@@ -1,0 +1,9 @@
+absorptionMap
+tracking
+*.[oa]
+*.txt
+*.png
+*.root
+*.dat
+*.csv
+*.jpg
