@@ -1058,6 +1058,7 @@ void Analyse::CalcStripResponseFunction(){
 		SRH[i]->Fit(SRF[i],"QN");
 		c[i]->cd();
 		SRH[i]->Draw();
+		SRF[i]->Draw("SAME");
 		c[i]->Modified();
 		c[i]->Update();
 	}
