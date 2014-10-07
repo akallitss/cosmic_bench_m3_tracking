@@ -28,7 +28,8 @@ int main(int argc, char ** argv){
 	string residus = "residus";
 	string fluxMap = "fluxmap";
 	string raypairs = "raypairs";
-	string bugtest = "bugtest";
+	string bugtest = "bugtest"
+	string srf = "srf";
 	if(argv[2] == efficacity){
 		blah->Efficacity();
 	}
@@ -60,6 +61,9 @@ int main(int argc, char ** argv){
 	}
 	else if(argv[2] == bugtest){
 		blah->bugtest();
+	}
+	else if(argv[2] == srf){
+		blah->CalcStripResponseFunction();
 	}
 	else{
 		cout << "function not found" << endl;
