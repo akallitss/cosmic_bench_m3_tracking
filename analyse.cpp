@@ -43,7 +43,7 @@ Analyse::Analyse(string configFilePath){
 	read_json(configFilePath, config_tree);
 	TFile *f = new TFile((config_tree.get<string>("Tree")).c_str());
 	cout << config_tree.get<string>("Tree") << endl;
-	TTree * tree = (TTree*)gDirectory->Get("T");
+	TTree * tree = (TTree*)(f->Get("T"));
 	CM_N = 0;
 	MG_N = 0;
 	BOOST_FOREACH(const ptree::value_type& child, config_tree.get_child("CosmicBench.CosMultis")){
