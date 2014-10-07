@@ -230,6 +230,7 @@ void Analyse::Residus_ref(){
 			}
 		}
 	}
+	/*
 	c_MM["Multigen_2D_0"] = new TCanvas("Multigen_2D_0","Multigen_2D_0",1200,1000);
 	c_MM["Multigen_2D_0"]->Divide(2);
 	MM_residus["Multigen_2D_0"] = new TH1D("Multigen_2D_0_residu","Multigen_2D_0_residu",nbins,-lim,lim);
@@ -251,7 +252,7 @@ void Analyse::Residus_ref(){
 	point_nb["Multigen_2D_1"] = 0;
 	correlation["Multigen_2D_1"] = new TGraph();
 	double z_MG2D_1 = 705;
-
+	*/
 	TCanvas * c0 = new TCanvas("chiSquares","chiSquares");
 	TH1D * chisquares = new TH1D("chiSquares","chiSquares",nbins,0,chisquare_threshold);
 
@@ -269,17 +270,18 @@ void Analyse::Residus_ref(){
 		}
 		eventReconstructed+=currentRays.size();
 		eventSuitable+=currentCBEvent->get_clus_N()/(CM_N+MG_N);
-		for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
-			if((jt->get_chiSquare_X()+jt->get_chiSquare_Y()) > chisquare_threshold) continue;
-			for(map<string,bool>::iterator nt = is_seen.begin();nt!=is_seen.end();++nt){
-				nt->second = false;
-			}
-			for(vector<Event*>::iterator it = (currentCBEvent->events).begin();it!=(currentCBEvent->events).end();++it){
-				if(!((*it)->get_is_ref())){
-					if((*it)->get_type() == "CM_Demux"){
-						ostringstream name;
-						name << "Cosmulti_" << (*it)->get_n_in_tree();
-						vector<CM_Demux_Cluster> current_clusters = (dynamic_cast<CM_Demux_Event*>(*it))->get_clusters();
+		
+		for(vector<Event*>::iterator it = (currentCBEvent->events).begin();it!=(currentCBEvent->events).end();++it){
+			if(!((*it)->get_is_ref())){
+				if((*it)->get_type() == "CM_Demux"){
+					ostringstream name;
+					name << "Cosmulti_" << (*it)->get_n_in_tree();
+					vector<CM_Demux_Cluster> current_clusters = (dynamic_cast<CM_Demux_Event*>(*it))->get_clusters();
+					for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
+						if((jt->get_chiSquare_X()+jt->get_chiSquare_Y()) > chisquare_threshold) continue;
+						for(map<string,bool>::iterator nt = is_seen.begin();nt!=is_seen.end();++nt){
+							nt->second = false;
+						}
 						double residu = numeric_limits<double>::max();
 						vector<CM_Demux_Cluster>::iterator matching_cluster = current_clusters.end();
 						for(vector<CM_Demux_Cluster>::iterator kt = current_clusters.begin();kt!=current_clusters.end();++kt){
@@ -305,10 +307,26 @@ void Analyse::Residus_ref(){
 							is_seen[name.str()] = true;
 						}
 					}
-					else if((*it)->get_type() == "MG"){
-						ostringstream name;
-						name << "Multigen_" << (*it)->get_n_in_tree();
-						vector<MG_Cluster> current_clusters = (dynamic_cast<MG_Event*>(*it))->get_clusters();
+											/*
+						muon_total["Multigen_2D_0"]->Fill(jt->eval_X(z_MG2D_0),jt->eval_Y(z_MG2D_0));
+						muon_total["Multigen_2D_1"]->Fill(jt->eval_X(z_MG2D_1),jt->eval_Y(z_MG2D_1));
+						if(is_seen["Multigen_0"] && is_seen["Multigen_1"]){
+							muon_seen["Multigen_2D_0"]->Fill(jt->eval_X(z_MG2D_0),jt->eval_Y(z_MG2D_0));
+						}
+						if(is_seen["Multigen_2"] && is_seen["Multigen_3"]){
+							muon_seen["Multigen_2D_1"]->Fill(jt->eval_X(z_MG2D_1),jt->eval_Y(z_MG2D_1));
+						}
+						*/
+				}
+				else if((*it)->get_type() == "MG"){
+					ostringstream name;
+					name << "Multigen_" << (*it)->get_n_in_tree();
+					vector<MG_Cluster> current_clusters = (dynamic_cast<MG_Event*>(*it))->get_clusters();
+					for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
+						if((jt->get_chiSquare_X()+jt->get_chiSquare_Y()) > chisquare_threshold) continue;
+						for(map<string,bool>::iterator nt = is_seen.begin();nt!=is_seen.end();++nt){
+							nt->second = false;
+						}
 						double residu = numeric_limits<double>::max();
 						vector<MG_Cluster>::iterator matching_cluster = current_clusters.end();
 						for(vector<MG_Cluster>::iterator kt = current_clusters.begin();kt!=current_clusters.end();++kt){
@@ -333,16 +351,18 @@ void Analyse::Residus_ref(){
 							muon_seen[name.str()]->Fill(jt->eval_X((*it)->get_z()),jt->eval_Y((*it)->get_z()));
 							is_seen[name.str()] = true;
 						}
+						/*
+						muon_total["Multigen_2D_0"]->Fill(jt->eval_X(z_MG2D_0),jt->eval_Y(z_MG2D_0));
+						muon_total["Multigen_2D_1"]->Fill(jt->eval_X(z_MG2D_1),jt->eval_Y(z_MG2D_1));
+						if(is_seen["Multigen_0"] && is_seen["Multigen_1"]){
+							muon_seen["Multigen_2D_0"]->Fill(jt->eval_X(z_MG2D_0),jt->eval_Y(z_MG2D_0));
+						}
+						if(is_seen["Multigen_2"] && is_seen["Multigen_3"]){
+							muon_seen["Multigen_2D_1"]->Fill(jt->eval_X(z_MG2D_1),jt->eval_Y(z_MG2D_1));
+						}
+						*/
 					}
 				}
-			}
-			muon_total["Multigen_2D_0"]->Fill(jt->eval_X(z_MG2D_0),jt->eval_Y(z_MG2D_0));
-			muon_total["Multigen_2D_1"]->Fill(jt->eval_X(z_MG2D_1),jt->eval_Y(z_MG2D_1));
-			if(is_seen["Multigen_0"] && is_seen["Multigen_1"]){
-				muon_seen["Multigen_2D_0"]->Fill(jt->eval_X(z_MG2D_0),jt->eval_Y(z_MG2D_0));
-			}
-			if(is_seen["Multigen_2"] && is_seen["Multigen_3"]){
-				muon_seen["Multigen_2D_1"]->Fill(jt->eval_X(z_MG2D_1),jt->eval_Y(z_MG2D_1));
 			}
 		}
 		delete currentCBEvent;
@@ -401,8 +421,8 @@ void Analyse::Residus_ref(){
 		it->second->Update();
 		cout << it->first << " efficacity : " << 100.*efficacity[it->first] << "%" << endl;
 	}
-	cout << "correlation MG2D_0 : " << (efficacity["Multigen_2D_0"] - efficacity["Multigen_0"]*efficacity["Multigen_1"])/Sqrt(efficacity["Multigen_0"]*(1-efficacity["Multigen_0"])*efficacity["Multigen_1"]*(1-efficacity["Multigen_1"])) << endl;
-	cout << "correlation MG2D_1 : " << (efficacity["Multigen_2D_1"] - efficacity["Multigen_2"]*efficacity["Multigen_3"])/Sqrt(efficacity["Multigen_2"]*(1-efficacity["Multigen_2"])*efficacity["Multigen_3"]*(1-efficacity["Multigen_3"])) << endl;
+	//cout << "correlation MG2D_0 : " << (efficacity["Multigen_2D_0"] - efficacity["Multigen_0"]*efficacity["Multigen_1"])/Sqrt(efficacity["Multigen_0"]*(1-efficacity["Multigen_0"])*efficacity["Multigen_1"]*(1-efficacity["Multigen_1"])) << endl;
+	//cout << "correlation MG2D_1 : " << (efficacity["Multigen_2D_1"] - efficacity["Multigen_2"]*efficacity["Multigen_3"])/Sqrt(efficacity["Multigen_2"]*(1-efficacity["Multigen_2"])*efficacity["Multigen_3"]*(1-efficacity["Multigen_3"])) << endl;
 	c0->cd();
 	chisquares->Draw();
 	c0->Modified();
@@ -1074,5 +1094,5 @@ void Analyse::CalcStripResponseFunction(){
 		c[i]->Modified();
 		c[i]->Update();
 	}
-	cout << "\r" << setw(20) << det_N << "|" << setw(20) << nentries << flush;
+	cout << "\r" << setw(20) << det_N << "|" << setw(20) << nentries << endl;
 }
