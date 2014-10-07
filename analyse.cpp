@@ -24,6 +24,7 @@
 #include <TMath.h>
 #include <TGraph.h>
 #include <TF1.h>
+#include <algorithm>
 
 using std::string;
 using std::cout;
@@ -37,6 +38,7 @@ using boost::property_tree::ptree;
 using TMath::Sqrt;
 using TMath::ATan;
 using TMath::MaxElement;
+using std::max_element;
 
 Analyse::Analyse(string configFilePath){
 	ptree config_tree;
@@ -958,8 +960,14 @@ void Analyse::CalcStripResponseFunction(){
 
 	TFile * signal_file = new TFile(signal_file_name.c_str(),"READ");
 	TTree * signal_tree = (TTree*)(signal_file->Get("T"));
-	double StripAmpl_MG_corr[MG_N][61][32];
-	double StripAmpl_CM_corr[CM_N][64][32];
+
+	if(nentries != signal_tree->GetEntriesFast()){
+		cout << "total number of event in signal and analyse tree does not match" << endl;
+		return;
+	}
+
+	float StripAmpl_MG_corr[MG_N][61][32];
+	float StripAmpl_CM_corr[CM_N][64][32];
 	int signal_evn;
 	signal_tree->SetBranchAddress("Nevent",&signal_evn);
 	signal_tree->SetBranchAddress("StripAmpl_CM_corr",StripAmpl_CM_corr);
@@ -986,6 +994,7 @@ void Analyse::CalcStripResponseFunction(){
 			Long64_t ientry = LoadTree(jentry);
 			if (ientry < 0) break;
 			fChain->GetEntry(jentry);
+			signal_tree->LoadTree(jentry);
 			signal_tree->GetEntry(jentry);
 			if(signal_evn!=(evn+1)){
 				cout << "event numbers are different in analyse and signal trees" << endl;
@@ -1036,7 +1045,9 @@ void Analyse::CalcStripResponseFunction(){
 							if(matching_cluster == current_clusters.end()) continue;
 							for(int strip_nb=0;strip_nb<matching_cluster->get_size();strip_nb++){
 								int strip = matching_cluster->get_pos() - matching_cluster->get_size() + strip_nb;
-								SRH[i]->Fill(matching_cluster->get_pos_mm() - strip*MG_Detector::StripPitch, MaxElement(32,StripAmpl_MG_corr[(*it)->get_n_in_tree()][strip]));
+								if(strip<0) continue;
+								int channel = MG_Detector::StripToChannel(strip);
+								SRH[i]->Fill(matching_cluster->get_pos_mm() - strip*MG_Detector::StripPitch, *max_element(StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel],StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel]+32));
 							}
 							current_clusters.erase(matching_cluster);
 						}
