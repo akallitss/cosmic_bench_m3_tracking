@@ -177,7 +177,7 @@ void Analyse::Residus(){
 }
 void Analyse::Residus_ref(){
 	int non_ref_n = 0;
-	double chisquare_threshold = 100;
+	double chisquare_threshold = 20;
 	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
 		if(!((*it)->get_is_ref())) non_ref_n++;
 	}
@@ -198,6 +198,10 @@ void Analyse::Residus_ref(){
 	int nbins_2D = 50*(1+2*marge);
 	int eventReconstructed = 0;
 	double eventSuitable = 0;
+	map<string, unsigned int> det_in_nref_dir;
+	map<string, bool> nref_is_X;
+	unsigned int det_x_n = 0;
+	unsigned int nref_x_n = 0;
 	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
 		if(!((*it)->get_is_ref())){
 			ostringstream name;
@@ -231,7 +235,14 @@ void Analyse::Residus_ref(){
 				efficacity[name.str()] = 0;
 				is_seen [name.str()] = false;
 			}
+			nref_is_X[name.str()] = (*it)->get_is_X();
+			if((*it)->get_is_X()) nref_x_n++;
 		}
+		if((*it)->get_is_X()) det_x_n++;
+	}
+	for(map<string,bool>::iterator it = nref_is_X.begin();it!=nref_is_X.end();++it){
+		if(it->second) det_in_nref_dir[it->first] = det_x_n - nref_x_n;
+		else det_in_nref_dir[it->first] = (MG_N + CM_N - det_x_n) - (nref_is_X.size() - nref_x_n);
 	}
 	/*
 	c_MM["Multigen_2D_0"] = new TCanvas("Multigen_2D_0","Multigen_2D_0",1200,1000);
@@ -259,7 +270,7 @@ void Analyse::Residus_ref(){
 	TCanvas * c0 = new TCanvas("stats","stats");
 	c0->Divide(2);
 	TH1D * chisquares = new TH1D("chiSquares","chiSquares",nbins,0,chisquare_threshold);
-	TH1D * ray_clus_n = new TH1D("clus_n","clus_n",10,0,10);
+	TH1D * ray_clus_n = new TH1D("clus_n","clus_n",MG_N + CM_N + 2,0,MG_N + CM_N + 2);
 
 	if (fChain == 0) return;
 	Long64_t nentries = fChain->GetEntriesFast();
@@ -287,6 +298,8 @@ void Analyse::Residus_ref(){
 					vector<CM_Demux_Cluster> current_clusters = (dynamic_cast<CM_Demux_Event*>(*it))->get_clusters();
 					for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
 						if((jt->get_chiSquare_X()+jt->get_chiSquare_Y()) > chisquare_threshold) continue;
+						unsigned int clus_in_nref_dir = (nref_is_X[name.str()]) ? jt->get_clus_x_n() : jt->get_clus_y_n();
+						if(clus_in_nref_dir<det_in_nref_dir[name.str()]) continue;
 						for(map<string,bool>::iterator nt = is_seen.begin();nt!=is_seen.end();++nt){
 							nt->second = false;
 						}
@@ -299,7 +312,7 @@ void Analyse::Residus_ref(){
 								matching_cluster = kt;
 							}
 						}
-						muon_total[name.str()]->Fill(jt->eval_X((*it)->get_z()),jt->eval_Y((*it)->get_z()));
+						if(jt->eval_X((*it)->get_z())<500 && jt->eval_X((*it)->get_z())>0 && jt->eval_Y((*it)->get_z())<500 && jt->eval_Y((*it)->get_z())>0) muon_total[name.str()]->Fill(jt->eval_X((*it)->get_z()),jt->eval_Y((*it)->get_z()));
 						if(matching_cluster == current_clusters.end()) continue;
 						if((*matching_cluster).get_is_X()){
 							correlation[name.str()]->SetPoint(point_nb[name.str()],jt->eval_X((*it)->get_z()),(*matching_cluster).get_pos_mm());
@@ -334,6 +347,8 @@ void Analyse::Residus_ref(){
 					vector<MG_Cluster> current_clusters = (dynamic_cast<MG_Event*>(*it))->get_clusters();
 					for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
 						if((jt->get_chiSquare_X()+jt->get_chiSquare_Y()) > chisquare_threshold) continue;
+						unsigned int clus_in_nref_dir = (nref_is_X[name.str()]) ? jt->get_clus_x_n() : jt->get_clus_y_n();
+						if(clus_in_nref_dir<det_in_nref_dir[name.str()]) continue;
 						for(map<string,bool>::iterator nt = is_seen.begin();nt!=is_seen.end();++nt){
 							nt->second = false;
 						}
@@ -346,7 +361,7 @@ void Analyse::Residus_ref(){
 								matching_cluster = kt;
 							}
 						}
-						muon_total[name.str()]->Fill(jt->eval_X((*it)->get_z()),jt->eval_Y((*it)->get_z()));
+						if(jt->eval_X((*it)->get_z())<500 && jt->eval_X((*it)->get_z())>0 && jt->eval_Y((*it)->get_z())<500 && jt->eval_Y((*it)->get_z())>0) muon_total[name.str()]->Fill(jt->eval_X((*it)->get_z()),jt->eval_Y((*it)->get_z()));
 						if(matching_cluster == current_clusters.end()) continue;
 						if((*matching_cluster).get_is_X()){
 							correlation[name.str()]->SetPoint(point_nb[name.str()],jt->eval_X((*it)->get_z()),(*matching_cluster).get_pos_mm());

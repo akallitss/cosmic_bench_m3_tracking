@@ -108,12 +108,17 @@ void Ray_2D::process(){
 	double maxZ = numeric_limits<double>::min();
 	double minZ = numeric_limits<double>::max();
 	int i =0;
+	bool has_up = false;
+	bool has_down = false;
 	for(vector<Cluster*>::iterator it = clusters.begin(); it!=clusters.end();++it){
 		if((*it)->z>maxZ) maxZ = (*it)->z;
 		if((*it)->z<minZ) minZ = (*it)->z;
 		pos->SetPoint(i,(*it)->z,(*it)->get_pos_mm());
 		i++;
+		if((*it)->get_is_up()) has_up = true;
+		else has_down = true;
 	}
+	if(!(has_up && has_down)) return;
 	pos->Sort();
 	TF1 * line = new TF1("line","[0]*x+[1]",minZ-10,maxZ+10);
 	double maxSlope = 500./(maxZ-minZ);
@@ -385,6 +390,16 @@ double Ray::get_t_sigma() const{
 }
 unsigned int Ray::get_clus_n() const{
 	return clusters.size();
+}
+unsigned int Ray::get_clus_x_n() const{
+	int n = 0;
+	for(vector<Cluster*>::const_iterator it = clusters.begin();it!=clusters.end();++it){
+		if((*it)->get_is_X()) n++;
+	}
+	return n;
+}
+unsigned int Ray::get_clus_y_n() const{
+	return (get_clus_n() - get_clus_x_n());
 }
 
 RayPair::RayPair(){

@@ -36,6 +36,7 @@ class Cluster{
 		string get_type() const;
 		virtual double get_pos_mm() const = 0;
 		bool get_is_X() const;
+		bool get_is_up() const;
 		double get_ampl() const;
 		double get_size() const;
 		double get_pos() const;

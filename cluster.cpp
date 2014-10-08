@@ -107,6 +107,9 @@ double Cluster::get_size() const{
 double Cluster::get_pos() const{
 	return pos;
 }
+bool Cluster::get_is_up() const{
+	return is_up;
+}
 Cluster::~Cluster(){
 
 }
