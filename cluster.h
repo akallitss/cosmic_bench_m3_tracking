@@ -35,6 +35,7 @@ class Cluster{
 		virtual ~Cluster();
 		string get_type() const;
 		virtual double get_pos_mm() const = 0;
+		virtual double correct_strip_nb(int strip_nb) const = 0;
 		bool get_is_X() const;
 		bool get_is_up() const;
 		double get_ampl() const;
@@ -84,6 +85,7 @@ class CM_Cluster: public Cluster{
 		bool is_in_det(Detector * det) const;
 		string get_strip_type() const;
 		virtual double get_pos_mm() const;
+		virtual double correct_strip_nb(int strip_nb) const;
 	protected:
 		int maxStrip;
 		string strip_type;
@@ -103,6 +105,7 @@ class CM_Demux_Cluster: public CM_Cluster{
 		CM_Demux_Cluster(const CM_Cluster& wideStrip_clus);
 		~CM_Demux_Cluster();
 		double get_pos_mm() const;
+		double correct_strip_nb(int strip_nb) const;
 };
 
 class MG_Cluster: public Cluster{
@@ -119,6 +122,7 @@ class MG_Cluster: public Cluster{
 		static bool is_suitable(T * treeObject,int number_,MG_Detector * detector, int entry = -1);
 		bool is_in_det(Detector * det) const;
 		double get_pos_mm() const;
+		double correct_strip_nb(int strip_nb) const;
 	protected:
 		int mg_n_in_tree;
 };

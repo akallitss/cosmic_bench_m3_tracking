@@ -39,6 +39,7 @@ using boost::property_tree::ptree;
 using TMath::Sqrt;
 using TMath::ATan;
 using TMath::MaxElement;
+using TMath::Abs;
 using std::max_element;
 using std::left;
 using std::right;
@@ -180,7 +181,7 @@ void Analyse::Residus(){
 }
 void Analyse::Residus_ref(){
 	int non_ref_n = 0;
-	double chisquare_threshold = 20;
+	double chisquare_threshold = 10;
 	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
 		if(!((*it)->get_is_ref())) non_ref_n++;
 	}
@@ -212,13 +213,13 @@ void Analyse::Residus_ref(){
 				name << "Cosmulti_" << (dynamic_cast<CM_Detector*>(*it))->get_cm_n_in_tree();
 				c_MM[name.str()] = new TCanvas(name.str().c_str(),name.str().c_str(),1200,1000);
 				c_MM[name.str()]->Divide(2,2);
-				MM_residus[name.str()] = new TH1D((name.str()+"_residu").c_str(),(name.str()+"_residu").c_str(),nbins,-20,20);
+				MM_residus[name.str()] = new TH1D((name.str()+"_residu").c_str(),(name.str()+"_residu").c_str(),nbins,-5,5);
 				muon_seen[name.str()] = new TH2D((name.str()+"_seen").c_str(),(name.str()+"_seen").c_str(),nbins_2D,-marge*lim,(1+marge)*lim,nbins_2D,-marge*lim,(1+marge)*lim);
 				muon_total[name.str()] = new TH2D((name.str()+"_total").c_str(),(name.str()+"_total").c_str(),nbins_2D,-marge*lim,(1+marge)*lim,nbins_2D,-marge*lim,(1+marge)*lim);
 				efficacity_2D[name.str()] = new TH2D((name.str()+"_efficacity").c_str(),(name.str()+"_efficacity").c_str(),nbins_2D,-marge*lim,(1+marge)*lim,nbins_2D,-marge*lim,(1+marge)*lim);
 				efficacity_2D[name.str()]->SetStats(false);
 				correlation[name.str()] = new TGraph();
-				angle_alignment[name.str()] = new TProfile((name.str()+"_angle").c_str(),(name.str()+"_angle").c_str(),500,0,500,-20,20);
+				angle_alignment[name.str()] = new TProfile((name.str()+"_angle").c_str(),(name.str()+"_angle").c_str(),500,0,500,-5,5);
 				point_nb[name.str()] = 0;
 				efficacity[name.str()] = 0;
 				is_seen [name.str()] = false;
@@ -227,13 +228,13 @@ void Analyse::Residus_ref(){
 				name << "Multigen_" << (dynamic_cast<MG_Detector*>(*it))->get_mg_n_in_tree();
 				c_MM[name.str()] = new TCanvas(name.str().c_str(),name.str().c_str(),1200,1000);
 				c_MM[name.str()]->Divide(2,2);
-				MM_residus[name.str()] = new TH1D((name.str()+"_residu").c_str(),(name.str()+"_residu").c_str(),nbins,-20,20);
+				MM_residus[name.str()] = new TH1D((name.str()+"_residu").c_str(),(name.str()+"_residu").c_str(),nbins,-5,5);
 				muon_seen[name.str()] = new TH2D((name.str()+"_seen").c_str(),(name.str()+"_seen").c_str(),nbins_2D,-marge*lim,(1+marge)*lim,nbins_2D,-marge*lim,(1+marge)*lim);
 				muon_total[name.str()] = new TH2D((name.str()+"_total").c_str(),(name.str()+"_total").c_str(),nbins_2D,-marge*lim,(1+marge)*lim,nbins_2D,-marge*lim,(1+marge)*lim);
 				efficacity_2D[name.str()] = new TH2D((name.str()+"_efficacity").c_str(),(name.str()+"_efficacity").c_str(),nbins_2D,-marge*lim,(1+marge)*lim,nbins_2D,-marge*lim,(1+marge)*lim);
 				efficacity_2D[name.str()]->SetStats(false);
 				correlation[name.str()] = new TGraph();
-				angle_alignment[name.str()] = new TProfile((name.str()+"_angle").c_str(),(name.str()+"_angle").c_str(),500,0,500,-20,20);
+				angle_alignment[name.str()] = new TProfile((name.str()+"_angle").c_str(),(name.str()+"_angle").c_str(),500,0,500,-5,5);
 				point_nb[name.str()] = 0;
 				efficacity[name.str()] = 0;
 				is_seen [name.str()] = false;
@@ -300,9 +301,10 @@ void Analyse::Residus_ref(){
 					name << "Cosmulti_" << (*it)->get_n_in_tree();
 					vector<CM_Demux_Cluster> current_clusters = (dynamic_cast<CM_Demux_Event*>(*it))->get_clusters();
 					for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
-						if((jt->get_chiSquare_X()+jt->get_chiSquare_Y()) > chisquare_threshold) continue;
+						double chiSquare_in_nref_dir = (nref_is_X[name.str()]) ? jt->get_chiSquare_X() : jt->get_chiSquare_Y();
 						unsigned int clus_in_nref_dir = (nref_is_X[name.str()]) ? jt->get_clus_x_n() : jt->get_clus_y_n();
 						if(clus_in_nref_dir<det_in_nref_dir[name.str()]) continue;
+						if(chiSquare_in_nref_dir > chisquare_threshold/static_cast<double>(clus_in_nref_dir)) continue;
 						for(map<string,bool>::iterator nt = is_seen.begin();nt!=is_seen.end();++nt){
 							nt->second = false;
 						}
@@ -355,9 +357,10 @@ void Analyse::Residus_ref(){
 					name << "Multigen_" << (*it)->get_n_in_tree();
 					vector<MG_Cluster> current_clusters = (dynamic_cast<MG_Event*>(*it))->get_clusters();
 					for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
-						if((jt->get_chiSquare_X()+jt->get_chiSquare_Y()) > chisquare_threshold) continue;
+						double chiSquare_in_nref_dir = (nref_is_X[name.str()]) ? jt->get_chiSquare_X() : jt->get_chiSquare_Y();
 						unsigned int clus_in_nref_dir = (nref_is_X[name.str()]) ? jt->get_clus_x_n() : jt->get_clus_y_n();
 						if(clus_in_nref_dir<det_in_nref_dir[name.str()]) continue;
+						if(chiSquare_in_nref_dir > chisquare_threshold/static_cast<double>(clus_in_nref_dir)) continue;
 						for(map<string,bool>::iterator nt = is_seen.begin();nt!=is_seen.end();++nt){
 							nt->second = false;
 						}
@@ -1026,11 +1029,12 @@ void Analyse::CalcStripResponseFunction(){
 	int det_N = CM_N + MG_N;
 	cout << setw(20) << "detector proccessed" << "|" << setw(20) << "event processed" << endl;
 	TProfile * SRH[det_N];
-	TGraph * SRH2D[det_N];
+	//TGraph * SRH2D[det_N];
+	TH2D * SRH2D[det_N];
 	TCanvas * c[det_N];
 	TCanvas * d[det_N];
 	TF1 * SRF[det_N];
-	double chisquare_threshold = 500;
+	double chisquare_threshold = 10;
 	Long64_t nentries = fChain->GetEntriesFast();
 
 	TFile * signal_file = new TFile(signal_file_name.c_str(),"READ");
@@ -1048,10 +1052,18 @@ void Analyse::CalcStripResponseFunction(){
 	if(CM_N>0) signal_tree->SetBranchAddress("StripAmpl_CM_corr",StripAmpl_CM_corr);
 	if(MG_N>0) signal_tree->SetBranchAddress("StripAmpl_MG_corr",StripAmpl_MG_corr);
 
+	int det_x_n = 0;
+	int det_y_n = 0;
+	for(int j=0;j<det_N;j++){
+		if(detectors[j]->get_is_X()) det_x_n++;
+		else det_y_n++;
+	}
+
 	for(int i=0;i<det_N;i++){
 		for(int j=0;j<det_N;j++){
 			detectors[j]->is_ref = (i!=j);
 		}
+		int det_in_nref_dir = (detectors[i]->get_is_X()) ? det_x_n : det_y_n;
 
 		ostringstream c_name;
 		c_name << "c_" << i;
@@ -1065,15 +1077,18 @@ void Analyse::CalcStripResponseFunction(){
 		SRF_name << "SRF_" << i;
 
 		double limit = 6;
+		int bin_n = 200;
 		if(detectors[i]->get_type() == "MG" && detectors[i]->get_is_X() == false) limit *= 2.;
 		c[i] = new TCanvas(c_name.str().c_str(),c_name.str().c_str());
 		d[i] = new TCanvas(d_name.str().c_str(),d_name.str().c_str());
-		SRH[i] = new TProfile(SRH_name.str().c_str(),SRH_name.str().c_str(),200,-limit,limit,0,1000);
-		SRH2D[i] = new TGraph();
-		SRH2D[i]->GetXaxis()->SetLimits(-limit,limit);
-		int graph_point_nb = 0;
+		SRH[i] = new TProfile(SRH_name.str().c_str(),SRH_name.str().c_str(),bin_n,-limit,limit,0,1000);
+		//SRH2D[i] = new TGraph();
+		//int graph_point_nb = 0;
+		SRH2D[i] = new TH2D(SRH2D_name.str().c_str(),SRH2D_name.str().c_str(),200,-limit,limit,100,0,10);
 		
-		SRF[i] = new TF1(SRF_name.str().c_str(),"([3] + exp(-4*log(2)*(1-[0])*(x-[4])*(x-[4])/([1]*[1]))/(1+(4*[0]*(x-[4])*(x-[4])/([2]*[2]))))/(1+[3])",-limit,limit);
+		SRF[i] = new TF1(SRF_name.str().c_str(),"[3] + ((1-[3])*(exp(-4*log(2)*(1-[0])*(x-[4])*(x-[4])/([1]*[1])))/(1+(4*[0]*(x-[4])*(x-[4])/([2]*[2]))))",-limit,limit);
+		//([3] + (exp(-4*log(2)*(1-[0])*(x-[4])*(x-[4])/([1]*[1]))/(1+(4*[0]*(x-[4])*(x-[4])/([2]*[2]))))/(1+[3]))
+		//[3] + ((1-[3])*(exp(-4*log(2)*(1-[0])*(x-[4])*(x-[4])/([1]*[1])))/(1+(4*[0]*(x-[4])*(x-[4])/([2]*[2]))))
 		SRF[i]->SetParameters(0.5,0.5,0.5,0.1,0);
 		SRF[i]->SetParLimits(0,0,1);
 		SRF[i]->SetParLimits(1,0,10000);
@@ -1100,31 +1115,16 @@ void Analyse::CalcStripResponseFunction(){
 				if(!((*it)->get_is_ref())){
 					if((*it)->get_type() == "CM_Demux"){
 						continue;
-						/*
-						vector<CM_Demux_Cluster> current_clusters = (dynamic_cast<CM_Demux_Event*>(*it))->get_clusters();
-						for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
-							if((jt->get_chiSquare_X()+jt->get_chiSquare_Y()) > chisquare_threshold) continue;
-							double residu = numeric_limits<double>::max();
-							vector<CM_Demux_Cluster>::iterator matching_cluster = current_clusters.end();
-							for(vector<CM_Demux_Cluster>::iterator kt = current_clusters.begin();kt!=current_clusters.end();++kt){
-								double current_residu = jt->get_residu_ref(&(*kt));
-								if(current_residu<residu){
-									residu = current_residu;
-									matching_cluster = kt;
-								}
-							}
-							if(matching_cluster == current_clusters.end()) continue;
-							for(int strip_nb=0;strip_nb<matching_cluster->get_size();strip_nb++){
-								int strip = matching_cluster->get_pos() - matching_cluster->get_size() + strip_nb;
-								SRH[i]->Fill(matching_cluster->get_pos_mm() - strip*CM_Detector::ThinStripPitch, MaxElement(32,StripAmpl_CM_corr[(*it)->get_n_in_tree()][strip]));
-							}
-							current_clusters.erase(matching_cluster);
-						}
-						*/
 					}
 					else if((*it)->get_type() == "MG"){
 						vector<MG_Cluster> current_clusters = (dynamic_cast<MG_Event*>(*it))->get_clusters();
 						for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
+
+							double chiSquare_in_nref_dir = (detectors[i]->get_is_X()) ? jt->get_chiSquare_X() : jt->get_chiSquare_Y();
+							int clus_in_nref_dir = (detectors[i]->get_is_X()) ? jt->get_clus_x_n() : jt->get_clus_y_n();
+							if(clus_in_nref_dir<(det_in_nref_dir-1)) continue;
+							if(chiSquare_in_nref_dir > chisquare_threshold/static_cast<double>(clus_in_nref_dir)) continue;
+
 							if((jt->get_chiSquare_X()+jt->get_chiSquare_Y()) > chisquare_threshold) continue;
 							double residu = numeric_limits<double>::max();
 							vector<MG_Cluster>::iterator matching_cluster = current_clusters.end();
@@ -1145,6 +1145,7 @@ void Analyse::CalcStripResponseFunction(){
 							
 							double normalization = matching_cluster->get_ampl()/matching_cluster->get_size();
 							double matching_position = (matching_cluster->get_is_X()) ? jt->eval_X((*it)->get_z()) : jt->eval_Y((*it)->get_z());
+							//double matching_position = matching_cluster->get_pos_mm();
 							/*
 							for(int strip_nb = matching_cluster->get_pos()-1;strip_nb<(matching_cluster->get_pos()+2);strip_nb++){
 								int channel = MG_Detector::StripToChannel(strip_nb);
@@ -1154,9 +1155,10 @@ void Analyse::CalcStripResponseFunction(){
 							*/
 							for(int strip_nb=0;strip_nb<1024;strip_nb++){
 								int channel = MG_Detector::StripToChannel(strip_nb);
-								SRH[i]->Fill(matching_position - strip_nb*MG_Detector::StripPitch, (*max_element(StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel],StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel]+32))/normalization);
-								SRH2D[i]->SetPoint(graph_point_nb, matching_position - strip_nb*MG_Detector::StripPitch, (*max_element(StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel],StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel]+32))/normalization);
-								graph_point_nb++;
+								if(Abs(residu)<1.) SRH[i]->Fill(matching_position - matching_cluster->correct_strip_nb(strip_nb), (*max_element(StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel],StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel]+32))/normalization);
+								//SRH2D[i]->SetPoint(graph_point_nb, matching_position - matching_cluster->correct_strip_nb(strip_nb), (*max_element(StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel],StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel]+32))/normalization);
+								//graph_point_nb++;
+								SRH2D[i]->Fill(matching_position - matching_cluster->correct_strip_nb(strip_nb), (*max_element(StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel],StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel]+32))/normalization);
 							}
 							current_clusters.erase(matching_cluster);
 						}
@@ -1173,20 +1175,36 @@ void Analyse::CalcStripResponseFunction(){
 				c[i]->Modified();
 				c[i]->Update();
 				d[i]->cd();
-				SRH2D[i]->Draw("AP");
+				//SRH2D[i]->GetXaxis()->SetLimits(-limit,limit);
+				SRH2D[i]->Draw("colz");
 				d[i]->Modified();
 				d[i]->Update();
 			}
 		}
 		cout << "\r" << setw(20) << i << "|" << setw(20) << nentries << endl;
-		
+		/*
 		double scaling_factor = 0;
-		for(int n=0;n<200;n++){
+		for(int n=0;n<bin_n;n++){
 			if(SRH[i]->GetBinCenter(n)<-2) continue;
 			if(SRH[i]->GetBinCenter(n)>2) continue;
 			if(SRH[i]->GetBinContent(n)>scaling_factor) scaling_factor = SRH[i]->GetBinContent(n);
 		}
 		SRH[i]->Scale(1./scaling_factor);
+		*/
+		//TF1 * scaling_function = new TF1("scaling_function","[0]+[1]*x+[2]*x*x",-1,1);
+		TF1 * scaling_function = new TF1("scaling_function","[0]*exp(-[1]*(x-[2])*(x-[2]))",-1,1);
+		SRH[i]->Fit(scaling_function,"QNR");
+		//double scaling_factor = scaling_function->GetParameter(0) - 0.25*scaling_function->GetParameter(1)*scaling_function->GetParameter(1)/scaling_function->GetParameter(2);
+		double scaling_factor = scaling_function->GetParameter(0);
+		SRH[i]->Scale(1./scaling_factor);
+		double offset_factor = 0;
+		for(int n=1;n<6;n++){ //bin 0 is undeflow bin and bin bin_n+1 is overflow bin
+			offset_factor += SRH[i]->GetBinContent(n);
+			offset_factor += SRH[i]->GetBinContent(bin_n + 1 - n);
+		}
+		offset_factor/=10.;
+		//SRF[i]->FixParameter(3,offset_factor);
+		//SRF[i]->FixParameter(4,0);
 		
 		SRH[i]->Fit(SRF[i],"QN");
 		c[i]->cd();
@@ -1195,7 +1213,7 @@ void Analyse::CalcStripResponseFunction(){
 		c[i]->Modified();
 		c[i]->Update();
 		d[i]->cd();
-		SRH2D[i]->Draw("AP");
+		SRH2D[i]->Draw("colz");
 		d[i]->Modified();
 		d[i]->Update();
 		cout << setw(5) << " " << setw(30) << left << "offset : " << setw(10) << right << SRF[i]->GetParameter(3) << endl;

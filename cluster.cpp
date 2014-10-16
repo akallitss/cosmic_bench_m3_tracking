@@ -236,6 +236,23 @@ double CM_Cluster::get_pos_mm() const{
 	}
 	else return -1;
 }
+double CM_Cluster::correct_strip_nb(int strip_nb) const{
+	if(strip_type == "Wide"){
+		double pos_mm = 0;
+		if(direction){
+			pos_mm = ((63.-strip_nb)*500./32.);
+		}
+		else{
+			pos_mm = (strip_nb*500./32.);
+		}
+		if(perp_pos_mm>-1){
+			pos_mm += (perp_pos_mm - 250)*Tan(angle);
+		}
+		pos_mm += offset;
+		return pos_mm;
+	}
+	else return -1;
+}
 
 CM_Demux_Cluster::CM_Demux_Cluster(): CM_Cluster(){
 	type.clear();
@@ -314,6 +331,20 @@ double CM_Demux_Cluster::get_pos_mm() const{
 	pos_mm += offset;
 	return pos_mm;
 }
+double CM_Demux_Cluster::correct_strip_nb(int strip_nb) const{
+	double pos_mm = 0;
+	if(direction){
+		pos_mm = strip_nb*500./1024.;
+	}
+	else{
+		pos_mm = (1024-strip_nb)*500./1024.;
+	}
+	if(perp_pos_mm>-1){
+		pos_mm += (perp_pos_mm - 250)*Tan(angle);
+	}
+	pos_mm += offset;
+	return pos_mm;
+}
 CM_Demux_Cluster::~CM_Demux_Cluster(){
 	
 }
@@ -385,6 +416,20 @@ double MG_Cluster::get_pos_mm() const{
 	}
 	else{
 		pos_mm = (1024-pos)*500./1024.;
+	}
+	if(perp_pos_mm>-1){
+		pos_mm += (perp_pos_mm - 250)*Tan(angle);
+	}
+	pos_mm += offset;
+	return pos_mm;
+}
+double MG_Cluster::correct_strip_nb(int strip_nb) const{
+	double pos_mm = 0;
+	if(direction){
+		pos_mm = strip_nb*500./1024.;
+	}
+	else{
+		pos_mm = (1024-strip_nb)*500./1024.;
 	}
 	if(perp_pos_mm>-1){
 		pos_mm += (perp_pos_mm - 250)*Tan(angle);
