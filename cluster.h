@@ -38,11 +38,13 @@ class Cluster{
 		virtual double correct_strip_nb(int strip_nb) const = 0;
 		bool get_is_X() const;
 		bool get_is_up() const;
+		double get_z() const;
 		double get_ampl() const;
 		double get_size() const;
 		double get_pos() const;
 		void set_perp_pos_mm(double coord);
 		double get_perp_pos_mm() const;
+		int find_det(const vector<Detector*> det_array) const;
 	protected:
 		Cluster();
 		Cluster(const Cluster& other);

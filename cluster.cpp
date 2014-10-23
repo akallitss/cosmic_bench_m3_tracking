@@ -119,11 +119,21 @@ double Cluster::get_pos() const{
 bool Cluster::get_is_up() const{
 	return is_up;
 }
+double Cluster::get_z() const{
+	return z;
+}
 void Cluster::set_perp_pos_mm(double coord){
 	perp_pos_mm = coord;
 }
 double Cluster::get_perp_pos_mm() const{
 	return perp_pos_mm;
+}
+int Cluster::find_det(const vector<Detector*> det_array) const{
+	int pos = -1;
+	for(unsigned int i = 0; i<det_array.size();i++){
+		if(is_in_det(det_array[i])) pos = i;
+	}
+	return pos;
 }
 Cluster::~Cluster(){
 

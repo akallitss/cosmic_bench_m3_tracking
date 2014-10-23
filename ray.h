@@ -80,6 +80,7 @@ class Ray{
 		unsigned int get_clus_n() const;
 		unsigned int get_clus_x_n() const;
 		unsigned int get_clus_y_n() const;
+		vector<Cluster*> get_clus() const;
 	protected:
 		vector<Cluster*> clusters;
 		double chiSquare_X;

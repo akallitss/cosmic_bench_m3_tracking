@@ -1,9 +1,11 @@
 #define analyse_cpp
+//my class
 #include "analyse.h"
 #include "T.h"
 #include "detector.h"
 #include "ray.h"
 #include "event.h"
+//ROOT
 #include <TTree.h>
 #include <TFile.h>
 #include <TROOT.h>
@@ -12,21 +14,27 @@
 #include <TH1D.h>
 #include <TH2D.h>
 #include <TProfile.h>
-#include <string>
+#include <TMath.h>
+#include <TGraph.h>
+#include <TF1.h>
+#include <TGraphErrors.h>
+#include <TGraph2D.h>
+#include <TPolyLine3D.h>
+//Boost
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/foreach.hpp>
+//std
 #include <sstream>
 #include <iomanip>
 #include <iostream>
 #include <vector>
 #include <limits>
-#include <TMath.h>
-#include <TGraph.h>
-#include <TF1.h>
+#include <string>
 #include <algorithm>
-#include <TGraphErrors.h>
+#include <utility>
 
+//std
 using std::string;
 using std::cout;
 using std::endl;
@@ -35,15 +43,19 @@ using std::setw;
 using std::vector;
 using std::ostringstream;
 using std::numeric_limits;
+using std::max_element;
+using std::left;
+using std::right;
+using std::pair;
+//boost
 using boost::property_tree::ptree;
+//tmath
 using TMath::Sqrt;
 using TMath::ATan;
 using TMath::MaxElement;
 using TMath::Abs;
 using TMath::FloorNint;
-using std::max_element;
-using std::left;
-using std::right;
+using TMath::CeilNint;
 
 Analyse::Analyse(string configFilePath){
 	ptree config_tree;
@@ -1307,4 +1319,173 @@ void Analyse::CalcStripResponseFunction(int bin_nb){
 		}
 	}
 	//cout << "\r" << setw(20) << det_N << "|" << setw(20) << nentries << endl;
+}
+
+void Analyse::EventDisplay(int event_nb){
+	long nentries = fChain->GetEntriesFast();
+	if(event_nb<0 || event_nb>nentries){
+		cout << "invalid event number" << endl;
+		return;
+	}
+	TFile * signal_file = new TFile(signal_file_name.c_str(),"READ");
+	TTree * signal_tree = (TTree*)(signal_file->Get("T"));
+
+	if(nentries != signal_tree->GetEntriesFast()){
+		cout << "total number of event in signal and analyse tree does not match" << endl;
+		return;
+	}
+
+	float StripAmpl_MG_corr[MG_N][61][32];
+	float StripAmpl_CM_corr[CM_N][64][32];
+	int signal_evn;
+	signal_tree->SetBranchAddress("Nevent",&signal_evn);
+	if(CM_N>0) signal_tree->SetBranchAddress("StripAmpl_CM_corr",StripAmpl_CM_corr);
+	if(MG_N>0) signal_tree->SetBranchAddress("StripAmpl_MG_corr",StripAmpl_MG_corr);
+
+	double chisquare_threshold = 50;
+	int detector_color = 1;
+	int ray_color = 2;
+	int pos_color = 4;
+
+	LoadTree(event_nb);
+	GetEntry(event_nb);
+	signal_tree->LoadTree(event_nb);
+	signal_tree->GetEntry(event_nb);
+	CosmicBenchEvent * CBEvent = new CosmicBenchEvent(this,this,-1);
+	vector<Ray> eventRays = CBEvent->get_absorption_rays();
+	delete CBEvent;
+	vector<Ray>::iterator rays_it = eventRays.begin();
+	//delete rays with too big chi²
+	while(rays_it!=eventRays.end()){
+		if((rays_it->get_chiSquare_X()+rays_it->get_chiSquare_Y())>chisquare_threshold){
+			eventRays.erase(rays_it);
+			rays_it = eventRays.begin();
+		}
+		else{
+			++rays_it;
+		}
+	}
+	if(eventRays.size() == 0){
+		cout << "no ray in this event, exiting" << endl;
+		return;
+	}
+	TGraph2D * ampl_graph_x = new TGraph2D();
+	ampl_graph_x->SetTitle("XZ plane");
+	int ampl_graph_x_point_nb = 0;
+	TGraph2D * ampl_graph_y = new TGraph2D();
+	ampl_graph_y->SetTitle("YZ plane");
+	int ampl_graph_y_point_nb = 0;
+	vector<pair<TPolyLine3D*, TPolyLine3D*> > det_pos;
+	vector<pair<TPolyLine3D*, TPolyLine3D*> > ray_lines;
+	vector<TPolyLine3D*> pos_lines_x;
+	vector<TPolyLine3D*> pos_lines_y;
+	double min_z = numeric_limits<double>::max();
+	double max_z = numeric_limits<double>::min();
+	//construct line representing det
+	for(vector<Detector*>::iterator det_it = detectors.begin();det_it!=detectors.end();++det_it){
+		TPolyLine3D det_x(2);
+		TPolyLine3D det_y(2);
+		double det_z = (*det_it)->get_z();
+		if(det_z>max_z) max_z = det_z;
+		if(det_z<min_z) min_z = det_z;
+		det_x.SetNextPoint(0,det_z,0);
+		det_y.SetNextPoint(0,det_z,0);
+		det_x.SetNextPoint(500,det_z,0);
+		det_y.SetNextPoint(500,det_z,0);
+		det_x.SetLineColor(detector_color);
+		det_y.SetLineColor(detector_color);
+		det_pos.push_back(pair<TPolyLine3D*, TPolyLine3D*>(new TPolyLine3D(det_x),new TPolyLine3D(det_y)));
+	}
+	min_z = min_z - 0.1*(max_z -min_z);
+	max_z = max_z + 0.1*(max_z -min_z);
+	for(rays_it = eventRays.begin();rays_it!=eventRays.end();++rays_it){
+		//construct line representing ray
+		TPolyLine3D ray_x(2);
+		TPolyLine3D ray_y(2);
+		cout << rays_it->eval_X(min_z) << endl;
+		cout << rays_it->eval_Y(min_z) << endl;
+		ray_x.SetNextPoint(rays_it->eval_X(min_z),min_z,0);
+		ray_y.SetNextPoint(rays_it->eval_Y(min_z),min_z,0);
+		ray_x.SetNextPoint(rays_it->eval_X(max_z),max_z,0);
+		ray_y.SetNextPoint(rays_it->eval_Y(max_z),max_z,0);
+		ray_x.SetLineColor(ray_color);
+		ray_y.SetLineColor(ray_color);
+		ray_lines.push_back(pair<TPolyLine3D*, TPolyLine3D*>(new TPolyLine3D(ray_x),new TPolyLine3D(ray_y)));
+		vector<Cluster*> ray_clusters = rays_it->get_clus();
+		for(vector<Cluster*>::iterator clus_it = ray_clusters.begin();clus_it!=ray_clusters.end();++clus_it){
+			//add clus_pos line
+			double det_z = (*clus_it)->get_z();
+			double current_clus_size = (*clus_it)->get_size();
+			double current_clus_pos = (*clus_it)->get_pos_mm();
+			double min_ampl = 0;
+			double max_ampl = 0;
+			if((*clus_it)->get_type() == "MG"){
+				int det_n_in_tree = dynamic_cast<MG_Detector*>(detectors[(*clus_it)->find_det(detectors)])->get_mg_n_in_tree();
+				for(int i_strip=0;i_strip<1024;i_strip++){
+					int channel = MG_Detector::StripToChannel(i_strip);
+					double current_strip_pos = (*clus_it)->correct_strip_nb(i_strip);
+					if(current_strip_pos>current_clus_pos+(2*current_clus_size)) continue;
+					if(current_strip_pos<current_clus_pos-(2*current_clus_size)) continue;
+					double current_ampl = *max_element(StripAmpl_MG_corr[det_n_in_tree][channel],StripAmpl_MG_corr[det_n_in_tree][channel]+32);
+					if(current_ampl>max_ampl) max_ampl = current_ampl;
+					if(current_ampl<min_ampl) min_ampl = current_ampl;
+					if((*clus_it)->get_is_X()){
+						ampl_graph_x->SetPoint(ampl_graph_x_point_nb,current_strip_pos,det_z,current_ampl);
+						ampl_graph_x_point_nb++;
+					}
+					else{
+						ampl_graph_y->SetPoint(ampl_graph_y_point_nb,current_strip_pos,det_z,current_ampl);
+						ampl_graph_y_point_nb++;
+					}
+
+				}
+			}
+			else if((*clus_it)->get_type() == "CM" || (*clus_it)->get_type() == "CM_Demux"){
+				//TODO : implement for CM
+			}
+			min_ampl = min_ampl - 0.1*(max_ampl - min_ampl);
+			max_ampl = max_ampl + 0.1*(max_ampl - min_ampl);
+			TPolyLine3D clus_line(2);
+			clus_line.SetNextPoint(current_clus_pos,det_z,min_ampl);
+			clus_line.SetNextPoint(current_clus_pos,det_z,max_ampl);
+			clus_line.SetLineColor(pos_color);
+			clus_line.SetLineStyle(2);
+			if((*clus_it)->get_is_X()) pos_lines_x.push_back(new TPolyLine3D(clus_line));
+			else pos_lines_y.push_back(new TPolyLine3D(clus_line));
+		}
+	}
+	delete signal_file;
+	ampl_graph_x->GetYaxis()->SetLimits(min_z,max_z);
+	ampl_graph_y->GetYaxis()->SetLimits(min_z,max_z);
+	ampl_graph_x->GetXaxis()->SetLimits(-50,550);
+	ampl_graph_y->GetXaxis()->SetLimits(-50,550);
+	ampl_graph_x->SetMarkerStyle(20);
+	ampl_graph_y->SetMarkerStyle(20);
+	TCanvas * c_visu = new TCanvas();
+	c_visu->Divide(2);
+	c_visu->cd(1);
+	ampl_graph_x->Draw("pcol");
+	for(vector<TPolyLine3D*>::iterator line_it = pos_lines_x.begin();line_it!=pos_lines_x.end();++line_it){
+		(*line_it)->Draw();
+	}
+	c_visu->cd(2);
+	ampl_graph_y->Draw("pcol");
+	for(vector<TPolyLine3D*>::iterator line_it = pos_lines_y.begin();line_it!=pos_lines_y.end();++line_it){
+		(*line_it)->Draw();
+	}
+	for(vector<pair<TPolyLine3D*, TPolyLine3D*> >::iterator pair_it = det_pos.begin();pair_it!=det_pos.end();++pair_it){
+		c_visu->cd(1);
+		(pair_it->first)->Draw();
+		c_visu->cd(2);
+		(pair_it->second)->Draw();
+	}
+	for(vector<pair<TPolyLine3D*, TPolyLine3D*> >::iterator pair_it = ray_lines.begin();pair_it!=ray_lines.end();++pair_it){
+		cout << "blah" << endl;
+		c_visu->cd(1);
+		(pair_it->first)->Draw();
+		c_visu->cd(2);
+		(pair_it->second)->Draw();
+	}
+	c_visu->Modified();
+	c_visu->Update();
 }

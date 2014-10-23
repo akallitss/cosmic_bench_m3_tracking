@@ -430,6 +430,15 @@ unsigned int Ray::get_clus_x_n() const{
 unsigned int Ray::get_clus_y_n() const{
 	return (get_clus_n() - get_clus_x_n());
 }
+vector<Cluster*> Ray::get_clus() const{
+	vector<Cluster*> return_vector;
+	for(vector<Cluster*>::const_iterator it = clusters.begin();it != clusters.end(); ++it){
+		if((*it)->get_type() == "MG") return_vector.push_back(new MG_Cluster(*dynamic_cast<MG_Cluster*>(*it)));
+		else if((*it)->get_type() == "CM") return_vector.push_back(new CM_Cluster(*dynamic_cast<CM_Cluster*>(*it)));
+		else if((*it)->get_type() == "CM_Demux") return_vector.push_back(new CM_Demux_Cluster(*dynamic_cast<CM_Demux_Cluster*>(*it)));
+	}
+	return return_vector;
+}
 
 RayPair::RayPair(){
 	downRay = Ray();

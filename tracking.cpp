@@ -31,6 +31,7 @@ int main(int argc, char ** argv){
 	string raypairs = "raypairs";
 	string bugtest = "bugtest";
 	string srf = "srf";
+	string eventdisplay = "eventdisplay";
 	if(argv[2] == efficacity){
 		blah->Efficacity();
 	}
@@ -70,6 +71,17 @@ int main(int argc, char ** argv){
 		else{
 			int i = atoi(argv[3]);
 			blah->CalcStripResponseFunction(i);
+		}
+	}
+	else if(argv[2] == eventdisplay){
+		if(argc<4){
+			cout << "you must indicate the number of the event you wanna see" << endl;
+			delete blah; delete theApp;
+			return 1;
+		}
+		else{
+			int i = atoi(argv[3]);
+			blah->EventDisplay(i);
 		}
 	}
 	else{
