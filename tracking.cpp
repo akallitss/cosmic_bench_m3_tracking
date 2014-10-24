@@ -26,6 +26,7 @@ int main(int argc, char ** argv){
 	TRint * theApp = new TRint("Rint",&argcR,argvR,0,0,true);
 	Analyse * blah = new Analyse(config_file.str());//"/home/irfulx176/mnt/sbouteil/Documents/deviation/config.cfg");
 	string efficacity = "efficacity";
+	string eff2D = "eff2D";
 	string residus = "residus";
 	string fluxMap = "fluxmap";
 	string raypairs = "raypairs";
@@ -38,6 +39,9 @@ int main(int argc, char ** argv){
 	else if(argv[2] == residus){
 		//blah->Residus();
 		blah->Residus_ref();
+	}
+	else if(argv[2] == eff2D){
+		blah->Residus_ref_2D();
 	}
 	else if(argv[2] == fluxMap){
 		if(argc<4){

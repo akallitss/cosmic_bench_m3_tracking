@@ -208,7 +208,6 @@ void Analyse::Residus_ref(){
 	map<string,TProfile*> angle_alignment;
 	map<string,int> point_nb;
 	map<string,double> efficacity;
-	map<string,bool> is_seen;
 	int nbins = 200;
 	int lim = 500;
 	double marge = 2./5.;
@@ -235,7 +234,6 @@ void Analyse::Residus_ref(){
 				angle_alignment[name.str()] = new TProfile((name.str()+"_angle").c_str(),(name.str()+"_angle").c_str(),500,0,500,-5,5);
 				point_nb[name.str()] = 0;
 				efficacity[name.str()] = 0;
-				is_seen [name.str()] = false;
 			}
 			else if((*it)->get_type() == "MG"){
 				name << "Multigen_" << (dynamic_cast<MG_Detector*>(*it))->get_mg_n_in_tree();
@@ -250,7 +248,6 @@ void Analyse::Residus_ref(){
 				angle_alignment[name.str()] = new TProfile((name.str()+"_angle").c_str(),(name.str()+"_angle").c_str(),500,0,500,-5,5);
 				point_nb[name.str()] = 0;
 				efficacity[name.str()] = 0;
-				is_seen [name.str()] = false;
 			}
 			nref_is_X[name.str()] = (*it)->get_is_X();
 			if((*it)->get_is_X()) nref_x_n++;
@@ -261,29 +258,6 @@ void Analyse::Residus_ref(){
 		if(it->second) det_in_nref_dir[it->first] = det_x_n - nref_x_n;
 		else det_in_nref_dir[it->first] = (MG_N + CM_N - det_x_n) - (nref_is_X.size() - nref_x_n);
 	}
-	/*
-	c_MM["Multigen_2D_0"] = new TCanvas("Multigen_2D_0","Multigen_2D_0",1200,1000);
-	c_MM["Multigen_2D_0"]->Divide(2);
-	MM_residus["Multigen_2D_0"] = new TH1D("Multigen_2D_0_residu","Multigen_2D_0_residu",nbins,-lim,lim);
-	muon_total["Multigen_2D_0"] = new TH2D("Multigen_2D_0_total","Multigen_2D_0_total",nbins_2D,-marge*lim,(1+marge)*lim,nbins_2D,-marge*lim,(1+marge)*lim);
-	muon_seen["Multigen_2D_0"] = new TH2D("Multigen_2D_0_seen","Multigen_2D_0_seen",nbins_2D,-marge*lim,(1+marge)*lim,nbins_2D,-marge*lim,(1+marge)*lim);
-	efficacity_2D["Multigen_2D_0"] = new TH2D("Multigen_2D_0_efficacity","Multigen_2D_0_efficacity",nbins_2D,-marge*lim,(1+marge)*lim,nbins_2D,-marge*lim,(1+marge)*lim);
-	efficacity["Multigen_2D_0"] = 0;
-	point_nb["Multigen_2D_0"] = 0;
-	correlation["Multigen_2D_0"] = new TGraph();
-	double z_MG2D_0 = 685;
-
-	c_MM["Multigen_2D_1"] = new TCanvas("Multigen_2D_1","Multigen_2D_1",1200,1000);
-	c_MM["Multigen_2D_1"]->Divide(2);
-	MM_residus["Multigen_2D_1"] = new TH1D("Multigen_2D_1_residu","Multigen_2D_1_residu",nbins,-lim,lim);
-	muon_total["Multigen_2D_1"] = new TH2D("Multigen_2D_1_total","Multigen_2D_1_total",nbins_2D,-marge*lim,(1+marge)*lim,nbins_2D,-marge*lim,(1+marge)*lim);
-	muon_seen["Multigen_2D_1"] = new TH2D("Multigen_2D_1_seen","Multigen_2D_1_seen",nbins_2D,-marge*lim,(1+marge)*lim,nbins_2D,-marge*lim,(1+marge)*lim);
-	efficacity_2D["Multigen_2D_1"] = new TH2D("Multigen_2D_1_efficacity","Multigen_2D_1_efficacity",nbins_2D,-marge*lim,(1+marge)*lim,nbins_2D,-marge*lim,(1+marge)*lim);
-	efficacity["Multigen_2D_1"] = 0;
-	point_nb["Multigen_2D_1"] = 0;
-	correlation["Multigen_2D_1"] = new TGraph();
-	double z_MG2D_1 = 705;
-	*/
 	TCanvas * c0 = new TCanvas("stats","stats");
 	c0->Divide(2);
 	TH1D * chisquares = new TH1D("chiSquares","chiSquares",nbins,0,chisquare_threshold);
@@ -318,9 +292,6 @@ void Analyse::Residus_ref(){
 						unsigned int clus_in_nref_dir = (nref_is_X[name.str()]) ? jt->get_clus_x_n() : jt->get_clus_y_n();
 						if(clus_in_nref_dir<det_in_nref_dir[name.str()]) continue;
 						if(chiSquare_in_nref_dir > chisquare_threshold/static_cast<double>(clus_in_nref_dir)) continue;
-						for(map<string,bool>::iterator nt = is_seen.begin();nt!=is_seen.end();++nt){
-							nt->second = false;
-						}
 						double residu = numeric_limits<double>::max();
 						vector<CM_Demux_Cluster>::iterator matching_cluster = current_clusters.end();
 						for(vector<CM_Demux_Cluster>::iterator kt = current_clusters.begin();kt!=current_clusters.end();++kt){
@@ -351,19 +322,8 @@ void Analyse::Residus_ref(){
 						MM_residus[name.str()]->Fill(residu);
 						if(residu<chisquare_threshold){
 							muon_seen[name.str()]->Fill(jt->eval_X((*it)->get_z()),jt->eval_Y((*it)->get_z()));
-							is_seen[name.str()] = true;
 						}
 					}
-											/*
-						muon_total["Multigen_2D_0"]->Fill(jt->eval_X(z_MG2D_0),jt->eval_Y(z_MG2D_0));
-						muon_total["Multigen_2D_1"]->Fill(jt->eval_X(z_MG2D_1),jt->eval_Y(z_MG2D_1));
-						if(is_seen["Multigen_0"] && is_seen["Multigen_1"]){
-							muon_seen["Multigen_2D_0"]->Fill(jt->eval_X(z_MG2D_0),jt->eval_Y(z_MG2D_0));
-						}
-						if(is_seen["Multigen_2"] && is_seen["Multigen_3"]){
-							muon_seen["Multigen_2D_1"]->Fill(jt->eval_X(z_MG2D_1),jt->eval_Y(z_MG2D_1));
-						}
-						*/
 				}
 				else if((*it)->get_type() == "MG"){
 					ostringstream name;
@@ -374,9 +334,6 @@ void Analyse::Residus_ref(){
 						unsigned int clus_in_nref_dir = (nref_is_X[name.str()]) ? jt->get_clus_x_n() : jt->get_clus_y_n();
 						if(clus_in_nref_dir<det_in_nref_dir[name.str()]) continue;
 						if(chiSquare_in_nref_dir > chisquare_threshold/static_cast<double>(clus_in_nref_dir)) continue;
-						for(map<string,bool>::iterator nt = is_seen.begin();nt!=is_seen.end();++nt){
-							nt->second = false;
-						}
 						double residu = numeric_limits<double>::max();
 						vector<MG_Cluster>::iterator matching_cluster = current_clusters.end();
 						for(vector<MG_Cluster>::iterator kt = current_clusters.begin();kt!=current_clusters.end();++kt){
@@ -409,18 +366,7 @@ void Analyse::Residus_ref(){
 						MM_residus[name.str()]->Fill(residu);
 						if(residu<chisquare_threshold){
 							muon_seen[name.str()]->Fill(jt->eval_X((*it)->get_z()),jt->eval_Y((*it)->get_z()));
-							is_seen[name.str()] = true;
 						}
-						/*
-						muon_total["Multigen_2D_0"]->Fill(jt->eval_X(z_MG2D_0),jt->eval_Y(z_MG2D_0));
-						muon_total["Multigen_2D_1"]->Fill(jt->eval_X(z_MG2D_1),jt->eval_Y(z_MG2D_1));
-						if(is_seen["Multigen_0"] && is_seen["Multigen_1"]){
-							muon_seen["Multigen_2D_0"]->Fill(jt->eval_X(z_MG2D_0),jt->eval_Y(z_MG2D_0));
-						}
-						if(is_seen["Multigen_2"] && is_seen["Multigen_3"]){
-							muon_seen["Multigen_2D_1"]->Fill(jt->eval_X(z_MG2D_1),jt->eval_Y(z_MG2D_1));
-						}
-						*/
 					}
 				}
 			}
@@ -487,8 +433,243 @@ void Analyse::Residus_ref(){
 		it->second->Update();
 		cout << it->first << " efficacity : " << 100.*efficacity[it->first] << "%" << endl;
 	}
-	//cout << "correlation MG2D_0 : " << (efficacity["Multigen_2D_0"] - efficacity["Multigen_0"]*efficacity["Multigen_1"])/Sqrt(efficacity["Multigen_0"]*(1-efficacity["Multigen_0"])*efficacity["Multigen_1"]*(1-efficacity["Multigen_1"])) << endl;
-	//cout << "correlation MG2D_1 : " << (efficacity["Multigen_2D_1"] - efficacity["Multigen_2"]*efficacity["Multigen_3"])/Sqrt(efficacity["Multigen_2"]*(1-efficacity["Multigen_2"])*efficacity["Multigen_3"]*(1-efficacity["Multigen_3"])) << endl;
+	c0->cd(1);
+	chisquares->Draw();
+	c0->cd(2);
+	ray_clus_n->Draw();
+	c0->Modified();
+	c0->Update();
+}
+void Analyse::Residus_ref_2D(){
+	int non_ref_n = 0;
+	double chisquare_threshold = 10;
+	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
+		if(!((*it)->get_is_ref())) non_ref_n++;
+	}
+	if(non_ref_n>2){
+		cout << "too much non ref det" << endl;
+		return;
+	}
+	if(non_ref_n<2){
+		cout << "can't do 2D efficacity without at least 2 non ref det" << endl;
+		return;
+	}
+	gStyle->SetPalette(55,0);
+	TCanvas* c_MM;
+	TH2D* muon_seen;
+	TH2D* muon_total;
+	TH2D* efficacity_2D;
+	double efficacity = 0;
+	int nbins = 200;
+	int lim = 500;
+	double marge = 2./5.;
+	int nbins_2D = 50*(1+2*marge);
+	int eventReconstructed = 0;
+	double eventSuitable = 0;
+	unsigned int nref_x_n = 0;
+	unsigned int det_x_n = 0;
+	unsigned int det_n = CM_N + MG_N;
+	vector<double> det_z;
+	ostringstream name;
+	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
+		if(!((*it)->get_is_ref())){
+			if((*it)->get_type() == "CM"){
+				if(name.str().size()>0) name << "_";
+				name << "Cosmulti_" << (dynamic_cast<CM_Detector*>(*it))->get_cm_n_in_tree();
+			}
+			else if((*it)->get_type() == "MG"){
+				if(name.str().size()>0) name << "_";
+				name << "Multigen_" << (dynamic_cast<MG_Detector*>(*it))->get_mg_n_in_tree();
+			}
+			if((*it)->get_is_X()) nref_x_n++;
+			det_z.push_back((*it)->get_z());
+		}
+		if((*it)->get_is_X()) det_x_n++;
+	}
+	if(det_z.size()!=2){
+		cout << "problem in nref det number" << endl;
+		return;
+	}
+	if(det_z[0]!=det_z[1]){
+		cout << "you can only calculate 2D efficacity for 2D detector (which have same z)" << endl;
+		return;
+	}
+	if(nref_x_n!=1){
+		cout << "2D efficacity can only be done with one det in each direction" << endl;
+		return;
+	}
+
+	c_MM = new TCanvas(name.str().c_str(),name.str().c_str(),1200,1000);
+	muon_seen = new TH2D((name.str()+"_seen").c_str(),(name.str()+"_seen").c_str(),nbins_2D,-marge*lim,(1+marge)*lim,nbins_2D,-marge*lim,(1+marge)*lim);
+	muon_total = new TH2D((name.str()+"_total").c_str(),(name.str()+"_total").c_str(),nbins_2D,-marge*lim,(1+marge)*lim,nbins_2D,-marge*lim,(1+marge)*lim);
+	efficacity_2D = new TH2D((name.str()+"_efficacity").c_str(),(name.str()+"_efficacity").c_str(),nbins_2D,-marge*lim,(1+marge)*lim,nbins_2D,-marge*lim,(1+marge)*lim);
+	efficacity_2D->SetStats(false);
+
+	TCanvas * c0 = new TCanvas("stats","stats");
+	c0->Divide(2);
+	TH1D * chisquares = new TH1D("chiSquares","chiSquares",nbins,0,chisquare_threshold);
+	TH1D * ray_clus_n = new TH1D("clus_n","clus_n",MG_N + CM_N + 2,0,MG_N + CM_N + 2);
+
+	if (fChain == 0) return;
+	Long64_t nentries = fChain->GetEntriesFast();
+	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
+	for (Long64_t jentry=0; jentry<nentries;jentry++){
+		Long64_t ientry = LoadTree(jentry);
+		if (ientry < 0) break;
+		fChain->GetEntry(jentry);
+		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,-1);
+		vector<Ray> currentRays = currentCBEvent->get_absorption_rays();
+		for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
+			if((jt->get_chiSquare_X()+jt->get_chiSquare_Y()) < chisquare_threshold){
+				chisquares->Fill(jt->get_chiSquare_X()+jt->get_chiSquare_Y());
+				ray_clus_n->Fill(jt->get_clus_n());
+			}
+		}
+		eventReconstructed+=currentRays.size();
+		eventSuitable+=currentCBEvent->get_clus_N()*1./(CM_N+MG_N);
+		
+		vector<Event*> nref_event;
+		for(vector<Event*>::iterator it = (currentCBEvent->events).begin();it!=(currentCBEvent->events).end();++it){
+			if(!((*it)->get_is_ref())){
+				if((*it)->get_type() == "CM_Demux"){
+					nref_event.push_back(new CM_Demux_Event(*dynamic_cast<CM_Demux_Event*>(*it)));
+				}
+				else if((*it)->get_type() == "MG"){
+					nref_event.push_back(new MG_Event(*dynamic_cast<MG_Event*>(*it)));
+				}
+			}
+		}
+		if(nref_event.size()!=2){
+			cout << "problem in event size" << endl;
+			return;
+		}
+		delete currentCBEvent;
+		for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
+			if(jt->get_clus_n()<(det_n-2)){
+				continue;
+			}
+			if((jt->get_chiSquare_X() + jt->get_chiSquare_Y()) > chisquare_threshold/static_cast<double>(det_n-2)){
+				continue;
+			}
+			vector<unsigned int> seen_clus_in_array;
+			for(vector<Event*>::iterator it = nref_event.begin();it!=nref_event.end();++it){
+				if((*it)->get_type() == "CM_Demux"){
+					vector<CM_Demux_Cluster> current_clusters = (dynamic_cast<CM_Demux_Event*>(*it))->get_clusters();
+					double residu = numeric_limits<double>::max();
+					vector<CM_Demux_Cluster>::iterator matching_cluster = current_clusters.end();
+					for(vector<CM_Demux_Cluster>::iterator kt = current_clusters.begin();kt!=current_clusters.end();++kt){
+						if(kt->get_is_X()){
+							kt->set_perp_pos_mm(jt->eval_Y((*it)->get_z()));
+						}
+						else{
+							kt->set_perp_pos_mm(jt->eval_X((*it)->get_z()));
+						}
+						double current_residu = jt->get_residu_ref(&(*kt));
+						if(current_residu<residu){
+							residu = current_residu;
+							matching_cluster = kt;
+						}
+					}
+					if(matching_cluster == current_clusters.end()) continue;
+					if((*matching_cluster).get_is_X()){
+						(*matching_cluster).set_perp_pos_mm(jt->eval_Y((*it)->get_z()));
+					}
+					else{
+						(*matching_cluster).set_perp_pos_mm(jt->eval_X((*it)->get_z()));
+					}
+					if(residu<chisquare_threshold){
+						seen_clus_in_array.push_back(matching_cluster - current_clusters.begin());
+					}
+				}
+				else if((*it)->get_type() == "MG"){
+					vector<MG_Cluster> current_clusters = (dynamic_cast<MG_Event*>(*it))->get_clusters();
+					double residu = numeric_limits<double>::max();
+					vector<MG_Cluster>::iterator matching_cluster = current_clusters.end();
+					for(vector<MG_Cluster>::iterator kt = current_clusters.begin();kt!=current_clusters.end();++kt){
+						if(kt->get_is_X()){
+							kt->set_perp_pos_mm(jt->eval_Y((*it)->get_z()));
+						}
+						else{
+							kt->set_perp_pos_mm(jt->eval_X((*it)->get_z()));
+						}
+						double current_residu = jt->get_residu_ref(&(*kt));
+						if(current_residu<residu){
+							residu = current_residu;
+							matching_cluster = kt;
+						}
+					}
+					if(matching_cluster == current_clusters.end()) continue;
+					if((*matching_cluster).get_is_X()){
+						(*matching_cluster).set_perp_pos_mm(jt->eval_Y((*it)->get_z()));
+					}
+					else{
+						(*matching_cluster).set_perp_pos_mm(jt->eval_X((*it)->get_z()));
+					}
+					if(residu<chisquare_threshold){
+						seen_clus_in_array.push_back(matching_cluster - current_clusters.begin());
+					}
+				}
+			}
+			muon_total->Fill(jt->eval_X(det_z[0]),jt->eval_Y(det_z[0]));
+			if(seen_clus_in_array.size()==2){
+				muon_seen->Fill(jt->eval_X(det_z[0]),jt->eval_Y(det_z[0]));
+				for(int i_event=0;i_event<2;i_event++){
+					if(nref_event[i_event]->get_type() == "CM_Demux"){
+						CM_Demux_Event * current_event = static_cast<CM_Demux_Event*>(nref_event[i_event]);
+						(current_event->clusters).erase((current_event->clusters).begin()+seen_clus_in_array[i_event]);
+					}
+					else if(nref_event[i_event]->get_type() == "MG"){
+						MG_Event * current_event = static_cast<MG_Event*>(nref_event[i_event]);
+						(current_event->clusters).erase((current_event->clusters).begin()+seen_clus_in_array[i_event]);
+					}
+				}
+			}
+		}
+		if(jentry%500 == 0) cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << static_cast<int>(eventSuitable) << "|" << setw(20) << jentry << flush;
+		if(jentry%5000 == 0){
+			for(int i=1;i<=nbins;i++){
+				for(int j=1;j<=nbins;j++){
+					int binN = muon_total->GetBin(i,j);
+					double binContent = 0;
+					if(muon_total->GetBinContent(binN) > 0) binContent = (muon_seen->GetBinContent(binN))/(muon_total->GetBinContent(binN));
+					efficacity_2D->SetBinContent(binN,binContent);
+				}
+			}
+			c_MM->cd();
+			efficacity_2D->Draw("COLZ");
+			c_MM->Modified();
+			c_MM->Update();
+			c0->cd(1);
+			chisquares->Draw();
+			c0->cd(2);
+			ray_clus_n->Draw();
+			c0->Modified();
+			c0->Update();
+		}
+	}
+	cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << static_cast<int>(eventSuitable) << "|" << setw(20) << nentries << endl;
+	double total_seen = 0;
+	double total_passed = 0;
+	for(int i=1;i<=nbins;i++){
+		for(int j=1;j<=nbins;j++){
+			int binN = muon_total->GetBin(i,j);
+			double binContent = 0;
+			if(muon_total->GetBinContent(binN) > 0) binContent = (muon_seen->GetBinContent(binN))/(muon_total->GetBinContent(binN));
+			efficacity_2D->SetBinContent(binN,binContent);
+			double pos_X = muon_total->GetXaxis()->GetBinCenter(i);
+			double pos_Y = muon_total->GetYaxis()->GetBinCenter(j);
+			if(pos_X<=400 && pos_X>=100 && pos_Y<=400 && pos_Y>=100){
+				total_seen += muon_seen->GetBinContent(binN);
+				total_passed += muon_total->GetBinContent(binN);
+			}
+		}
+	}
+	efficacity = total_seen/total_passed;
+	c_MM->cd();
+	efficacity_2D->Draw("COLZ");
+	c_MM->Modified();
+	c_MM->Update();
+	cout << name.str() << " efficacity : " << 100.*efficacity << "%" << endl;
 	c0->cd(1);
 	chisquares->Draw();
 	c0->cd(2);
@@ -1342,7 +1523,7 @@ void Analyse::EventDisplay(int event_nb){
 	if(CM_N>0) signal_tree->SetBranchAddress("StripAmpl_CM_corr",StripAmpl_CM_corr);
 	if(MG_N>0) signal_tree->SetBranchAddress("StripAmpl_MG_corr",StripAmpl_MG_corr);
 
-	double chisquare_threshold = 50;
+	double chisquare_threshold = 10000;
 	int detector_color = 1;
 	int ray_color = 2;
 	int pos_color = 4;
@@ -1353,9 +1534,9 @@ void Analyse::EventDisplay(int event_nb){
 	signal_tree->GetEntry(event_nb);
 	CosmicBenchEvent * CBEvent = new CosmicBenchEvent(this,this,-1);
 	vector<Ray> eventRays = CBEvent->get_absorption_rays();
-	delete CBEvent;
 	vector<Ray>::iterator rays_it = eventRays.begin();
 	//delete rays with too big chi²
+	
 	while(rays_it!=eventRays.end()){
 		if((rays_it->get_chiSquare_X()+rays_it->get_chiSquare_Y())>chisquare_threshold){
 			eventRays.erase(rays_it);
@@ -1365,10 +1546,7 @@ void Analyse::EventDisplay(int event_nb){
 			++rays_it;
 		}
 	}
-	if(eventRays.size() == 0){
-		cout << "no ray in this event, exiting" << endl;
-		return;
-	}
+	
 	TGraph2D * ampl_graph_x = new TGraph2D();
 	ampl_graph_x->SetTitle("XZ plane");
 	int ampl_graph_x_point_nb = 0;
@@ -1402,8 +1580,6 @@ void Analyse::EventDisplay(int event_nb){
 		//construct line representing ray
 		TPolyLine3D ray_x(2);
 		TPolyLine3D ray_y(2);
-		cout << rays_it->eval_X(min_z) << endl;
-		cout << rays_it->eval_Y(min_z) << endl;
 		ray_x.SetNextPoint(rays_it->eval_X(min_z),min_z,0);
 		ray_y.SetNextPoint(rays_it->eval_Y(min_z),min_z,0);
 		ray_x.SetNextPoint(rays_it->eval_X(max_z),max_z,0);
@@ -1412,24 +1588,26 @@ void Analyse::EventDisplay(int event_nb){
 		ray_y.SetLineColor(ray_color);
 		ray_lines.push_back(pair<TPolyLine3D*, TPolyLine3D*>(new TPolyLine3D(ray_x),new TPolyLine3D(ray_y)));
 		vector<Cluster*> ray_clusters = rays_it->get_clus();
-		for(vector<Cluster*>::iterator clus_it = ray_clusters.begin();clus_it!=ray_clusters.end();++clus_it){
-			//add clus_pos line
-			double det_z = (*clus_it)->get_z();
-			double current_clus_size = (*clus_it)->get_size();
-			double current_clus_pos = (*clus_it)->get_pos_mm();
-			double min_ampl = 0;
-			double max_ampl = 0;
-			if((*clus_it)->get_type() == "MG"){
-				int det_n_in_tree = dynamic_cast<MG_Detector*>(detectors[(*clus_it)->find_det(detectors)])->get_mg_n_in_tree();
+	}
+	for(vector<Event*>::iterator ev_it = (CBEvent->events).begin();ev_it!=(CBEvent->events).end();++ev_it){
+		if((*ev_it)->get_type() == "MG"){
+			int det_n_in_tree = (*ev_it)->get_n_in_tree();
+			vector<MG_Cluster> current_clusters = (dynamic_cast<MG_Event*>(*ev_it))->get_clusters();
+			for(vector<MG_Cluster>::iterator clus_it = current_clusters.begin();clus_it!=current_clusters.end();++clus_it){
+				double det_z = clus_it->get_z();
+				double current_clus_size = clus_it->get_size();
+				double current_clus_pos = clus_it->get_pos_mm();
+				double min_ampl = 0;
+				double max_ampl = 0;
 				for(int i_strip=0;i_strip<1024;i_strip++){
 					int channel = MG_Detector::StripToChannel(i_strip);
-					double current_strip_pos = (*clus_it)->correct_strip_nb(i_strip);
-					if(current_strip_pos>current_clus_pos+(2*current_clus_size)) continue;
-					if(current_strip_pos<current_clus_pos-(2*current_clus_size)) continue;
+					double current_strip_pos = clus_it->correct_strip_nb(i_strip);
+					if(current_strip_pos>current_clus_pos+(1.*current_clus_size)) continue;
+					if(current_strip_pos<current_clus_pos-(1.*current_clus_size)) continue;
 					double current_ampl = *max_element(StripAmpl_MG_corr[det_n_in_tree][channel],StripAmpl_MG_corr[det_n_in_tree][channel]+32);
 					if(current_ampl>max_ampl) max_ampl = current_ampl;
 					if(current_ampl<min_ampl) min_ampl = current_ampl;
-					if((*clus_it)->get_is_X()){
+					if(clus_it->get_is_X()){
 						ampl_graph_x->SetPoint(ampl_graph_x_point_nb,current_strip_pos,det_z,current_ampl);
 						ampl_graph_x_point_nb++;
 					}
@@ -1437,24 +1615,29 @@ void Analyse::EventDisplay(int event_nb){
 						ampl_graph_y->SetPoint(ampl_graph_y_point_nb,current_strip_pos,det_z,current_ampl);
 						ampl_graph_y_point_nb++;
 					}
-
 				}
+				min_ampl = min_ampl - 0.1*(max_ampl - min_ampl);
+				max_ampl = max_ampl + 0.1*(max_ampl - min_ampl);
+				TPolyLine3D clus_line(2);
+				clus_line.SetNextPoint(current_clus_pos,det_z,min_ampl);
+				clus_line.SetNextPoint(current_clus_pos,det_z,max_ampl);
+				clus_line.SetLineColor(pos_color);
+				clus_line.SetLineStyle(2);
+				if(clus_it->get_is_X()) pos_lines_x.push_back(new TPolyLine3D(clus_line));
+				else pos_lines_y.push_back(new TPolyLine3D(clus_line));
 			}
-			else if((*clus_it)->get_type() == "CM" || (*clus_it)->get_type() == "CM_Demux"){
-				//TODO : implement for CM
-			}
-			min_ampl = min_ampl - 0.1*(max_ampl - min_ampl);
-			max_ampl = max_ampl + 0.1*(max_ampl - min_ampl);
-			TPolyLine3D clus_line(2);
-			clus_line.SetNextPoint(current_clus_pos,det_z,min_ampl);
-			clus_line.SetNextPoint(current_clus_pos,det_z,max_ampl);
-			clus_line.SetLineColor(pos_color);
-			clus_line.SetLineStyle(2);
-			if((*clus_it)->get_is_X()) pos_lines_x.push_back(new TPolyLine3D(clus_line));
-			else pos_lines_y.push_back(new TPolyLine3D(clus_line));
+
 		}
+		else if((*ev_it)->get_type() == "CM_Demux"){
+			//TODO : implement for CM
+		}		
 	}
+	delete CBEvent;
 	delete signal_file;
+	if(ampl_graph_x_point_nb == 0 || ampl_graph_y_point_nb == 0){
+		cout << "no cluster in this event, exiting" << endl;
+		return;
+	}
 	ampl_graph_x->GetYaxis()->SetLimits(min_z,max_z);
 	ampl_graph_y->GetYaxis()->SetLimits(min_z,max_z);
 	ampl_graph_x->GetXaxis()->SetLimits(-50,550);
@@ -1480,7 +1663,6 @@ void Analyse::EventDisplay(int event_nb){
 		(pair_it->second)->Draw();
 	}
 	for(vector<pair<TPolyLine3D*, TPolyLine3D*> >::iterator pair_it = ray_lines.begin();pair_it!=ray_lines.end();++pair_it){
-		cout << "blah" << endl;
 		c_visu->cd(1);
 		(pair_it->first)->Draw();
 		c_visu->cd(2);
