@@ -56,6 +56,8 @@ using TMath::MaxElement;
 using TMath::Abs;
 using TMath::FloorNint;
 using TMath::CeilNint;
+using TMath::Max;
+using TMath::Min;
 
 Analyse::Analyse(string configFilePath){
 	ptree config_tree;
@@ -1373,6 +1375,7 @@ void Analyse::CalcStripResponseFunction(int bin_nb){
 							
 							double normalization = matching_cluster->get_ampl()/matching_cluster->get_size();
 							double matching_position = (matching_cluster->get_is_X()) ? jt->eval_X((*it)->get_z()) : jt->eval_Y((*it)->get_z());
+							double matching_position_perp = (matching_cluster->get_is_X()) ? jt->eval_Y((*it)->get_z()) : jt->eval_X((*it)->get_z());
 							//double matching_position = matching_cluster->get_pos_mm();
 							/*
 							for(int strip_nb = matching_cluster->get_pos()-1;strip_nb<(matching_cluster->get_pos()+2);strip_nb++){
@@ -1385,7 +1388,7 @@ void Analyse::CalcStripResponseFunction(int bin_nb){
 								int channel = MG_Detector::StripToChannel(strip_nb);
 								if(Abs(residu)<50.){
 									SRH->Fill(matching_position - matching_cluster->correct_strip_nb(strip_nb), (*max_element(StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel],StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel]+32))/normalization);
-									if(bin_nb>0) SRH_coord[FloorNint(matching_position*bin_nb/500.)]->Fill(matching_position - matching_cluster->correct_strip_nb(strip_nb), (*max_element(StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel],StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel]+32))/normalization);
+									if(bin_nb>0) SRH_coord[Min(Max(FloorNint(matching_position_perp*bin_nb/500.),0),bin_nb-1)]->Fill(matching_position - matching_cluster->correct_strip_nb(strip_nb), (*max_element(StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel],StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel]+32))/normalization);
 								}
 								//SRH2D[i]->SetPoint(graph_point_nb, matching_position - matching_cluster->correct_strip_nb(strip_nb), (*max_element(StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel],StripAmpl_MG_corr[(*it)->get_n_in_tree()][channel]+32))/normalization);
 								//graph_point_nb++;

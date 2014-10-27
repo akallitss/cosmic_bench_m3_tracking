@@ -42,6 +42,8 @@ class Detector{
 		void set_ClusTOTCut_Min(double cut);
 		void set_ClusMaxSampleCut_Min(double cut);
 		void set_ClusMaxSampleCut_Max(double cut);
+		double get_RMS(int i) const;
+		virtual void set_RMS(vector<double> RMS_) = 0;
 		virtual ~Detector();
 	protected:
 		Detector();	
@@ -59,6 +61,7 @@ class Detector{
 		double ClusTOTCut_Min;
 		double ClusMaxSampleCut_Min;
 		double ClusMaxSampleCut_Max;
+		vector<double> RMS;
 
 };
 
@@ -80,6 +83,7 @@ class CM_Detector: public Detector{
 		int get_cm_n_in_tree() const;
 		bool get_use_thin_strip() const;
 		string get_type() const;
+		void set_RMS(vector<double> RMS_);
 	protected:
 		int cm_n_in_tree;
 		bool use_thin_strip;
@@ -104,10 +108,18 @@ class MG_Detector: public Detector{
 		void set_ClusSizeCut_Min(double cut);
 		int get_mg_n_in_tree() const;
 		string get_type() const;
+		void set_RMS(vector<double> RMS_);
+		void set_SRF(double offset, double gauss, double lorentz, double ratio);
+		double SRF_fit(double * x, double * p);
 	protected:
 		int mg_n_in_tree;
 		//Detector dependant cuts
 		double ClusSizeCut_Min;
+		//Strip Response Function Parameters
+		double srf_offset;
+		double srf_gauss_width;
+		double srf_lorentz_width;
+		double srf_ratio;
 };
 
 class CosmicBench{

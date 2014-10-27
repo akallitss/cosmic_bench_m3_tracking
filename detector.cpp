@@ -46,6 +46,9 @@ bool Detector::get_direction() const{
 double Detector::get_angle() const{
 	return angle;
 }
+double get_RMS(int i) const{
+	return RMS[i];
+}
 void Detector::set_ClusTOTCut_Min(double cut){
 	ClusTOTCut_Min = cut;
 }
@@ -78,6 +81,7 @@ Detector::Detector(const Detector& other){
 	ClusMaxSampleCut_Min = other.ClusMaxSampleCut_Min;
 	ClusMaxSampleCut_Max = other.ClusMaxSampleCut_Max;
 	angle = other.angle;
+	RMS = other.RMS;
 }
 Detector& Detector::operator=(const Detector& other){
 	z = other.z;
@@ -90,6 +94,7 @@ Detector& Detector::operator=(const Detector& other){
 	ClusMaxSampleCut_Min = other.ClusMaxSampleCut_Min;
 	ClusMaxSampleCut_Max = other.ClusMaxSampleCut_Max;
 	angle = other.angle;
+	RMS = other.RMS;
 	return *this;
 }
 Detector::Detector(double z_, bool is_X_, bool is_up_, bool is_ref_, double offset_, bool direction_, double angle_){
@@ -154,6 +159,10 @@ bool CM_Detector::get_use_thin_strip() const{
 string CM_Detector::get_type() const{
 	return "CM";
 }
+void CM_Detector::set_RMS(vector<double> RMS_){
+	if(RMS_.size()!=64) return;
+	RMS = RMS_;
+}
 
 MG_Detector::MG_Detector(): Detector(){
 	mg_n_in_tree = -1;
@@ -217,6 +226,25 @@ int MG_Detector::get_mg_n_in_tree() const{
 }
 string MG_Detector::get_type() const{
 	return "MG";
+}
+void MG_Detector::set_RMS(vector<double> RMS_){
+	if(RMS_.size()!=61) return;
+	RMS = RMS_;
+}
+void MG_Detector::set_SRF(double offset, double gauss, double lorentz, double ratio){
+	srf_offset = offset;
+	srf_gauss_width = gauss;
+	srf_lorentz_width = lorentz;
+	srf_ratio = ratio;	
+}
+double MG_Detector::SRF_fit(double * x, double * p){
+	double position = (x[0]-p[0])/p[1];
+	double alpha = srf_lorentz_width/srf_gauss_width;
+	double return_value = Exp(-4*Log(2)*(1-srf_ratio)*position*position);
+	return_value /= 1 + (4*srf_ratio*position*position/(alpha*alpha));
+	return_value *= 1 - srf_offset;
+	return_value += srf_offset;
+	return return_value;
 }
 
 CosmicBench::CosmicBench(){
