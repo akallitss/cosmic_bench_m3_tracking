@@ -106,6 +106,7 @@ class MG_Cluster: public Cluster{
 		MG_Cluster(MG_Detector * det, int number_, double pos_, double size_, double ampl_, double maxSample_, double maxStripAmpl_, double TOT_, double t_);
 		~MG_Cluster();
 		static bool is_suitable(T * treeObject,int number_,MG_Detector * detector, int entry = -1);
+		bool is_suitable(MG_Detector * detector);
 		bool is_in_det(Detector * det) const;
 		double get_pos_mm() const;
 		double correct_strip_nb(int strip_nb) const;

@@ -4,11 +4,11 @@
 
 using std::cout;
 using std::endl;
-
+/*
 Tanalyse::Tanalyse(string saveFileName){
    saveFile = new TFile(saveFileName.c_str(),"RECREATE");
 }
-
+*/
 Tanalyse::Tanalyse(string saveFileName, int CM_n, int MG_n)
 {
    saveFile = new TFile(saveFileName.c_str(),"RECREATE");
@@ -20,8 +20,8 @@ Tanalyse::Tanalyse(string saveFileName, int CM_n, int MG_n)
 
 Tanalyse::~Tanalyse()
 {
+   //delete T;
    delete saveFile;
-   delete T;
 }
 
 void Tanalyse::Init()
@@ -153,24 +153,29 @@ void Tanalyse::Write(){
 void Tanalyse::CloseFile(){
    saveFile->Close();
 }
-void Tanalyse::fillTree(int evn_, double evttime_, map<int,MG_Event> mg_events, map<int,CM_Event> cm_events){
+void Tanalyse::fillTree(int evn_, double evttime_, vector<MG_Event> mg_events, vector<CM_Event> cm_events){
    evn = evn_;
    evttime = evttime_;
-   for(int i= 0;i<MGN;i++){
-      MG_NClus[i] = mg_events[i].get_NClus();
-      vector<MG_Cluster> current_clusters = mg_events[i].get_clusters();
+   if(mg_events.size()!=static_cast<unsigned int>(MGN)){
+      cout << "problem in event number" << endl;
+      return;
+   }
+   for(vector<MG_Event>::iterator it=mg_events.begin();it!=mg_events.end();++it){
+      int i = it->get_n_in_tree();
+      MG_NClus[i] = it->get_NClus();
+      vector<MG_Cluster> current_clusters = it->get_clusters();
       if(current_clusters.size()!=static_cast<unsigned int>(MG_NClus[i])){
          cout << "problem in cluster number" << endl;
          return;
       }
       for(int j=0;j<MG_NClus[i];j++){
-         MG_ClusAmpl[i][j] = current_clusters[i].get_ampl();
-         MG_ClusT[i][j] = current_clusters[i].get_t();
-         MG_ClusTOT[i][j] = current_clusters[i].get_TOT();
-         MG_ClusPos[i][j] = current_clusters[i].get_pos();
-         MG_ClusSize[i][j] = current_clusters[i].get_size();
-         MG_ClusMaxSample[i][j] = current_clusters[i].get_maxSample();
-         MG_ClusMaxStripAmpl[i][j] = current_clusters[i].get_maxStripAmpl();
+         MG_ClusAmpl[i][j] = current_clusters[j].get_ampl();
+         MG_ClusT[i][j] = current_clusters[j].get_t();
+         MG_ClusTOT[i][j] = current_clusters[j].get_TOT();
+         MG_ClusPos[i][j] = current_clusters[j].get_pos();
+         MG_ClusSize[i][j] = current_clusters[j].get_size();
+         MG_ClusMaxSample[i][j] = current_clusters[j].get_maxSample();
+         MG_ClusMaxStripAmpl[i][j] = current_clusters[j].get_maxStripAmpl();
       }
       for(int j=MG_NClus[i];j<300;j++){
          MG_ClusAmpl[i][j] = 0;
@@ -182,21 +187,26 @@ void Tanalyse::fillTree(int evn_, double evttime_, map<int,MG_Event> mg_events, 
          MG_ClusMaxStripAmpl[i][j] = 0;
       }
    }
-   for(int i= 0;i<CMN;i++){
-      CM_NClus[i] = cm_events[i].get_NClus();
-      vector<CM_Cluster> current_clusters = cm_events[i].get_clusters();
-      if(current_clusters.size()!=static_cast<unsigned int>(CM_NClus[i])){
+   if(cm_events.size()!=static_cast<unsigned int>(CMN)){
+      cout << "problem in event number" << endl;
+      return;
+   }
+   for(vector<CM_Event>::iterator it=cm_events.begin();it!=cm_events.end();++it){
+      int i = it->get_n_in_tree();
+      CM_NClus[i] = it->get_NClus();
+      vector<CM_Cluster> current_clusters = it->get_clusters();
+      if(current_clusters.size()!=static_cast<unsigned int>(MG_NClus[i])){
          cout << "problem in cluster number" << endl;
          return;
       }
       for(int j=0;j<CM_NClus[i];j++){
-         CM_ClusAmpl[i][j] = current_clusters[i].get_ampl();
-         CM_ClusT[i][j] = current_clusters[i].get_t();
-         CM_ClusTOT[i][j] = current_clusters[i].get_TOT();
-         CM_ClusPos[i][j] = current_clusters[i].get_pos();
-         CM_ClusSize[i][j] = current_clusters[i].get_size();
-         CM_ClusMaxSample[i][j] = current_clusters[i].get_maxSample();
-         CM_ClusMaxStripAmpl[i][j] = current_clusters[i].get_maxStripAmpl();
+         CM_ClusAmpl[i][j] = current_clusters[j].get_ampl();
+         CM_ClusT[i][j] = current_clusters[j].get_t();
+         CM_ClusTOT[i][j] = current_clusters[j].get_TOT();
+         CM_ClusPos[i][j] = current_clusters[j].get_pos();
+         CM_ClusSize[i][j] = current_clusters[j].get_size();
+         CM_ClusMaxSample[i][j] = current_clusters[j].get_maxSample();
+         CM_ClusMaxStripAmpl[i][j] = current_clusters[j].get_maxStripAmpl();
       }
       for(int j=CM_NClus[i];j<600;j++){
          CM_ClusAmpl[i][j] = 0;

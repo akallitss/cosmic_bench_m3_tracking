@@ -2,11 +2,16 @@
 #include "signal.h"
 #include "event.h"
 #include "Tanalyse.h"
+
 #include <fstream>
 #include <string>
 #include <iostream>
 #include <map>
 #include <utility>
+
+#include <TH2D.h>
+#include <TCanvas.h>
+#include <TStyle.h>
 
 //Boost
 #include <boost/property_tree/ptree.hpp>
@@ -95,21 +100,19 @@ void Signal::MultiCluster(){
 	for(int i=0;i<nentries;i++){
 		LoadTree(i);
 		GetEntry(i);
-		map<int,MG_Event> mg_events;
-		map<int,CM_Event> cm_events;
-		//MG_Event mg_events[MG_N];
-		//CM_Event cm_events[CM_N];
+		vector<MG_Event> mg_events;
+		vector<CM_Event> cm_events;
 
 		for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
 			if((*it)->get_type() == "MG"){
 				MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
-				mg_events[current_det->get_mg_n_in_tree()] = MG_Event(*current_det,get_mg_ampl(current_det->get_mg_n_in_tree()),use_srf);
-				mg_events[current_det->get_mg_n_in_tree()].MultiCluster();
+				mg_events.push_back(MG_Event(*current_det,get_mg_ampl(current_det->get_mg_n_in_tree()),use_srf));
+				mg_events.back().MultiCluster();
 			}
 			else if((*it)->get_type() == "CM"){
 				CM_Detector * current_det = dynamic_cast<CM_Detector*>(*it);
-				cm_events[current_det->get_cm_n_in_tree()] = CM_Event(*current_det,get_cm_ampl(current_det->get_cm_n_in_tree()),use_srf);
-				cm_events[current_det->get_cm_n_in_tree()].MultiCluster();
+				cm_events.push_back(CM_Event(*current_det,get_cm_ampl(current_det->get_cm_n_in_tree()),use_srf));
+				cm_events.back().MultiCluster();
 			}
 		}
 		
@@ -119,9 +122,64 @@ void Signal::MultiCluster(){
 	cout << "\r" << nentries << "/" << nentries << endl;
 	analyseFile->Write();
 	analyseFile->CloseFile();
-	delete analyseFile;
+	//delete analyseFile;
 }
 
-void HoughTracking(int event_nb){
-	
+void Signal::HoughTracking(int event_nb){
+	if(CM_n!=0){
+		cout << "not implemented with CM" << endl;
+		return;
+	}
+	long nentries = fChain->GetEntriesFast();
+	if(event_nb<0 || event_nb>=nentries){
+		cout << "invalid event number" << endl;
+		return;
+	}
+	LoadTree(event_nb);
+	GetEntry(event_nb);
+	vector<MG_Cluster> all_cluster;
+	double max_z = -10000;
+	double min_z = 10000;
+	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
+		if((*it)->get_type() == "MG"){
+			MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
+			MG_Event current_event = MG_Event(*current_det,get_mg_ampl(current_det->get_mg_n_in_tree()),use_srf);
+			current_event.HoughCluster();
+			vector<MG_Cluster> current_cluster = current_event.get_clusters();
+			all_cluster.insert(all_cluster.end(),current_cluster.begin(),current_cluster.end());
+		}
+		if((*it)->get_z()>max_z) max_z = (*it)->get_z();
+		if((*it)->get_z()<min_z) min_z = (*it)->get_z();
+	}
+	max_z+=10;
+	min_z-=10;
+	int bin_n = 500;
+	double min_coord = -100;
+	double max_coord = 600;
+	TH2D * hough_space_X = new TH2D("hough_space_X","hough_space_X",2*bin_n,min_coord,max_coord,2*bin_n,min_coord,max_coord);
+	TH2D * hough_space_Y = new TH2D("hough_space_Y","hough_space_Y",2*bin_n,min_coord,max_coord,2*bin_n,min_coord,max_coord);
+	int suitable_clus_n = 0;
+	for(vector<MG_Cluster>::iterator it=all_cluster.begin();it!=all_cluster.end();++it){
+		if(it->get_size()<2) continue;
+		if(!(it->is_suitable(dynamic_cast<MG_Detector*>(detectors[it->find_det(detectors)])))) continue;
+		suitable_clus_n++;
+		for(int i=0;i<bin_n;i++){
+			double current_coord_up = min_coord +i*max_coord/bin_n;
+			double current_coord_down = current_coord_up + (it->get_pos_mm() - current_coord_up)*(min_z-max_z)/(it->get_z()-max_z);
+			if(it->get_is_X()){
+				hough_space_X->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
+			}
+			else{
+				hough_space_Y->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
+			}
+		}
+	}
+	cout << "total number of suitable cluster : " << suitable_clus_n << endl;
+	gStyle->SetPalette(55,0);
+	TCanvas * cHough = new TCanvas();
+	cHough->Divide(2);
+	cHough->cd(1);
+	hough_space_X->Draw("colz");
+	cHough->cd(2);
+	hough_space_Y->Draw("colz");
 }

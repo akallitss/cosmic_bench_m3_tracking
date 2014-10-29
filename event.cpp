@@ -421,6 +421,126 @@ void MG_Event::MultiCluster(){
 			}
 			*/
 			ClusPos = SRFfit->GetParameter(0);
+			//ClusSize = SRFfit->GetParameter(1);
+		}
+		delete SRFfit; delete SRFgraph;
+		clusters.push_back(MG_Cluster(&detector,i,ClusPos,ClusSize,ClusAmpl,ClusMaxSample,ClusMaxStripAmpl,ClusTOT,ClusT));
+	}
+}
+void MG_Event::HoughCluster(){
+	//first loop : find channels with signal and store them with their caracteristics
+	double sigma = 3;
+	int SampleMin = 5;
+	int SampleMax = 21;
+	int TOTCut = 7;
+	int p = 61;
+	int n = 1024;
+	map<int,bool> channelOverThreshold;
+	map<int,StripInfo> allChannels;
+	for(int i=0;i<p;i++){
+		StripInfo current_strip;
+		current_strip.MaxAmpl = 0;
+		current_strip.MaxSample = 0;
+		current_strip.TOT = 0;
+		current_strip.Time = 0;
+		for(int j=SampleMin;j<SampleMax;j++){
+			if(strip_ampl[i][j]>current_strip.MaxAmpl){
+				current_strip.MaxAmpl = strip_ampl[i][j];
+				current_strip.MaxSample = j;
+				if(j>0 && j<31){
+					double a = 0.5*strip_ampl[i][j+1] - 2*strip_ampl[i][j] + strip_ampl[i][j-1];
+					double b = strip_ampl[i][j] - strip_ampl[i][j-1] - a*((2*j)-1);
+					current_strip.Time = -0.5*b/a;
+				}
+				else current_strip.Time = 0;
+			}
+			if(strip_ampl[i][j]>sigma*(detector.get_RMS(i))) current_strip.TOT++;
+		}
+		if(current_strip.TOT>TOTCut) channelOverThreshold.insert(pair<int,bool>(i,true));
+		allChannels.insert(pair<int,StripInfo>(i,current_strip));
+	}
+	//second loop : group the channels in clusters
+	vector<pair<int,int> > cluster_list;
+	int k = 0;
+	while(k<n){
+		if(channelOverThreshold.count(MG_Detector::StripToChannel(k))>0){
+			pair<int,int> current_cluster(k,k);
+			for(int j=k+1;j<n;j++){
+				if(channelOverThreshold.count(MG_Detector::StripToChannel(j))>0){
+					current_cluster.second = j;
+				}
+				else break;
+			}
+			cluster_list.push_back(current_cluster);
+			k = current_cluster.second+1;
+		}
+		else k++;
+	}
+	//third loop : store the clusters and their caracteristics
+	NClus = cluster_list.size();
+	MG_Detector * detector_p = &detector;
+	for(unsigned int i=0;i<cluster_list.size();i++){
+		TF1 * SRFfit = new TF1("SRFfit",detector_p,&MG_Detector::SRF_fit,0,1024,2,"MG_Detector","SRF_fit");
+		TGraphErrors * SRFgraph = new TGraphErrors();
+		int graph_point_n = 0;
+		double ClusSize = 1 + cluster_list[i].second - cluster_list[i].first;
+		double ClusPos = 0;
+		double ClusAmpl = 0;
+		double ClusMaxStripAmpl = 0;
+		double ClusMaxSample = 0;
+		double ClusT = 0;
+		double ClusTOT = 0;
+		for(int j = cluster_list[i].first;j<((cluster_list[i].second)+1);j++){
+			StripInfo current_strip = allChannels[MG_Detector::StripToChannel(j)];
+			double effective_ampl = current_strip.MaxAmpl;
+			ClusPos = (ClusPos*ClusAmpl + j*effective_ampl)/(ClusAmpl + effective_ampl);
+			ClusAmpl += effective_ampl;
+			if(effective_ampl>ClusMaxStripAmpl){
+				ClusMaxStripAmpl = effective_ampl;
+				ClusMaxSample = current_strip.MaxSample;
+				ClusT = current_strip.Time;
+				//ClusTOT[i] = current_strip.TOT;
+			}
+			if(current_strip.TOT>ClusTOT) ClusTOT = current_strip.TOT;
+			SRFgraph->SetPoint(graph_point_n,j,effective_ampl);
+			SRFgraph->SetPointError(graph_point_n,0.5*500./1024.,detector.get_RMS(MG_Detector::StripToChannel(j)));
+			graph_point_n++;
+		}
+
+		if(graph_point_n>2 && use_srf){
+			for(int iPoint=0;iPoint<graph_point_n;iPoint++){
+				double x_current = -1;
+				double y_current = -1;
+				SRFgraph->GetPoint(iPoint,x_current,y_current);
+				y_current /= ClusMaxStripAmpl;
+				//y_current = strip_ampl[MG_Detector::StripToChannel(static_cast<int>(x_current))][static_cast<int>(ClusMaxSample)]/ClusMaxStripAmpl;
+				SRFgraph->SetPoint(iPoint,x_current,y_current);
+				SRFgraph->SetPointError(iPoint,500./1024.,(SRFgraph->GetEY())[iPoint]/ClusMaxStripAmpl);
+			}
+			SRFfit->SetParameter(0,ClusPos);
+			SRFfit->SetParLimits(0,ClusPos-0.5*ClusSize,ClusPos+0.5*ClusSize);
+			SRFfit->SetParameter(1,0.25*ClusSize);
+			SRFfit->SetParLimits(1,0,ClusSize);
+			SRFgraph->Fit(SRFfit,"QN");
+			/*
+			if(detector.get_n_in_tree() == 0 && i == 0){
+				TCanvas * cSRF = new TCanvas();
+				TLine * posLine = new TLine(ClusPos[i],0,ClusPos[i],1);
+				posLine->SetLineStyle(2);
+				posLine->SetLineColor(4);
+				cSRF->cd();
+				SRFgraph->Draw("AP");
+				SRFfit->Draw("same");
+				posLine->Draw();
+				cSRF->Modified();
+				cSRF->Update();
+				cout << graph_point_n << " " << SRFfit->GetChisquare() << endl;
+				gROOT->GetApplication()->Run(true);
+				delete posLine;
+				delete cSRF;
+			}
+			*/
+			ClusPos = SRFfit->GetParameter(0);
 			ClusSize = SRFfit->GetParameter(1);
 		}
 		delete SRFfit; delete SRFgraph;

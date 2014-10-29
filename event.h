@@ -98,6 +98,7 @@ class MG_Event: public Event{
 		MG_Event(MG_Detector detector_, vector<vector<double> > strip_ampl_, bool use_srf_);
 		~MG_Event();
 		void MultiCluster();
+		void HoughCluster();
 		vector<MG_Cluster> get_clusters() const;
 	protected:
 		MG_Detector detector;

@@ -6,10 +6,10 @@
 #include <TFile.h>
 #include "event.h"
 #include <string>
-#include <map>
+#include <vector>
 
 using std::string;
-using std::map;
+using std::vector;
 
 class MG_Event;
 class CM_Event;
@@ -47,14 +47,14 @@ class Tanalyse{
       Double_t        (*MG_ClusT)[300];
       Double_t        (*MG_StripMaxAmpl)[61];
 
-      Tanalyse(string saveFileName);
+      //Tanalyse(string saveFileName);
       Tanalyse(string saveFileName, int CM_n, int MG_n);
       ~Tanalyse();
       void Init();
       TTree * getTree() const;
       void Write();
       void CloseFile();
-      void fillTree(int evn_, double evttime_, map<int,MG_Event> mg_events, map<int,CM_Event> cm_events);
+      void fillTree(int evn_, double evttime_, vector<MG_Event> mg_events, vector<CM_Event> cm_events);
 };
 
 #endif
