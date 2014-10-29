@@ -43,7 +43,7 @@ absorptionMap: absorptionMap.o analyse.o T.o event.o ray.o cluster.o detector.o 
 tracking: tracking.o analyse.o T.o event.o ray.o cluster.o detector.o point.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-MultiCluster: MultiCluster.o detector.o event.o cluster.o Tanalyse.o ray.o point.o Tsignal.o
+MultiCluster: MultiCluster.o signal.o detector.o event.o cluster.o Tanalyse.o ray.o point.o Tsignal.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
 absorptionMapDict: absorptionMap.o analyse.o T.o event.o ray.o cluster.o detector.o point.o MyDict.o
@@ -52,13 +52,13 @@ absorptionMapDict: absorptionMap.o analyse.o T.o event.o ray.o cluster.o detecto
 trackingDict: tracking.o analyse.o T.o event.o ray.o cluster.o detector.o point.o MyDict.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-MultiClusterDict: MultiCluster.o detector.o event.o cluster.o Tanalyse.o Tsignal.o ray.o point.o MyDict.o
+MultiClusterDict: MultiCluster.o signal.o detector.o event.o cluster.o Tanalyse.o Tsignal.o ray.o point.o MyDict.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-libAnalyse.so: analyse.o T.o event.o ray.o cluster.o detector.o point.o Tanalyse.o Tsignal.o MyDict.o
+libAnalyse.so: analyse.o T.o event.o ray.o cluster.o detector.o point.o Tanalyse.o Tsignal.o signal.o MyDict.o
 	$(CXX) $(SOFLAGS) $(LDFLAGS) -o $@ $^ 
 
-MyDict.cpp: analyse.h T.h event.h ray.h cluster.h detector.h point.h Tanalyse.h Tsignal.h Linkdef.h
+MyDict.cpp: analyse.h T.h event.h ray.h cluster.h detector.h point.h Tanalyse.h Tsignal.h signal.h Linkdef.h
 	rootcint -f $@ -c $(CXXFLAGS) -p $^
 
 clean:

@@ -6,8 +6,10 @@
 #include <TFile.h>
 #include "event.h"
 #include <string>
+#include <map>
 
 using std::string;
+using std::map;
 
 class MG_Event;
 class CM_Event;
@@ -52,7 +54,7 @@ class Tanalyse{
       TTree * getTree() const;
       void Write();
       void CloseFile();
-      void fillTree(int evn_, double evttime_, MG_Event * mg_events, CM_Event * cm_events);
+      void fillTree(int evn_, double evttime_, map<int,MG_Event> mg_events, map<int,CM_Event> cm_events);
 };
 
 #endif

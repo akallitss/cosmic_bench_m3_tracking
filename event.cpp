@@ -46,7 +46,7 @@ vector<map<double,int> > CosmicBenchEvent::combinaisons(map<double,int> sizes){
 
 
 Event::Event(){
-	type ="";
+	type = "";
 	n_in_tree = -1;
 	has_spark = true;
 	is_ref = false;
@@ -82,6 +82,7 @@ Event::Event(T * treeObject, bool use_srf_,int entry){
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);
 	}
+	type = "";
 	evn = treeObject->evn;
 	has_spark = true;
 	is_ref = false;
@@ -154,9 +155,13 @@ CM_Event::CM_Event(CM_Detector detector_, vector<vector<double> > strip_ampl_, b
 		detector = CM_Detector();
 		return;
 	}
+	n_in_tree = detector_.get_cm_n_in_tree();
+	is_ref = detector_.get_is_ref();
+	z = detector_.get_z();
 	strip_ampl = strip_ampl_;
 	detector = detector_;
 	use_srf = use_srf_;
+	type = "CM";
 }
 void CM_Event::MultiCluster(){
 	// TODO : implement multicluster for CM
@@ -259,9 +264,13 @@ MG_Event::MG_Event(MG_Detector detector_, vector<vector<double> > strip_ampl_, b
 		detector = MG_Detector();
 		return;
 	}
+	n_in_tree = detector_.get_mg_n_in_tree();
+	is_ref = detector_.get_is_ref();
+	z = detector_.get_z();
 	strip_ampl = strip_ampl_;
 	detector = detector_;
 	use_srf = use_srf_;
+	type = "MG";
 }
 vector<MG_Cluster> MG_Event::get_clusters() const{
 	return clusters;

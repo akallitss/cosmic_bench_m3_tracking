@@ -153,7 +153,7 @@ void Tanalyse::Write(){
 void Tanalyse::CloseFile(){
    saveFile->Close();
 }
-void Tanalyse::fillTree(int evn_, double evttime_, MG_Event * mg_events, CM_Event * cm_events){
+void Tanalyse::fillTree(int evn_, double evttime_, map<int,MG_Event> mg_events, map<int,CM_Event> cm_events){
    evn = evn_;
    evttime = evttime_;
    for(int i= 0;i<MGN;i++){

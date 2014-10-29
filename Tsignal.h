@@ -47,15 +47,14 @@ public :
    TBranch        *b_StripAmpl_CM_corr;   //!
 
    Tsignal(TTree *tree, int CMN, int MGN);
+   Tsignal();
    virtual ~Tsignal();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
    virtual void     Init(TTree *tree, int CMN, int MGN);
-   virtual void     Loop();
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
-   Long64_t GetEntriesFast() const;
    vector<vector<double> > get_mg_ampl(int mg_n);
    vector<vector<double> > get_cm_ampl(int cm_n);
 
