@@ -2,6 +2,7 @@
 #include "signal.h"
 #include "event.h"
 #include "Tanalyse.h"
+#include "ray.h"
 
 #include <fstream>
 #include <string>
@@ -12,6 +13,7 @@
 #include <TH2D.h>
 #include <TCanvas.h>
 #include <TStyle.h>
+#include <TGraph.h>
 
 //Boost
 #include <boost/property_tree/ptree.hpp>
@@ -85,6 +87,8 @@ Signal::Signal(string configFilePath){
 		cout << "problem in detectors number" << endl;
 		return;
 	}
+	CM_N = CM_n;
+	MG_N = MG_n;
 	if(total_CM_N!=0) cout << "warning, CosMultis are not fully supported !" << endl;
 	Init(treeIn,CM_n,MG_n);
 	analyseTree = config_tree.get<string>("Tree");
@@ -106,12 +110,12 @@ void Signal::MultiCluster(){
 		for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
 			if((*it)->get_type() == "MG"){
 				MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
-				mg_events.push_back(MG_Event(*current_det,get_mg_ampl(current_det->get_mg_n_in_tree()),use_srf));
+				mg_events.push_back(MG_Event(*current_det,get_mg_ampl(current_det->get_mg_n_in_tree()),use_srf,Nevent));
 				mg_events.back().MultiCluster();
 			}
 			else if((*it)->get_type() == "CM"){
 				CM_Detector * current_det = dynamic_cast<CM_Detector*>(*it);
-				cm_events.push_back(CM_Event(*current_det,get_cm_ampl(current_det->get_cm_n_in_tree()),use_srf));
+				cm_events.push_back(CM_Event(*current_det,get_cm_ampl(current_det->get_cm_n_in_tree()),use_srf,Nevent));
 				cm_events.back().MultiCluster();
 			}
 		}
@@ -138,48 +142,95 @@ void Signal::HoughTracking(int event_nb){
 	LoadTree(event_nb);
 	GetEntry(event_nb);
 	vector<MG_Cluster> all_cluster;
+	vector<Event*> events;
 	double max_z = -10000;
 	double min_z = 10000;
 	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
 		if((*it)->get_type() == "MG"){
 			MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
-			MG_Event current_event = MG_Event(*current_det,get_mg_ampl(current_det->get_mg_n_in_tree()),use_srf);
+			MG_Event current_event = MG_Event(*current_det,get_mg_ampl(current_det->get_mg_n_in_tree()),use_srf,Nevent);
 			current_event.HoughCluster();
 			vector<MG_Cluster> current_cluster = current_event.get_clusters();
+			vector<MG_Cluster>::iterator clus_it = current_cluster.begin();
+			while(clus_it!=current_cluster.end()){
+				if(!(clus_it->is_suitable(current_det))){
+					current_cluster.erase(clus_it);
+					clus_it = current_cluster.begin();
+				}
+				else ++clus_it;
+			}
+			cout << "number of suitable cluster for detector n°" << current_det->get_mg_n_in_tree() << " : " << current_cluster.size() << endl;
 			all_cluster.insert(all_cluster.end(),current_cluster.begin(),current_cluster.end());
+			events.push_back(new MG_Event(current_event));
+			(events.back())->MultiCluster();
 		}
 		if((*it)->get_z()>max_z) max_z = (*it)->get_z();
 		if((*it)->get_z()<min_z) min_z = (*it)->get_z();
 	}
-	max_z+=10;
-	min_z-=10;
-	int bin_n = 500;
+	//max_z+=10;
+	//min_z-=10;
+	int bin_n = 250;
 	double min_coord = -100;
 	double max_coord = 600;
-	TH2D * hough_space_X = new TH2D("hough_space_X","hough_space_X",2*bin_n,min_coord,max_coord,2*bin_n,min_coord,max_coord);
-	TH2D * hough_space_Y = new TH2D("hough_space_Y","hough_space_Y",2*bin_n,min_coord,max_coord,2*bin_n,min_coord,max_coord);
+	TH2D * hough_space_X = new TH2D("hough_space_X","hough_space_X",bin_n,min_coord,max_coord,bin_n,min_coord,max_coord);
+	TH2D * hough_space_Y = new TH2D("hough_space_Y","hough_space_Y",bin_n,min_coord,max_coord,bin_n,min_coord,max_coord);
 	int suitable_clus_n = 0;
+	//draw clusters in hough space
+	bin_n = 2*bin_n;
 	for(vector<MG_Cluster>::iterator it=all_cluster.begin();it!=all_cluster.end();++it){
-		if(it->get_size()<2) continue;
-		if(!(it->is_suitable(dynamic_cast<MG_Detector*>(detectors[it->find_det(detectors)])))) continue;
 		suitable_clus_n++;
-		for(int i=0;i<bin_n;i++){
-			double current_coord_up = min_coord +i*max_coord/bin_n;
-			double current_coord_down = current_coord_up + (it->get_pos_mm() - current_coord_up)*(min_z-max_z)/(it->get_z()-max_z);
-			if(it->get_is_X()){
-				hough_space_X->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
+		if(!it->get_is_up()){
+			for(int i=0;i<bin_n;i++){
+				double current_coord_up = min_coord +i*(max_coord-min_coord)/bin_n;
+				double current_coord_down = current_coord_up + (it->get_pos_mm() - current_coord_up)*(min_z-max_z)/(it->get_z()-max_z);
+				if(it->get_is_X()){
+					hough_space_X->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
+				}
+				else{
+					hough_space_Y->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
+				}
 			}
-			else{
-				hough_space_Y->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
+		}
+		else{
+			for(int i=0;i<bin_n;i++){
+				double current_coord_down = min_coord +i*(max_coord-min_coord)/bin_n;
+				double current_coord_up = current_coord_down + (it->get_pos_mm() - current_coord_down)*(max_z-min_z)/(it->get_z()-min_z);
+				if(it->get_is_X()){
+					hough_space_X->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
+				}
+				else{
+					hough_space_Y->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
+				}
 			}
 		}
 	}
 	cout << "total number of suitable cluster : " << suitable_clus_n << endl;
+	//draw "normal" ray in hough space
+	CosmicBenchEvent * thisEvent = new CosmicBenchEvent(this,events);
+	vector<Ray> rays = thisEvent->get_absorption_rays();
+	delete thisEvent;
+	TGraph * rays_X = new TGraph();
+	TGraph * rays_Y = new TGraph();
+	int X_point_nb = 0;
+	int Y_point_nb = 0;
+	rays_X->SetMarkerStyle(24);
+	rays_Y->SetMarkerStyle(24);
+	rays_X->SetMarkerSize(2);
+	rays_Y->SetMarkerSize(2);
+	for(vector<Ray>::iterator it = rays.begin();it!=rays.end();++it){
+		rays_X->SetPoint(X_point_nb,it->eval_X(min_z),it->eval_X(max_z));
+		rays_Y->SetPoint(Y_point_nb,it->eval_Y(min_z),it->eval_Y(max_z));
+		X_point_nb++;
+		Y_point_nb++;
+	}
+	cout << "number of reconstructed rays : " << rays.size() << endl;
 	gStyle->SetPalette(55,0);
 	TCanvas * cHough = new TCanvas();
 	cHough->Divide(2);
 	cHough->cd(1);
 	hough_space_X->Draw("colz");
+	if(rays.size()>0) rays_X->Draw("sameP");
 	cHough->cd(2);
 	hough_space_Y->Draw("colz");
+	if(rays.size()>0) rays_Y->Draw("sameP");
 }

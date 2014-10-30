@@ -37,19 +37,19 @@ lib: libAnalyse.so
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
-absorptionMap: absorptionMap.o analyse.o T.o event.o ray.o cluster.o detector.o point.o
+absorptionMap: absorptionMap.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-tracking: tracking.o analyse.o T.o event.o ray.o cluster.o detector.o point.o
+tracking: tracking.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
 MultiCluster: MultiCluster.o signal.o detector.o event.o cluster.o Tanalyse.o ray.o point.o Tsignal.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-absorptionMapDict: absorptionMap.o analyse.o T.o event.o ray.o cluster.o detector.o point.o MyDict.o
+absorptionMapDict: absorptionMap.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o MyDict.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-trackingDict: tracking.o analyse.o T.o event.o ray.o cluster.o detector.o point.o MyDict.o
+trackingDict: tracking.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o MyDict.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
 MultiClusterDict: MultiCluster.o signal.o detector.o event.o cluster.o Tanalyse.o Tsignal.o ray.o point.o MyDict.o

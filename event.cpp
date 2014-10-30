@@ -12,10 +12,16 @@
 #include <limits>
 #include <iostream>
 #include <utility>
+#include <sstream>
+#include <algorithm>
 
 #include <TMath.h>
 #include <TF1.h>
 #include <TGraphErrors.h>
+#include <TH1D.h>
+#include <TCanvas.h>
+#include <TLine.h>
+#include <TStyle.h>
 
 using std::pair;
 using std::string;
@@ -24,9 +30,14 @@ using std::vector;
 using std::numeric_limits;
 using std::cout;
 using std::endl;
+using std::ostringstream;
+using std::max_element;
 
 using TMath::Min;
 using TMath::Max;
+using TMath::Abs;
+using TMath::FloorNint;
+using TMath::CeilNint;
 
 vector<map<double,int> > CosmicBenchEvent::combinaisons(map<double,int> sizes){
 	map<double,int> partial_product;
@@ -53,6 +64,7 @@ Event::Event(){
 	z = -1;
 	NClus = -1;
 	use_srf = false;
+	is_X = false;
 }
 Event::Event(const Event& other){
 	evn = other.evn;
@@ -64,6 +76,7 @@ Event::Event(const Event& other){
 	NClus = other.NClus;
 	use_srf = other.use_srf;
 	strip_ampl = other.strip_ampl;
+	is_X = other.is_X;
 }
 Event& Event::operator=(const Event& other){
 	evn = other.evn;
@@ -75,6 +88,7 @@ Event& Event::operator=(const Event& other){
 	NClus = other.NClus;
 	use_srf = other.use_srf;
 	strip_ampl = other.strip_ampl;
+	is_X = other.is_X;
 	return *this;
 }
 Event::Event(T * treeObject, bool use_srf_,int entry){
@@ -89,6 +103,7 @@ Event::Event(T * treeObject, bool use_srf_,int entry){
 	z = -1;
 	NClus = -1;
 	use_srf = use_srf_;
+	is_X = false;
 }
 Event::~Event(){
 
@@ -104,6 +119,9 @@ int Event::get_n_in_tree() const{
 }
 bool Event::get_is_ref() const{
 	return is_ref;
+}
+bool Event::get_is_X() const{
+	return is_X;
 }
 double Event::get_z() const{
 	return z;
@@ -144,12 +162,13 @@ CM_Event::CM_Event(T * treeObject,CM_Detector * det, bool use_srf_,int entry): E
 	n_in_tree = det->get_cm_n_in_tree();
 	use_thin_strip = det->get_use_thin_strip();
 	z = det->get_z();
+	is_X = det->get_is_X();
 	has_spark = (treeObject->CM_Spark[n_in_tree]==1) ? true : false;
 	is_ref = det->get_is_ref();
 	detector = *det;
 	type = "CM";
 }
-CM_Event::CM_Event(CM_Detector detector_, vector<vector<double> > strip_ampl_, bool use_srf_): Event(){
+CM_Event::CM_Event(CM_Detector detector_, vector<vector<double> > strip_ampl_, bool use_srf_, int evn_): Event(){
 	if(strip_ampl_.size()!=64){
 		cout << "problem in size" << endl;
 		detector = CM_Detector();
@@ -158,13 +177,22 @@ CM_Event::CM_Event(CM_Detector detector_, vector<vector<double> > strip_ampl_, b
 	n_in_tree = detector_.get_cm_n_in_tree();
 	is_ref = detector_.get_is_ref();
 	z = detector_.get_z();
+	is_X = detector_.get_is_X();
 	strip_ampl = strip_ampl_;
 	detector = detector_;
 	use_srf = use_srf_;
+	evn = evn_;
 	type = "CM";
 }
 void CM_Event::MultiCluster(){
 	// TODO : implement multicluster for CM
+}
+void CM_Event::set_strip_ampl(vector<vector<double> > strip_ampl_){
+	if(strip_ampl_.size()!=64){
+		cout << "problem in size" << endl;
+		return;
+	}
+	strip_ampl = strip_ampl_;
 }
 vector<CM_Cluster> CM_Event::get_clusters() const{
 	return clusters;
@@ -212,6 +240,8 @@ CM_Demux_Event::CM_Demux_Event(const CM_Event& rawEvent){
 	has_spark = rawEvent.has_spark;
 	is_ref = rawEvent.is_ref;
 	z = rawEvent.z;
+	is_X = rawEvent.is_X;
+	strip_ampl = rawEvent.strip_ampl;
 	type = "CM_Demux";
 }
 vector<CM_Demux_Cluster> CM_Demux_Event::get_clusters() const{
@@ -219,6 +249,13 @@ vector<CM_Demux_Cluster> CM_Demux_Event::get_clusters() const{
 }
 void CM_Demux_Event::MultiCluster(){
 	// TODO : implement multicluster for CM
+}
+void CM_Demux_Event::set_strip_ampl(vector<vector<double> > strip_ampl_){
+	if(strip_ampl_.size()!=64){
+		cout << "problem in size" << endl;
+		return;
+	}
+	strip_ampl = strip_ampl_;
 }
 CM_Demux_Event::~CM_Demux_Event(){
 	clusters.clear();
@@ -255,10 +292,11 @@ MG_Event::MG_Event(T * treeObject,MG_Detector * det, bool use_srf_,int entry): E
 	has_spark = (treeObject->MG_Spark[n_in_tree]==1) ? true : false;
 	is_ref = det->get_is_ref();
 	z = det->get_z();
+	is_X = det->get_is_X();
 	detector = *det;
 	type = "MG";
 }
-MG_Event::MG_Event(MG_Detector detector_, vector<vector<double> > strip_ampl_, bool use_srf_): Event(){
+MG_Event::MG_Event(MG_Detector detector_, vector<vector<double> > strip_ampl_, bool use_srf_, int evn_): Event(){
 	if(strip_ampl_.size()!=61){
 		cout << "problem in size" << endl;
 		detector = MG_Detector();
@@ -267,15 +305,18 @@ MG_Event::MG_Event(MG_Detector detector_, vector<vector<double> > strip_ampl_, b
 	n_in_tree = detector_.get_mg_n_in_tree();
 	is_ref = detector_.get_is_ref();
 	z = detector_.get_z();
+	is_X = detector_.get_is_X();
 	strip_ampl = strip_ampl_;
 	detector = detector_;
 	use_srf = use_srf_;
+	evn = evn_;
 	type = "MG";
 }
 vector<MG_Cluster> MG_Event::get_clusters() const{
 	return clusters;
 }
 void MG_Event::MultiCluster(){
+	clusters.clear();
 	//first loop : find channels with signal and store them with their caracteristics
 	double sigma = 3;
 	int SampleMin = 5;
@@ -325,7 +366,7 @@ void MG_Event::MultiCluster(){
 							current_cluster.second = j;
 							used_channel.push_back(MG_Detector::StripToChannel(j));
 						}
-						else if(hole_channel.size()<0){
+						else if(hole_channel.size()<1){
 							hole_channel.insert(pair<int,int>(MG_Detector::StripToChannel(j),j));
 						}
 						else break;
@@ -428,6 +469,7 @@ void MG_Event::MultiCluster(){
 	}
 }
 void MG_Event::HoughCluster(){
+	clusters.clear();
 	//first loop : find channels with signal and store them with their caracteristics
 	double sigma = 3;
 	int SampleMin = 5;
@@ -547,6 +589,36 @@ void MG_Event::HoughCluster(){
 		clusters.push_back(MG_Cluster(&detector,i,ClusPos,ClusSize,ClusAmpl,ClusMaxSample,ClusMaxStripAmpl,ClusTOT,ClusT));
 	}
 }
+void MG_Event::set_strip_ampl(vector<vector<double> > strip_ampl_){
+	if(strip_ampl_.size()!=61){
+		cout << "problem in size" << endl;
+		return;
+	}
+	strip_ampl = strip_ampl_;
+}
+TH1D MG_Event::get_ampl_hist() const{
+	ostringstream name;
+	name << "ampl_MG_det_" << n_in_tree << "_evn_" << evn;
+	TH1D histo(name.str().c_str(),name.str().c_str(),1024,0,500);
+	vector<pair<int,int> > cluster_edges;
+	for(vector<MG_Cluster>::const_iterator it=clusters.begin();it!=clusters.end();++it){
+		cluster_edges.push_back(pair<int,int>(FloorNint(it->get_pos()-it->get_size()),CeilNint(it->get_pos()+it->get_size())));
+	}
+	vector<bool> is_used(1024,false);
+	for(vector<pair<int,int> >::iterator it = cluster_edges.begin();it!=cluster_edges.end();++it){
+		if(it->first<0) it->first = 0;
+		if(it->second<0) it->second = 0;
+		if(it->first>1023) it->first = 1023;
+		if(it->second>1023) it->second = 1023;
+		for(int strip=it->first;strip<=it->second;strip++){
+			if(is_used[strip]) continue;
+			int channel = MG_Detector::StripToChannel(strip);
+			histo.Fill(strip,*max_element(strip_ampl[channel].begin(),strip_ampl[channel].end()));
+			is_used[strip] = true;
+		}
+	}
+	return histo;
+}
 MG_Event::~MG_Event(){
 	clusters.clear();
 }
@@ -589,10 +661,67 @@ CosmicBenchEvent::CosmicBenchEvent(CosmicBench * detectors, T * treeObject, bool
 	int det_N = detectors->get_CM_N() + detectors->get_MG_N();
 	for(int i=0;i<det_N;i++){
 		if((detectors->get_detector(i))->get_type() == "CM"){
-			events.push_back(new CM_Event(treeObject,(dynamic_cast<CM_Detector*>(detectors->get_detector(i))),-1,use_srf_));
+			events.push_back(new CM_Event(treeObject,(dynamic_cast<CM_Detector*>(detectors->get_detector(i))),use_srf_,-1));
 		}
 		else if((detectors->get_detector(i))->get_type() == "MG"){
-			events.push_back(new MG_Event(treeObject,(dynamic_cast<MG_Detector*>(detectors->get_detector(i))),-1,use_srf_));
+			events.push_back(new MG_Event(treeObject,(dynamic_cast<MG_Detector*>(detectors->get_detector(i))),use_srf_,-1));
+		}
+	}
+}
+CosmicBenchEvent::CosmicBenchEvent(CosmicBench * detectors, vector<Event*> events_){
+	rayPairs.clear();
+	events.clear();
+	unsigned int det_N = detectors->get_CM_N() + detectors->get_MG_N();
+	if(events_.size()!=det_N){
+		cout << "problem in event number" << endl;
+		return;
+	}
+	map<int,bool> CM_is_used;
+	map<int,bool> MG_is_used;
+	for(unsigned int i=0;i<det_N;i++){
+		Detector * current_det = detectors->get_detector(i);
+		if(current_det->get_type() == "MG"){
+			MG_is_used[dynamic_cast<MG_Detector*>(current_det)->get_mg_n_in_tree()] = false;
+		}
+		else if(current_det->get_type() == "CM"){
+			CM_is_used[dynamic_cast<CM_Detector*>(current_det)->get_cm_n_in_tree()] = false;
+		}
+	}
+	evn = (events_.front())->get_evn();
+	for(vector<Event*>::iterator it = events_.begin();it!=events_.end();++it){
+		if((*it)->get_evn() != evn){
+			cout << "attempt to merge event with different number in cosmicbench event" << endl;
+			return;
+		}
+		if((*it)->get_type() == "MG"){
+			if(MG_is_used[(*it)->get_n_in_tree()]){
+				cout << "problem in events" << endl;
+				return;
+			}
+			else{
+				MG_is_used[(*it)->get_n_in_tree()] = true;
+				events.push_back(new MG_Event(*dynamic_cast<MG_Event*>(*it)));
+			}
+		}
+		else if((*it)->get_type() == "CM"){
+			if(CM_is_used[(*it)->get_n_in_tree()]){
+				cout << "problem in events" << endl;
+				return;
+			}
+			else{
+				CM_is_used[(*it)->get_n_in_tree()] = true;
+				events.push_back(new CM_Event(*dynamic_cast<CM_Event*>(*it)));
+			}
+		}
+		else if((*it)->get_type() == "CM_Demux"){
+			if(CM_is_used[(*it)->get_n_in_tree()]){
+				cout << "problem in events" << endl;
+				return;
+			}
+			else{
+				CM_is_used[(*it)->get_n_in_tree()] = true;
+				events.push_back(new CM_Demux_Event(*dynamic_cast<CM_Demux_Event*>(*it)));
+			}
 		}
 	}
 }
@@ -893,4 +1022,165 @@ vector<Ray> CosmicBenchEvent::get_absorption_rays(){
 		}
 	}
 	return returnRays;
+}
+void CosmicBenchEvent::EventDisplay(){
+	gStyle->SetOptStat(false);
+	double chisquare_threshold = 10000;
+	int detector_color = 1;
+	int ray_color = 2;
+	int pos_color = 3;
+	vector<Ray> eventRays = this->get_absorption_rays();
+	vector<Ray>::iterator rays_it = eventRays.begin();
+	while(rays_it!=eventRays.end()){
+		if((rays_it->get_chiSquare_X()+rays_it->get_chiSquare_Y())>chisquare_threshold){
+			eventRays.erase(rays_it);
+			rays_it = eventRays.begin();
+		}
+		else{
+			++rays_it;
+		}
+	}
+	map<double,TH1D*> ampl_hists_X;
+	map<double,TH1D*> ampl_hists_Y;
+	map<double,vector<double> > clus_pos_X;
+	map<double,vector<double> > clus_pos_Y;
+	double min_dist = 10000;
+	for(vector<Event*>::iterator event_it = events.begin();event_it!=events.end();++event_it){
+		if((*event_it)->get_type() != "MG"){
+			cout << "no display for CM, sorry :(" << endl;
+				return;
+		}
+		if((*event_it)->get_is_X()){
+			for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
+				if(Abs(map_it->first - (*event_it)->get_z())<min_dist) min_dist = Abs(map_it->first - (*event_it)->get_z());
+			}
+			if(!ampl_hists_X.insert(pair<double,TH1D*>((*event_it)->get_z(),new TH1D(dynamic_cast<MG_Event*>(*event_it)->get_ampl_hist()))).second){
+				cout << "problem in events" << endl;
+				return;
+			}
+			vector<MG_Cluster> current_clusters = dynamic_cast<MG_Event*>(*event_it)->get_clusters();
+			for(vector<MG_Cluster>::iterator clus_it = current_clusters.begin();clus_it!=current_clusters.end();++clus_it){
+				clus_pos_X[(*event_it)->get_z()].push_back(clus_it->get_pos());
+			}
+		}
+		else{
+			for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
+				if(Abs(map_it->first - (*event_it)->get_z())<min_dist) min_dist = Abs(map_it->first - (*event_it)->get_z());
+			}
+			if(!ampl_hists_Y.insert(pair<double,TH1D*>((*event_it)->get_z(),new TH1D(dynamic_cast<MG_Event*>(*event_it)->get_ampl_hist()))).second){
+				cout << "problem in events" << endl;
+				return;
+			}
+			vector<MG_Cluster> current_clusters = dynamic_cast<MG_Event*>(*event_it)->get_clusters();
+			for(vector<MG_Cluster>::iterator clus_it = current_clusters.begin();clus_it!=current_clusters.end();++clus_it){
+				clus_pos_Y[(*event_it)->get_z()].push_back(clus_it->get_pos());
+			}
+		}
+	}
+	double scale_factor = 1;
+	for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
+		cout << map_it->first << " : " << map_it->second->GetMaximum() << endl;
+		if(map_it->second->GetMaximum()>scale_factor) scale_factor = map_it->second->GetMaximum();
+	}
+	for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
+		cout << map_it->first << " : " << map_it->second->GetMaximum() << endl;
+		if(map_it->second->GetMaximum()>scale_factor) scale_factor = map_it->second->GetMaximum();
+	}
+	double scale = 1.1;
+	scale_factor *= scale;
+	scale_factor = min_dist/scale_factor;
+	for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
+		//map_it->second->Scale(scale_factor);
+		map_it->second->Scale(min_dist/(scale*map_it->second->GetMaximum()));
+		TF1 * offset = new TF1("offset","[0]",0,500);
+		offset->SetParameter(0,map_it->first);
+		map_it->second->Add(offset);
+		delete offset;
+	}
+	for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
+		//map_it->second->Scale(scale_factor);
+		map_it->second->Scale(min_dist/(scale*map_it->second->GetMaximum()));
+		TF1 * offset = new TF1("offset","[0]",0,500);
+		offset->SetParameter(0,map_it->first);
+		map_it->second->Add(offset);
+		delete offset;
+	}
+	vector<TLine*> clus_X;
+	vector<TLine*> clus_Y;
+	for(map<double,vector<double> >::iterator it = clus_pos_X.begin();it!=clus_pos_X.end();++it){
+		for(vector<double>::iterator jt = (it->second).begin();jt!=(it->second).begin();++jt){
+			clus_X.push_back(new TLine(*jt,it->first,*jt,it->first + (min_dist/scale)));
+			(clus_X.back())->SetLineColor(pos_color);
+			(clus_X.back())->SetLineStyle(2);
+		}
+	}
+	for(map<double,vector<double> >::iterator it = clus_pos_Y.begin();it!=clus_pos_Y.end();++it){
+		for(vector<double>::iterator jt = (it->second).begin();jt!=(it->second).begin();++jt){
+			clus_Y.push_back(new TLine(*jt,it->first,*jt,it->first + (min_dist/scale)));
+			(clus_Y.back())->SetLineColor(pos_color);
+			(clus_Y.back())->SetLineStyle(2);
+		}
+	}
+	double min_z = Min(ampl_hists_X.begin()->first,ampl_hists_Y.begin()->first);
+	double max_z = Max((--(ampl_hists_X.end()))->first,(--(ampl_hists_Y.end()))->first);
+	double temp = min_z;
+	min_z -= 0.1*(max_z-min_z);
+	max_z += 0.1*(max_z-temp);
+	vector<TLine*> rays_X;
+	vector<TLine*> rays_Y;
+	for(rays_it = eventRays.begin();rays_it!=eventRays.end();++rays_it){
+		rays_X.push_back(new TLine(rays_it->eval_X(min_z),min_z,rays_it->eval_X(max_z),max_z));
+		rays_Y.push_back(new TLine(rays_it->eval_Y(min_z),min_z,rays_it->eval_Y(max_z),max_z));
+		(rays_X.back())->SetLineColor(ray_color);
+		(rays_Y.back())->SetLineColor(ray_color);
+	}
+	vector<TLine*> det_X;
+	vector<TLine*> det_Y;
+	for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
+		det_X.push_back(new TLine(0,map_it->first,500,map_it->first));
+		det_Y.push_back(new TLine(0,map_it->first,500,map_it->first));
+		(det_X.back())->SetLineColor(detector_color);
+		(det_Y.back())->SetLineColor(detector_color);
+
+	}
+	TH1D * bg_X = new TH1D("XZ plane","XZ plane",2,-100,600);
+	TH1D * bg_Y = new TH1D("YZ plane","YZ plane",2,-100,600);
+	bg_X->Fill(0.,min_z);
+	bg_X->Fill(500.,max_z);
+	bg_X->SetAxisRange(min_z,max_z,"Y");
+	bg_Y->Fill(0.,min_z);
+	bg_Y->Fill(500.,max_z);
+	bg_Y->SetAxisRange(min_z,max_z,"Y");
+	TCanvas * cDisplay = new TCanvas();
+	cDisplay->Divide(2);
+	cDisplay->cd(1);
+	bg_X->Draw("AXIS");
+	for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
+		map_it->second->Draw("SAME");
+	}
+	for(vector<TLine*>::iterator line_it = clus_X.begin();line_it!=clus_X.end();++line_it){
+		(*line_it)->Draw();
+	}
+	for(vector<TLine*>::iterator line_it = rays_X.begin();line_it!=rays_X.end();++line_it){
+		(*line_it)->Draw();
+	}
+	for(vector<TLine*>::iterator line_it = det_X.begin();line_it!=det_X.end();++line_it){
+		(*line_it)->Draw();
+	}
+	cDisplay->cd(2);
+	bg_Y->Draw("AXIS");
+	for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
+		map_it->second->Draw("SAME");
+	}
+	for(vector<TLine*>::iterator line_it = clus_Y.begin();line_it!=clus_Y.end();++line_it){
+		(*line_it)->Draw();
+	}
+	for(vector<TLine*>::iterator line_it = rays_Y.begin();line_it!=rays_Y.end();++line_it){
+		(*line_it)->Draw();
+	}
+	for(vector<TLine*>::iterator line_it = det_Y.begin();line_it!=det_Y.end();++line_it){
+		(*line_it)->Draw();
+	}
+	cDisplay->Modified();
+	cDisplay->Update();
 }

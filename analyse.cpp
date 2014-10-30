@@ -5,6 +5,7 @@
 #include "detector.h"
 #include "ray.h"
 #include "event.h"
+#include "Tsignal.h"
 //ROOT
 #include <TTree.h>
 #include <TFile.h>
@@ -129,7 +130,7 @@ void Analyse::Residus(){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
-		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,-1);
+		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
 		vector<Ray> currentRays = currentCBEvent->get_absorption_rays();
 		eventReconstructed+=currentRays.size();
 		eventSuitable+=currentCBEvent->get_clus_N()/(CM_N+MG_N);
@@ -272,7 +273,7 @@ void Analyse::Residus_ref(){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
-		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,-1);
+		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
 		vector<Ray> currentRays = currentCBEvent->get_absorption_rays();
 		for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
 			if((jt->get_chiSquare_X()+jt->get_chiSquare_Y()) < chisquare_threshold){
@@ -519,7 +520,7 @@ void Analyse::Residus_ref_2D(){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
-		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,-1);
+		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
 		vector<Ray> currentRays = currentCBEvent->get_absorption_rays();
 		for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
 			if((jt->get_chiSquare_X()+jt->get_chiSquare_Y()) < chisquare_threshold){
@@ -739,7 +740,7 @@ void Analyse::Efficacity(){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
-		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,-1);
+		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
 		vector<Ray> currentRays = currentCBEvent->get_absorption_rays();
 		eventReconstructed+=currentRays.size();
 		eventSuitable+=currentCBEvent->get_clus_N()/(CM_N+MG_N);
@@ -881,7 +882,7 @@ TH2D * Analyse::AbsorptionFluxMap(double z, int nbins, TCanvas * c1){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
-		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,-1);
+		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
 		vector<Ray> currentRays = currentCBEvent->get_absorption_rays();
 		eventReconstructed+=currentRays.size();
 		eventSuitable+=currentCBEvent->get_clus_N()/(CM_N+MG_N);
@@ -928,7 +929,7 @@ void Analyse::AbsorptionFluxMapNorm(double z,TH2D * background, int nbins, TCanv
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
-		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,-1);
+		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
 		vector<Ray> currentRays = currentCBEvent->get_absorption_rays();
 		eventReconstructed+=currentRays.size();
 		eventSuitable+=currentCBEvent->get_clus_N()/(CM_N+MG_N);
@@ -1060,7 +1061,7 @@ void Analyse::StoreRayPairs(string outFileName){
 		if(multi) continue;
 		*/
 
-		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,-1);
+		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
 		currentCBEvent->createPairs();
 		eventSuitable+=currentCBEvent->get_clus_N()/(CM_N+MG_N);
 		eventReconstructed+=currentCBEvent->get_rayPairs_N();
@@ -1144,7 +1145,7 @@ void Analyse::StoreRayPairs(string outFileName){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
-		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,-1);
+		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
 		eventSuitable+=currentCBEvent->get_clus_N()/(CM_N+MG_N);
 		for(vector<Event*>::iterator it=(currentCBEvent->events).begin();it!=(currentCBEvent->events).end();++it){
 			if((*it)->get_type() == "MG" && (*it)->get_n_in_tree() == i){
@@ -1190,31 +1191,26 @@ double Analyse::get_z_Down() const{
 }
 
 void Analyse::bugtest(){
-	int before = 0;
-	int afterAbsorption = 0;
-	int afterDeviation = 0;
 	if (fChain == 0) return;
 	Long64_t nentries = fChain->GetEntriesFast();
-	cout <<  setw(20) << "before" <<  "|" << setw(20) << "after absorption" <<  "|" << setw(20) << "after deviation" << endl;
+	int limit = 10;
+	if(limit<nentries) nentries = limit;
 	for (Long64_t jentry=0; jentry<nentries;jentry++){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
-		CosmicBenchEvent * currentCBEvent1 = new CosmicBenchEvent(this,this,-1);
-		currentCBEvent1->Demux_CM();
-		before+=currentCBEvent1->get_clus_N()/(CM_N+MG_N);
-		delete currentCBEvent1;
-		CosmicBenchEvent * currentCBEvent2 = new CosmicBenchEvent(this,this,-1);
-		currentCBEvent2->get_absorption_rays();
-		afterAbsorption+=currentCBEvent2->get_clus_N()/(CM_N+MG_N);
-		delete currentCBEvent2;
-		CosmicBenchEvent * currentCBEvent3 = new CosmicBenchEvent(this,this,-1);
-		currentCBEvent3->createPairs();
-		afterDeviation+=currentCBEvent3->get_clus_N()/(CM_N+MG_N);
-		delete currentCBEvent3;
-		if(jentry%500 == 0) cout << "\r"<< setw(20) << before << "|" << setw(20) << afterAbsorption << "|" << setw(20) << afterDeviation << flush;
+		cout << evn << " : " << endl;
+		CosmicBenchEvent * CBEvent = new CosmicBenchEvent(this,this,false,-1);
+		for(vector<Event*>::iterator it = (CBEvent->events).begin();it!=(CBEvent->events).end();++it){
+			if((*it)->get_type() == "MG")cout << dynamic_cast<MG_Event*>(*it)->get_clusters().front().get_pos() << " | ";
+		}
+		cout << endl;
+		delete CBEvent;
+		for(int i=0;i<MG_N-1;i++){
+			cout << MG_ClusPos[i][0] << " | ";
+		}
+		cout << MG_ClusPos[MG_N-1][0] << endl;
 	}
-	cout << "\r"<< setw(20) << before << "|" << setw(20) << afterAbsorption << "|" << setw(20) << afterDeviation << endl;
 }
 
 void Analyse::CalcStripResponseFunction(int bin_nb){
@@ -1338,7 +1334,7 @@ void Analyse::CalcStripResponseFunction(int bin_nb){
 				cout << "event numbers are different in analyse and signal trees" << endl;
 				return;
 			}
-			CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,-1);
+			CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
 			vector<Ray> currentRays = currentCBEvent->get_absorption_rays();
 
 			for(vector<Event*>::iterator it = (currentCBEvent->events).begin();it!=(currentCBEvent->events).end();++it){
@@ -1513,6 +1509,30 @@ void Analyse::EventDisplay(int event_nb){
 	}
 	TFile * signal_file = new TFile(signal_file_name.c_str(),"READ");
 	TTree * signal_tree = (TTree*)(signal_file->Get("T"));
+	Tsignal * signalT = new Tsignal(signal_tree,CM_N,MG_N);
+
+	if(nentries != signal_tree->GetEntriesFast()){
+		cout << "total number of event in signal and analyse tree does not match" << endl;
+		return;
+	}
+	LoadTree(event_nb);
+	GetEntry(event_nb);
+	CosmicBenchEvent * CBEvent = new CosmicBenchEvent(this,this,false,-1);
+	signalT->LoadTree(event_nb);
+	signalT->GetEntry(event_nb);
+	for(vector<Event*>::iterator ev_it = (CBEvent->events).begin();ev_it!=(CBEvent->events).end();++ev_it){
+		if((*ev_it)->get_type() == "MG") (*ev_it)->set_strip_ampl(signalT->get_mg_ampl((*ev_it)->get_n_in_tree()));
+		else if((*ev_it)->get_type() == "CM" || (*ev_it)->get_type() == "CM_Demux") (*ev_it)->set_strip_ampl(signalT->get_cm_ampl((*ev_it)->get_n_in_tree()));
+	}
+	CBEvent->EventDisplay();
+	/*
+	long nentries = fChain->GetEntriesFast();
+	if(event_nb<0 || event_nb>nentries){
+		cout << "invalid event number" << endl;
+		return;
+	}
+	TFile * signal_file = new TFile(signal_file_name.c_str(),"READ");
+	TTree * signal_tree = (TTree*)(signal_file->Get("T"));
 
 	if(nentries != signal_tree->GetEntriesFast()){
 		cout << "total number of event in signal and analyse tree does not match" << endl;
@@ -1535,7 +1555,7 @@ void Analyse::EventDisplay(int event_nb){
 	GetEntry(event_nb);
 	signal_tree->LoadTree(event_nb);
 	signal_tree->GetEntry(event_nb);
-	CosmicBenchEvent * CBEvent = new CosmicBenchEvent(this,this,-1);
+	CosmicBenchEvent * CBEvent = new CosmicBenchEvent(this,this,false,-1);
 	vector<Ray> eventRays = CBEvent->get_absorption_rays();
 	vector<Ray>::iterator rays_it = eventRays.begin();
 	//delete rays with too big chi²
@@ -1673,4 +1693,5 @@ void Analyse::EventDisplay(int event_nb){
 	}
 	c_visu->Modified();
 	c_visu->Update();
+	*/
 }
