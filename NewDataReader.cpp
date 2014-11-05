@@ -11,7 +11,7 @@ using std::setw;
 using std::setfill;
 
 int main(int argc, char ** argv){
-	string outName = "output2";
+	string outName = "output3";
 	//string baseName = "RawTest_465_400_141029_09H01";
 	//string dataDir = "/media/data/Clas12/CosmicBench/2014/W44";
 	int FEU_N = 1;
@@ -23,7 +23,7 @@ int main(int argc, char ** argv){
 		det_type[i] = "MG";
 		det_asic[i] = i;
 	}
-	DataReader blah(outName,det_type,det_asic);//,true,true,true);
+	DreamDataReader blah(outName,det_type,det_asic);//,true,true,true);
 	blah.add_file_to_process("../file12.fdf");
 	/*
 	for(int i=0;i<dataFile_n;i++){

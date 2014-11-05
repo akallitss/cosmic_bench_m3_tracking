@@ -27,8 +27,7 @@ class DataReader{
 		void read_ped();
 		void Fill();
 		void Write();
-		void read_file(string file_name,int evn_offset);
-		int mapping(string det_type, int channel);
+		virtual void read_file(string file_name,int evn_offset) = 0;
 		void reset_tree_leaf();
 		vector<string> file_names;
 		TFile * outFile;
@@ -54,7 +53,26 @@ class DataReader{
 		bool exists;
 		bool ped_done;
 		bool cns_done;
+		string DAQType;
 
+};
+
+class DreamDataReader: public DataReader{
+	public:
+		DreamDataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false);
+		~DreamDataReader();
+	protected:
+		void read_file(string file_name,int evn_offset);
+		int mapping(string det_type, int channel);
+};
+
+class FeminosDataReader: public DataReader{
+	public:
+		FeminosDataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false);
+		~FeminosDataReader();
+	protected:
+		void read_file(string file_name,int evn_offset);
+		int mapping(string det_type, int channel);
 };
 
 #endif
