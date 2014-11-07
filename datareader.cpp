@@ -220,8 +220,9 @@ void DataReader::compute_ped(){
 	cout << "!" << endl;
 }
 
-void DataReader::read_ped(){
-	cout << "reading pedestal from file..." << flush;
+void DataReader::read_ped(string ped_file){
+	if(ped_file != "") PedFileName = ped_file;
+	cout << "reading pedestal from file : " << PedFileName << "..." << flush;
 	ifstream pedFile(PedFileName.c_str());
 	for(unsigned int i=0;i<CM_N;i++){
 		for(int j=0;j<Nstrip_CM;j++){
@@ -236,12 +237,12 @@ void DataReader::read_ped(){
 	pedFile.close();
 	cout << "!" << endl;
 }
-void DataReader::do_ped_sub(){
+void DataReader::do_ped_sub(string ped_file){
 	if(ped_done){
 		cout << "pedestal already substracted" << endl;
 		return;
 	}
-	read_ped();
+	read_ped(ped_file);
 	char leefStripAmpl_MG[100];
 	sprintf(leefStripAmpl_MG,"StripAmpl_MG_ped[%d][%d][%d]/F",MG_N,Nstrip_MG,Nsample);
 	TBranch *newBranch_MG = outTree->Branch("StripAmpl_MG_ped", StripAmpl_MG_ped,leefStripAmpl_MG);

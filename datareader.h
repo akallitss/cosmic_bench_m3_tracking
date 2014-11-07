@@ -17,14 +17,14 @@ class DataReader{
 		void add_file_to_process(string inFileName);
 		void process();
 		void compute_ped();
-		void do_ped_sub();
+		void do_ped_sub(string ped_file = "");
 		void do_common_noise_sub();
 		void compute_RMSPed();
 		static const int Nsample;
 		static const int Nstrip_MG;
 		static const int Nstrip_CM;
 	protected:
-		void read_ped();
+		void read_ped(string ped_file = "");
 		void Fill();
 		void Write();
 		virtual void read_file(string file_name,int evn_offset) = 0;
