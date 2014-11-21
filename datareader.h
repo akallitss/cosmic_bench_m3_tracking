@@ -5,6 +5,7 @@
 #include <map>
 #include <TTree.h>
 #include <TFile.h>
+#include <TBranch.h>
 
 using std::string;
 using std::vector;
@@ -54,6 +55,7 @@ class DataReader{
 		bool ped_done;
 		bool cns_done;
 		string DAQType;
+		TBranch * dumb_branch;
 
 };
 

@@ -56,14 +56,18 @@ DataReader::DataReader(string baseFileName, map<int,string> det_type_by_asic_, m
 			}
 		}
 	}
-	StripAmpl_MG = new float[MG_N][Nstrip_MG][Nsample];
-	StripAmpl_CM = new float[CM_N][Nstrip_CM][Nsample];
-	StripAmpl_MG_ped = new float[MG_N][Nstrip_MG][Nsample];
-	StripAmpl_CM_ped = new float[CM_N][Nstrip_CM][Nsample];
-	StripAmpl_MG_corr = new float[MG_N][Nstrip_MG][Nsample];
-	StripAmpl_CM_corr = new float[CM_N][Nstrip_CM][Nsample];
-	Pedestal_CM = new float[CM_N][Nstrip_CM];
-	Pedestal_MG = new float[MG_N][Nstrip_MG];
+	if(MG_N>0){
+		StripAmpl_MG = new float[MG_N][Nstrip_MG][Nsample];
+		StripAmpl_MG_ped = new float[MG_N][Nstrip_MG][Nsample];
+		StripAmpl_MG_corr = new float[MG_N][Nstrip_MG][Nsample];
+		Pedestal_MG = new float[MG_N][Nstrip_MG];
+	}
+	if(CM_N>0){
+		StripAmpl_CM = new float[CM_N][Nstrip_CM][Nsample];
+		StripAmpl_CM_ped = new float[CM_N][Nstrip_CM][Nsample];
+		StripAmpl_CM_corr = new float[CM_N][Nstrip_CM][Nsample];
+		Pedestal_CM = new float[CM_N][Nstrip_CM];
+	}
 	outFileName = baseFileName + "_signal.root";
 	PedFileName = baseFileName + "_Ped.dat";
 	RMSPedFileName = baseFileName + "_RMSPed.dat";
@@ -78,28 +82,32 @@ DataReader::DataReader(string baseFileName, map<int,string> det_type_by_asic_, m
 		sprintf(leefTsampleNum,"TsampleNum[%d]/I",Nsample);
 		outTree->Branch("TsampleNum", TsampleNum, leefTsampleNum); // time sample number
 		// For the MG
-		char leefStripAmpl_MG[100];
-		sprintf(leefStripAmpl_MG,"StripAmpl_MG[%d][%d][%d]/F",MG_N,Nstrip_MG,Nsample);
-		outTree->Branch("StripAmpl_MG", StripAmpl_MG, leefStripAmpl_MG); // raw amplitude
+		if(MG_N>0){
+			char leefStripAmpl_MG[100];
+			sprintf(leefStripAmpl_MG,"StripAmpl_MG[%d][%d][%d]/F",MG_N,Nstrip_MG,Nsample);
+			outTree->Branch("StripAmpl_MG", StripAmpl_MG, leefStripAmpl_MG); // raw amplitude
+		}
 		// For the CM
-		char leefStripAmpl_CM[100];
-		sprintf(leefStripAmpl_CM,"StripAmpl_CM[%d][%d][%d]/F",CM_N,Nstrip_CM,Nsample);
-		outTree->Branch("StripAmpl_CM", StripAmpl_CM, leefStripAmpl_CM); // raw amplitude
+		if(CM_N>0){
+			char leefStripAmpl_CM[100];
+			sprintf(leefStripAmpl_CM,"StripAmpl_CM[%d][%d][%d]/F",CM_N,Nstrip_CM,Nsample);
+			outTree->Branch("StripAmpl_CM", StripAmpl_CM, leefStripAmpl_CM); // raw amplitude
+		}
 	}
 	else{
 		outTree = (TTree*)(outFile->Get("T"));
 		outTree->SetBranchAddress("Nevent",&Nevent);
 		outTree->SetBranchAddress("TsampleNum",TsampleNum);
-		outTree->SetBranchAddress("StripAmpl_CM",StripAmpl_CM);
-		outTree->SetBranchAddress("StripAmpl_MG",StripAmpl_MG);
+		if(CM_N>0) outTree->SetBranchAddress("StripAmpl_CM",StripAmpl_CM);
+		if(MG_N>0) outTree->SetBranchAddress("StripAmpl_MG",StripAmpl_MG);
 	}
 	if(ped_done){
-		outTree->SetBranchAddress("StripAmpl_CM_ped",StripAmpl_CM_ped);
-		outTree->SetBranchAddress("StripAmpl_MG_ped",StripAmpl_MG_ped);
+		if(CM_N>0) outTree->SetBranchAddress("StripAmpl_CM_ped",StripAmpl_CM_ped);
+		if(MG_N>0) outTree->SetBranchAddress("StripAmpl_MG_ped",StripAmpl_MG_ped);
 	}
 	if(cns_done){
-		outTree->SetBranchAddress("StripAmpl_CM_corr",StripAmpl_CM_corr);
-		outTree->SetBranchAddress("StripAmpl_MG_corr",StripAmpl_MG_corr);
+		if(CM_N>0) outTree->SetBranchAddress("StripAmpl_CM_corr",StripAmpl_CM_corr);
+		if(MG_N>0) outTree->SetBranchAddress("StripAmpl_MG_corr",StripAmpl_MG_corr);
 	}
 	for(int k=0;k<Nsample;k++){
 		TsampleNum[k] = 0;
@@ -120,8 +128,10 @@ DataReader::DataReader(string baseFileName, map<int,string> det_type_by_asic_, m
 	}
 	is_first = true;
 	DAQType = "";
+	dumb_branch = new TBranch();
 }
 DataReader::~DataReader(){
+	delete dumb_branch;
 	outFile->Close();
 	delete outFile;
 }
@@ -233,12 +243,18 @@ void DataReader::do_ped_sub(string ped_file){
 		return;
 	}
 	read_ped(ped_file);
-	char leefStripAmpl_MG[100];
-	sprintf(leefStripAmpl_MG,"StripAmpl_MG_ped[%d][%d][%d]/F",MG_N,Nstrip_MG,Nsample);
-	TBranch *newBranch_MG = outTree->Branch("StripAmpl_MG_ped", StripAmpl_MG_ped,leefStripAmpl_MG);
-	char leefStripAmpl_CM[100];
-	sprintf(leefStripAmpl_CM,"StripAmpl_CM_ped[%d][%d][%d]/F",CM_N,Nstrip_CM,Nsample);
-	TBranch *newBranch_CM = outTree->Branch("StripAmpl_CM_ped", StripAmpl_CM_ped,leefStripAmpl_CM);
+	TBranch *newBranch_MG = dumb_branch;
+	TBranch *newBranch_CM = dumb_branch;
+	if(MG_N>0){
+		char leefStripAmpl_MG[100];
+		sprintf(leefStripAmpl_MG,"StripAmpl_MG_ped[%d][%d][%d]/F",MG_N,Nstrip_MG,Nsample);
+		newBranch_MG = outTree->Branch("StripAmpl_MG_ped", StripAmpl_MG_ped,leefStripAmpl_MG);
+	}
+	if(CM_N>0){
+		char leefStripAmpl_CM[100];
+		sprintf(leefStripAmpl_CM,"StripAmpl_CM_ped[%d][%d][%d]/F",CM_N,Nstrip_CM,Nsample);
+		newBranch_CM = outTree->Branch("StripAmpl_CM_ped", StripAmpl_CM_ped,leefStripAmpl_CM);
+	}
 	int nentries = outTree->GetEntries();
 	for(int n=0;n<nentries;n++){
 		outTree->LoadTree(n);
@@ -257,8 +273,8 @@ void DataReader::do_ped_sub(string ped_file){
 				}
 			}
 		}
-		newBranch_CM->Fill();
-		newBranch_MG->Fill();
+		if(CM_N>0) newBranch_CM->Fill();
+		if(MG_N>0) newBranch_MG->Fill();
 		if((n%100) == 0) cout << "\r" << "substracting pedestal (" << n << "/" << nentries << ")" << flush;
 	}
 	cout << "\r" << "substracting pedestal (" << nentries << "/" << nentries << ")" << endl;
@@ -274,12 +290,18 @@ void DataReader::do_common_noise_sub(){
 		cout << "cannot substract common noise before the pedestal substraction" << endl;
 		return;
 	}
-	char leefStripAmpl_MG[100];
-	sprintf(leefStripAmpl_MG,"StripAmpl_MG_corr[%d][%d][%d]/F",MG_N,Nstrip_MG,Nsample);
-	TBranch *newBranch_MG = outTree->Branch("StripAmpl_MG_corr", StripAmpl_MG_corr,leefStripAmpl_MG);
-	char leefStripAmpl_CM[100];
-	sprintf(leefStripAmpl_CM,"StripAmpl_CM_corr[%d][%d][%d]/F",CM_N,Nstrip_CM,Nsample);
-	TBranch *newBranch_CM = outTree->Branch("StripAmpl_CM_corr", StripAmpl_CM_corr,leefStripAmpl_CM);
+	TBranch *newBranch_MG = dumb_branch;
+	TBranch *newBranch_CM = dumb_branch;
+	if(MG_N>0){
+		char leefStripAmpl_MG[100];
+		sprintf(leefStripAmpl_MG,"StripAmpl_MG_corr[%d][%d][%d]/F",MG_N,Nstrip_MG,Nsample);
+		newBranch_MG = outTree->Branch("StripAmpl_MG_corr", StripAmpl_MG_corr,leefStripAmpl_MG);
+	}
+	if(CM_N>0){
+		char leefStripAmpl_CM[100];
+		sprintf(leefStripAmpl_CM,"StripAmpl_CM_corr[%d][%d][%d]/F",CM_N,Nstrip_CM,Nsample);
+		newBranch_CM = outTree->Branch("StripAmpl_CM_corr", StripAmpl_CM_corr,leefStripAmpl_CM);
+	}
 	int detector_div_MG = 2;
 	int detector_div_CM = 2;
 	int nentries = outTree->GetEntries();
@@ -320,8 +342,8 @@ void DataReader::do_common_noise_sub(){
 				}
 			}
 		}
-		newBranch_CM->Fill();
-		newBranch_MG->Fill();
+		if(CM_N>0) newBranch_CM->Fill();
+		if(MG_N>0) newBranch_MG->Fill();
 		if((n%100) == 0) cout << "\r" << "substracting common noise (" << n << "/" << nentries << ")" << flush;
 	}
 	cout << "\r" << "substracting common noise (" << nentries << "/" << nentries << ")" << endl;
@@ -335,44 +357,48 @@ void DataReader::compute_RMSPed(){
 	Long64_t max_event = 500;
 	int nentries = Min(outTree->GetEntries(),max_event);
 	ofstream RMSPedFile(RMSPedFileName.c_str());
-	outTree->SetBranchStatus("*",0);
-	outTree->SetBranchStatus("StripAmpl_CM_corr",1);
-	for(unsigned int i=0;i<CM_N;i++){
-		for(int j=0;j<Nstrip_CM;j++){
-			cout << "\r" << "computing RMS Ped for CM_" << i << " and strip_" << setw(2) << setfill('0') << j << flush;
-			TH1F * ampl_hist = new TH1F("ampl_hist","ampl_hist",bin_n,Ymin,Ymax);
-			for(int n=0;n<nentries;n++){
-				outTree->LoadTree(n);
-				outTree->GetEntry(n);
-				for(int k=0;k<Nsample;k++){
-					ampl_hist->Fill(StripAmpl_CM_corr[i][j][k]);
+	if(CM_N>0){
+		outTree->SetBranchStatus("*",0);
+		outTree->SetBranchStatus("StripAmpl_CM_corr",1);
+		for(unsigned int i=0;i<CM_N;i++){
+			for(int j=0;j<Nstrip_CM;j++){
+				cout << "\r" << "computing RMS Ped for CM_" << i << " and strip_" << setw(2) << setfill('0') << j << flush;
+				TH1F * ampl_hist = new TH1F("ampl_hist","ampl_hist",bin_n,Ymin,Ymax);
+				for(int n=0;n<nentries;n++){
+					outTree->LoadTree(n);
+					outTree->GetEntry(n);
+					for(int k=0;k<Nsample;k++){
+						ampl_hist->Fill(StripAmpl_CM_corr[i][j][k]);
+					}
 				}
+				TFitResultPtr res = ampl_hist->Fit("gaus","SQN");
+				RMSPedFile << i << " " << j << " " << res->Parameter(2) << "\n";
+				delete ampl_hist;
 			}
-			TFitResultPtr res = ampl_hist->Fit("gaus","SQN");
-			RMSPedFile << i << " " << j << " " << res->Parameter(2) << "\n";
-			delete ampl_hist;
 		}
+		cout << "\r" << "RMS Ped for CMs computed !                             " << endl;
 	}
-	if(CM_N>0) cout << "\r" << "RMS Ped for CMs computed !                             " << endl;
-	outTree->SetBranchStatus("*",0);
-	outTree->SetBranchStatus("StripAmpl_MG_corr",1);
-	for(unsigned int i=0;i<MG_N;i++){
-		for(int j=0;j<Nstrip_MG;j++){
-			cout << "\r" << "computing RMS Ped for MG_" << i << " and strip_" << setw(2) << setfill('0') << j << flush;
-			TH1F * ampl_hist = new TH1F("ampl_hist","ampl_hist",bin_n,Ymin,Ymax);
-			for(int n=0;n<nentries;n++){
-				outTree->LoadTree(n);
-				outTree->GetEntry(n);
-				for(int k=0;k<Nsample;k++){
-					ampl_hist->Fill(StripAmpl_MG_corr[i][j][k]);
+	if(MG_N>0){
+		outTree->SetBranchStatus("*",0);
+		outTree->SetBranchStatus("StripAmpl_MG_corr",1);
+		for(unsigned int i=0;i<MG_N;i++){
+			for(int j=0;j<Nstrip_MG;j++){
+				cout << "\r" << "computing RMS Ped for MG_" << i << " and strip_" << setw(2) << setfill('0') << j << flush;
+				TH1F * ampl_hist = new TH1F("ampl_hist","ampl_hist",bin_n,Ymin,Ymax);
+				for(int n=0;n<nentries;n++){
+					outTree->LoadTree(n);
+					outTree->GetEntry(n);
+					for(int k=0;k<Nsample;k++){
+						ampl_hist->Fill(StripAmpl_MG_corr[i][j][k]);
+					}
 				}
+				TFitResultPtr res = ampl_hist->Fit("gaus","SQN");
+				RMSPedFile << i << " " << j << " " << res->Parameter(2) << "\n";
+				delete ampl_hist;
 			}
-			TFitResultPtr res = ampl_hist->Fit("gaus","SQN");
-			RMSPedFile << i << " " << j << " " << res->Parameter(2) << "\n";
-			delete ampl_hist;
 		}
+		cout << "\r" << "RMS Ped for MGs computed !                             " << endl;
 	}
-	if(MG_N>0) cout << "\r" << "RMS Ped for MGs computed !                             " << endl;
 	outTree->SetBranchStatus("*",1);
 	RMSPedFile.close();
 }
