@@ -13,7 +13,7 @@ using std::map;
 
 class DataReader{
 	public:
-		DataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false);
+		DataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
 		~DataReader();
 		void add_file_to_process(string inFileName);
 		virtual void process() = 0;
@@ -55,13 +55,15 @@ class DataReader{
 		bool ped_done;
 		bool cns_done;
 		string DAQType;
+		int max_event;
+		int global_offset;
 		TBranch * dumb_branch;
 
 };
 
 class DreamDataReader: public DataReader{
 	public:
-		DreamDataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false);
+		DreamDataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
 		~DreamDataReader();
 		void process();
 	protected:
@@ -71,7 +73,7 @@ class DreamDataReader: public DataReader{
 
 class FeminosDataReader: public DataReader{
 	public:
-		FeminosDataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false);
+		FeminosDataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
 		~FeminosDataReader();
 		void process();
 	protected:

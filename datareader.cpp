@@ -13,6 +13,7 @@
 #include <TFitResult.h>
 #include <TROOT.h>
 #include <TMath.h>
+#include <sstream>
 #include "dataline.h"
 #include "header.h"
 
@@ -27,6 +28,7 @@ using std::ofstream;
 using std::sort;
 using std::setw;
 using std::setfill;
+using std::ostringstream;
 
 using TMath::Min;
 
@@ -34,10 +36,12 @@ const int DataReader::Nsample = 32;
 const int DataReader::Nstrip_MG = 61;
 const int DataReader::Nstrip_CM = 64;
 
-DataReader::DataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_){
+DataReader::DataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_){
 	exists = exists_;
 	ped_done = ped_done_;
 	cns_done = cns_done_;
+	max_event = max_event_;
+	global_offset = 0;
 	MG_N = 0;
 	CM_N = 0;
 	det_type_by_asic = det_type_by_asic_;
@@ -110,7 +114,7 @@ DataReader::DataReader(string baseFileName, map<int,string> det_type_by_asic_, m
 		if(MG_N>0) outTree->SetBranchAddress("StripAmpl_MG_corr",StripAmpl_MG_corr);
 	}
 	for(int k=0;k<Nsample;k++){
-		TsampleNum[k] = 0;
+		TsampleNum[k] = k;
 	}
 	for(unsigned int i=0;i<MG_N;i++){
 		for(int j=0;j<Nstrip_MG;j++){
@@ -146,9 +150,11 @@ void DataReader::Write(){
 }
 void DataReader::reset_tree_leaf(){
 	Nevent = 0;
+	/*
 	for(int k=0;k<Nsample;k++){
-		TsampleNum[k] = 0;
+		TsampleNum[k] = k;
 	}
+	*/
 	for(unsigned int i=0;i<MG_N;i++){
 		for(int j=0;j<Nstrip_MG;j++){
 			for(int k=0;k<Nsample;k++){
@@ -361,6 +367,28 @@ void DataReader::compute_RMSPed(){
 		outTree->SetBranchStatus("*",0);
 		outTree->SetBranchStatus("StripAmpl_CM_corr",1);
 		for(unsigned int i=0;i<CM_N;i++){
+			cout << "\r" << "computing RMS Ped for CM_" << i << flush;
+			vector<TH1F*> ampl_hist(Nstrip_CM);
+			for(int j=0;j<Nstrip_CM;j++){
+				ostringstream name;
+				name << "ampl_hist_" << j;
+				ampl_hist[j] = new TH1F(name.str().c_str(),name.str().c_str(),bin_n,Ymin,Ymax);
+			}
+			for(int n=0;n<nentries;n++){
+				outTree->LoadTree(n);
+				outTree->GetEntry(n);
+				for(int j=0;j<Nstrip_CM;j++){
+					for(int k=0;k<Nsample;k++){
+						ampl_hist[j]->Fill(StripAmpl_CM_corr[i][j][k]);
+					}
+				}
+			}
+			for(int j=0;j<Nstrip_CM;j++){
+				TFitResultPtr res = ampl_hist[j]->Fit("gaus","SQN");
+				RMSPedFile << i << " " << j << " " << res->Parameter(2) << "\n";
+				delete ampl_hist[j];
+			}
+			/*
 			for(int j=0;j<Nstrip_CM;j++){
 				cout << "\r" << "computing RMS Ped for CM_" << i << " and strip_" << setw(2) << setfill('0') << j << flush;
 				TH1F * ampl_hist = new TH1F("ampl_hist","ampl_hist",bin_n,Ymin,Ymax);
@@ -375,6 +403,7 @@ void DataReader::compute_RMSPed(){
 				RMSPedFile << i << " " << j << " " << res->Parameter(2) << "\n";
 				delete ampl_hist;
 			}
+			*/
 		}
 		cout << "\r" << "RMS Ped for CMs computed !                             " << endl;
 	}
@@ -382,6 +411,28 @@ void DataReader::compute_RMSPed(){
 		outTree->SetBranchStatus("*",0);
 		outTree->SetBranchStatus("StripAmpl_MG_corr",1);
 		for(unsigned int i=0;i<MG_N;i++){
+			cout << "\r" << "computing RMS Ped for MG_" << i << flush;
+			vector<TH1F*> ampl_hist(Nstrip_MG);
+			for(int j=0;j<Nstrip_MG;j++){
+				ostringstream name;
+				name << "ampl_hist_" << j;
+				ampl_hist[j] = new TH1F(name.str().c_str(),name.str().c_str(),bin_n,Ymin,Ymax);
+			}
+			for(int n=0;n<nentries;n++){
+				outTree->LoadTree(n);
+				outTree->GetEntry(n);
+				for(int j=0;j<Nstrip_MG;j++){
+					for(int k=0;k<Nsample;k++){
+						ampl_hist[j]->Fill(StripAmpl_MG_corr[i][j][k]);
+					}
+				}
+			}
+			for(int j=0;j<Nstrip_MG;j++){
+				TFitResultPtr res = ampl_hist[j]->Fit("gaus","SQN");
+				RMSPedFile << i << " " << j << " " << res->Parameter(2) << "\n";
+				delete ampl_hist[j];
+			}
+			/*
 			for(int j=0;j<Nstrip_MG;j++){
 				cout << "\r" << "computing RMS Ped for MG_" << i << " and strip_" << setw(2) << setfill('0') << j << flush;
 				TH1F * ampl_hist = new TH1F("ampl_hist","ampl_hist",bin_n,Ymin,Ymax);
@@ -396,13 +447,14 @@ void DataReader::compute_RMSPed(){
 				RMSPedFile << i << " " << j << " " << res->Parameter(2) << "\n";
 				delete ampl_hist;
 			}
+			*/
 		}
 		cout << "\r" << "RMS Ped for MGs computed !                             " << endl;
 	}
 	outTree->SetBranchStatus("*",1);
 	RMSPedFile.close();
 }
-DreamDataReader::DreamDataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_): DataReader(baseFileName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_){
+DreamDataReader::DreamDataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_): DataReader(baseFileName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
 	DAQType = "Dream";
 }
 DreamDataReader::~DreamDataReader(){
@@ -433,7 +485,7 @@ void DreamDataReader::read_file(string file_name,int evn_offset){
 		return;
 	}
 	HeaderC current_header;
-	unsigned int evNinFile = 0;
+	int evNinFile = 0;
 	// Loop on event
 	int isample=-1; int isample_prev=-2;
 	int ichannel=0;
@@ -441,7 +493,7 @@ void DreamDataReader::read_file(string file_name,int evn_offset){
 	int detN=0;
 	int channelN=0;
 	DataLineDream current_data;
-	while(iFile.good() && evNinFile<26000){
+	while(iFile.good() && evNinFile<26000 && !(((evNinFile + evn_offset - global_offset)>max_event)*(max_event>0))){
 		reset_tree_leaf();
 		isample=-1; isample_prev=-2;
 		while(isample<Nsample-1 && isample==isample_prev+1){
@@ -519,14 +571,14 @@ void DreamDataReader::read_file(string file_name,int evn_offset){
 			}
 		}
 		Nevent = evNinFile+evn_offset;
-		if((evNinFile%100) == 0) cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << Nevent << ")" << flush;
+		if((evNinFile%100) == 0) cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << evNinFile + evn_offset - global_offset << ")" << flush;
 		evNinFile++;
 		Fill();
 	}
-	cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << Nevent+1 << ")" << endl;
+	cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << evNinFile + evn_offset - global_offset << ")" << endl;
 	iFile.close();
 }
-FeminosDataReader::FeminosDataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_): DataReader(baseFileName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_){
+FeminosDataReader::FeminosDataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_): DataReader(baseFileName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
 	DAQType = "Feminos";
 }
 FeminosDataReader::~FeminosDataReader(){
@@ -550,7 +602,7 @@ void FeminosDataReader::process(){
 		cout << "tree already initiated" << endl;
 		return;
 	}
-	int global_offset = get_first_event_nb(file_names.front());
+	global_offset = get_first_event_nb(file_names.front());
 	for(vector<string>::iterator it=file_names.begin();it!=file_names.end();++it){
 		int current_offset = global_offset + outTree->GetEntries();
 		read_file(*it,current_offset);
@@ -579,7 +631,7 @@ void FeminosDataReader::read_file(string file_name,int evn_offset){
 	int event_started = 0;
 	DataLineFeminos current_data;
 	iFile.read((char*)&current_data,sizeof(current_data));
-	while(iFile.good() /*&& evNinFile<6000*/){
+	while(iFile.good() && !(((evNinFile + evn_offset - global_offset)>max_event)*(max_event>0))){
 
 
 		if(inEvent){
@@ -633,7 +685,7 @@ void FeminosDataReader::read_file(string file_name,int evn_offset){
 				}
 				inEvent = false;
 				Nevent = evNinFile + evn_offset;
-				if((evNinFile%100) == 0) cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << Nevent << ")" << flush;
+				if((evNinFile%100) == 0) cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << evNinFile + evn_offset - global_offset << ")" << flush;
 				evNinFile++;
 				Fill();
 			}
@@ -654,7 +706,7 @@ void FeminosDataReader::read_file(string file_name,int evn_offset){
 		}
 		iFile.read((char*)&current_data,sizeof(current_data));
 	}
-	cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << Nevent+1 << ")" << endl;
+	cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << evNinFile + evn_offset - global_offset << ")" << endl;
 	iFile.close();
 }
 int FeminosDataReader::get_first_event_nb(string file_name){

@@ -25,7 +25,7 @@ int main(int argc, char ** argv){
 		det_type[i] = "MG";
 		det_asic[i] = i-4;
 	}
-	FeminosDataReader blah(outName,det_type,det_asic);//,true,true,true);
+	FeminosDataReader blah(outName,det_type,det_asic);//,false,false,false,100);
 	blah.add_file_to_process("../R2014_10_31-12_09_38-000.aqs");
 	/*
 	for(int i=0;i<dataFile_n;i++){
