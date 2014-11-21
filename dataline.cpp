@@ -68,11 +68,17 @@ bool DataLineFeminos::is_end_of_frame() const{
 	return data==15;
 }
 bool DataLineFeminos::is_end_of_event() const{
-	return ((data & 0xFFFF))==8;
+	return ((data & 0xFFF0)>>4)==14;
 }
 bool DataLineFeminos::is_event_start() const{
 	return ((data & 0xFFF0)>>4)==15;
 }
 bool DataLineFeminos::is_frame_start() const{
 	return ((data & 0xFE00)>>9)==4;
+}
+bool DataLineFeminos::is_built_event_start() const{
+	return data == 9;
+}
+bool DataLineFeminos::is_end_of_built_event() const{
+	return data == 8;
 }

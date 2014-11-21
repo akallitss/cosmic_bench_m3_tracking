@@ -32,6 +32,8 @@ class DataLineFeminos{
 		bool is_end_of_event() const;
 		bool is_event_start() const;
 		bool is_frame_start() const;
+		bool is_built_event_start() const;
+		bool is_end_of_built_event() const;
 		unsigned short int data;
 };
 

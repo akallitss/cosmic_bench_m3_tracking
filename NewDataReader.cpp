@@ -21,9 +21,9 @@ int main(int argc, char ** argv){
 	*/
 	map<int,string> det_type;
 	map<int,int> det_asic;
-	for(int i=0;i<4;i++){
+	for(int i=0;i<8;i++){
 		det_type[i] = "MG";
-		det_asic[i] = i;
+		det_asic[i] = i-4;
 	}
 	FeminosDataReader blah(outName,det_type,det_asic);//,true,true,true);
 	blah.add_file_to_process("../R2014_10_31-12_09_38-000.aqs");

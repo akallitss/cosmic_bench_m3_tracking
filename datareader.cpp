@@ -46,12 +46,14 @@ DataReader::DataReader(string baseFileName, map<int,string> det_type_by_asic_, m
 		cout << "problem in detector caracs" << endl;
 		return;
 	}
-	for(map<int,string>::iterator it=det_type_by_asic.begin();it!=det_type_by_asic.end();++it){
-		if(it->second == "MG") MG_N++;
-		else if(it->second == "CM") CM_N++;
-		else{
-			cout << "detector type unknown : " << it->second << endl;
-			return;
+	for(unsigned int i=0;i<det_n_by_asic.size();i++){
+		if(det_n_by_asic[i]>=0){
+			if(det_type_by_asic[i] == "MG") MG_N++;
+			else if(det_type_by_asic[i] == "CM") CM_N++;
+			else{
+				cout << "detector type unknown : " << det_type_by_asic[i] << endl;
+				return;
+			}
 		}
 	}
 	StripAmpl_MG = new float[MG_N][Nstrip_MG][Nsample];
@@ -125,18 +127,6 @@ DataReader::~DataReader(){
 }
 void DataReader::add_file_to_process(string inFileName){
 	file_names.push_back(inFileName);
-}
-void DataReader::process(){
-	if(exists){
-		cout << "tree already initiated" << endl;
-		return;
-	}
-	for(vector<string>::iterator it=file_names.begin();it!=file_names.end();++it){
-		int current_offset = outTree->GetEntries();
-		read_file(*it,current_offset);
-	}
-	Write();
-	exists = true;
 }
 void DataReader::Fill(){
 	outTree->Fill();
@@ -398,6 +388,18 @@ int DreamDataReader::mapping(string det_type, int channel){
 	}
 	return channel;
 }
+void DreamDataReader::process(){
+	if(exists){
+		cout << "tree already initiated" << endl;
+		return;
+	}
+	for(vector<string>::iterator it=file_names.begin();it!=file_names.end();++it){
+		int current_offset = outTree->GetEntries();
+		read_file(*it,current_offset);
+	}
+	Write();
+	exists = true;
+}
 void DreamDataReader::read_file(string file_name,int evn_offset){
 	ifstream iFile(file_name.c_str(),ifstream::binary);
 	if(!iFile.is_open()){
@@ -517,6 +519,19 @@ int FeminosDataReader::mapping(string det_type, int channel){
 	}
 	return channel;
 }
+void FeminosDataReader::process(){
+	if(exists){
+		cout << "tree already initiated" << endl;
+		return;
+	}
+	int global_offset = get_first_event_nb(file_names.front());
+	for(vector<string>::iterator it=file_names.begin();it!=file_names.end();++it){
+		int current_offset = global_offset + outTree->GetEntries();
+		read_file(*it,current_offset);
+	}
+	Write();
+	exists = true;
+}
 void FeminosDataReader::read_file(string file_name,int evn_offset){
 	ifstream iFile(file_name.c_str(),ifstream::binary);
 	if(!iFile.is_open()){
@@ -525,69 +540,115 @@ void FeminosDataReader::read_file(string file_name,int evn_offset){
 	}
 	iFile.ignore(26); //You can read run UID here
 	iFile.ignore(2); //Beginning of frame (28 bytes from the beginning)
-	unsigned int evNinFile = 0;
-	//int card=0;
+	int evNinFile = 0;
+	int card=0;
 	int chip=0;
 	int channel=0;
 	int itime = 0;
 	int channelN=0;
+	int det = 0;
 	int detN=0;
 	bool inEvent = false;
 	bool inFrame = false;
+	int event_started = 0;
 	DataLineFeminos current_data;
 	iFile.read((char*)&current_data,sizeof(current_data));
 	while(iFile.good() /*&& evNinFile<6000*/){
 
-		if(inEvent && current_data.is_end_of_event()){
-			inEvent = false;
-			Nevent = evNinFile + evn_offset;
-			if((evNinFile%100) == 0) cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << Nevent << ")" << flush;
-			evNinFile++;
-			Fill();
-		}
-		else if(inFrame && current_data.is_end_of_frame()){
-			inFrame = false;
-		}
-		else if(inEvent){
-			if(current_data.is_info()){
-				//card = current_data.get_card_ID();
-				chip = current_data.get_chip_ID();
-				detN = det_n_by_asic[chip];
-				channel = current_data.get_channel_ID();
-				channelN = mapping(det_type_by_asic[chip],channel);
-				itime = 0;
-			}
-			else if(current_data.is_time()){
-				itime= current_data.get_time();
-			}
-			else if(current_data.is_data()){
-				if(det_type_by_asic[chip] == "MG" && channelN>-1 && channelN<61){
-					StripAmpl_MG[detN][channelN][itime] = current_data.get_data();
-					itime++;
+
+		if(inEvent){
+			if(inFrame){
+				if(current_data.is_event_start()){
+					event_started++;
+					iFile.ignore(3*sizeof(current_data)); //contain timestamp
+					int current_event;
+					iFile.read((char*)&current_event,sizeof(current_event));
+					if(current_event != (evNinFile + evn_offset)){
+						cout << "problem in event number" << endl;
+						cout << std::hex << current_event << " " << evNinFile << endl;
+						return;
+					}
 				}
-				else if(det_type_by_asic[chip] == "CM" && channelN>-1 && channelN<64){
-					StripAmpl_CM[detN][channelN][itime] = current_data.get_data();
-					itime++;
+				else if(current_data.is_end_of_event()){
+					event_started--;
+					iFile.ignore(sizeof(current_data)); //contain eventsize
 				}
+				else if(current_data.is_end_of_frame()){
+					inFrame = false;
+				}
+				else if(current_data.is_info()){
+					card = current_data.get_card_ID();
+					chip = current_data.get_chip_ID();
+					det = chip + (4*card);
+					detN = det_n_by_asic[det];
+					channel = current_data.get_channel_ID();
+					channelN = mapping(det_type_by_asic[det],channel);
+					itime = 0;
+				}
+				else if(current_data.is_time()){
+					itime= current_data.get_time();
+				}
+				else if(current_data.is_data()){
+					if(det_type_by_asic[det] == "MG" && channelN>-1 && channelN<61){
+						StripAmpl_MG[detN][channelN][itime] = current_data.get_data();
+						itime++;
+					}
+					else if(det_type_by_asic[det] == "CM" && channelN>-1 && channelN<64){
+						StripAmpl_CM[detN][channelN][itime] = current_data.get_data();
+						itime++;
+					}
+				}
+
+			}
+			else if(current_data.is_end_of_built_event()){
+				if(event_started != 0){
+					cout << "problem in fem number" << endl;
+					return;
+				}
+				inEvent = false;
+				Nevent = evNinFile + evn_offset;
+				if((evNinFile%100) == 0) cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << Nevent << ")" << flush;
+				evNinFile++;
+				Fill();
+			}
+			else if(current_data.is_frame_start()){
+				inFrame = true;
 			}
 		}
-		else if(inFrame){
-			if(current_data.is_event_start()){
-				inEvent = true;
-				reset_tree_leaf();
-				chip=0;
-				channel=0;
-				itime = 0;
-				channelN=0;
-				detN=0;
-				iFile.ignore(5*sizeof(current_data));
-			}
-		}
-		else if(current_data.is_frame_start()){
-			inFrame = true;
-			iFile.ignore(sizeof(current_data));
+		else if(current_data.is_built_event_start()){
+			inEvent = true;
+			reset_tree_leaf();
+			chip=0;
+			channel=0;
+			itime = 0;
+			channelN=0;
+			det=0;
+			detN=0;
+			event_started = 0;
 		}
 		iFile.read((char*)&current_data,sizeof(current_data));
 	}
 	cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << Nevent+1 << ")" << endl;
+	iFile.close();
+}
+int FeminosDataReader::get_first_event_nb(string file_name){
+	ifstream iFile(file_name.c_str(),ifstream::binary);
+	if(!iFile.is_open()){
+		cout << "file : " << file_name << " can't be opened" << endl;
+		return -1;
+	}
+	iFile.ignore(26); //You can read run UID here
+	iFile.ignore(2); //Beginning of frame (28 bytes from the beginning)
+	DataLineFeminos current_data;
+	while(iFile.good() /*&& evNinFile<6000*/){
+		if(current_data.is_event_start()){
+			iFile.ignore(3*sizeof(current_data)); //contain timestamp
+			int current_event;
+			iFile.read((char*)&current_event,sizeof(current_event));
+			return current_event;
+		}
+		iFile.read((char*)&current_data,sizeof(current_data));
+	}
+	iFile.close();
+	return -1;
 }

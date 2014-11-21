@@ -15,7 +15,7 @@ class DataReader{
 		DataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false);
 		~DataReader();
 		void add_file_to_process(string inFileName);
-		void process();
+		virtual void process() = 0;
 		void compute_ped();
 		void do_ped_sub(string ped_file = "");
 		void do_common_noise_sub();
@@ -61,6 +61,7 @@ class DreamDataReader: public DataReader{
 	public:
 		DreamDataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false);
 		~DreamDataReader();
+		void process();
 	protected:
 		void read_file(string file_name,int evn_offset);
 		int mapping(string det_type, int channel);
@@ -70,8 +71,10 @@ class FeminosDataReader: public DataReader{
 	public:
 		FeminosDataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false);
 		~FeminosDataReader();
+		void process();
 	protected:
 		void read_file(string file_name,int evn_offset);
+		int get_first_event_nb(string file_name);
 		int mapping(string det_type, int channel);
 };
 
