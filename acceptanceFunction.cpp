@@ -1,3 +1,5 @@
+#define acceptanceFunction_cpp
+
 #include <TH2D.h>
 #include <TCanvas.h>
 #include <TMath.h>
@@ -17,19 +19,7 @@ using TMath::Pi;
 using TMath::Cos;
 using TMath::Sin;
 
-class ProbaFunction{
-	public:
-		ProbaFunction(double x_min_,double x_max_,double y_min_,double y_max_,double z_Up_,double z_Down_,double sigma_theta_);
-		double operator()(double x,double y,double z);
-		double x_min;
-		double x_max;
-		double y_min;
-		double y_max;
-		double z_Up;
-		double z_Down;
-		double sigma_theta;
-};
-ProbaFunction::ProbaFunction(double x_min_,double x_max_,double y_min_,double y_max_,double z_Up_,double z_Down_,double sigma_theta_){
+acceptanceFunction::acceptanceFunction(double x_min_,double x_max_,double y_min_,double y_max_,double z_Up_,double z_Down_,double sigma_theta_){
 	x_min = x_min_;
 	x_max = x_max_;
 	y_min = y_min_;
@@ -39,7 +29,11 @@ ProbaFunction::ProbaFunction(double x_min_,double x_max_,double y_min_,double y_
 	sigma_theta = sigma_theta_;
 }
 
-double ProbaFunction::operator()(double x,double y, double z){
+acceptanceFunction::~acceptanceFunction(){
+
+}
+
+double acceptanceFunction::operator()(double x,double y, double z){
 	double theta_x_min = 0;
 	double theta_x_max = 0;
 	double theta_y_min = 0;
@@ -84,40 +78,32 @@ double ProbaFunction::operator()(double x,double y, double z){
 	return ((Sin(theta_x_max-theta_x_min)*Cos(theta_x_max+theta_x_min)) + theta_x_max - theta_x_min)*((Sin(theta_y_max-theta_y_min)*Cos(theta_y_max+theta_y_min)) + theta_y_max - theta_y_min)/(Pi()*Pi());
 }
 
-void Proba(){
+void acceptanceFunction::plot_3D(){
 	int step_x = 1000;
 	int step_y = 1000;
 	int step_z = 1000;
-	double x_min = 0;
-	double x_max = 500;
-	double y_min = 0;
-	double y_max = 500;
-	double z_Up = 1270;
-	double z_Down = 0;
-	double sigma_theta = Pi()/3.;
-	ProbaFunction current_proba(x_min,x_max,y_min,y_max,z_Up,z_Down,sigma_theta);
-	x_min = -200;
-	x_max = 700;
-	y_min = -200;
-	y_max = 700;
-	z_Up = 1500;
-	z_Down = -200;
+	double x_min_ = -200;
+	double x_max_ = 700;
+	double y_min_ = -200;
+	double y_max_ = 700;
+	double z_Up_ = 1500;
+	double z_Down_ = -200;
 	TCanvas * cDisplay = new TCanvas();
 	cDisplay->Divide(3);
-	TH2D * proba_XY = new TH2D("proba_XY","proba_XY",step_x,x_min,x_max,step_y,y_min,y_max);
-	TH2D * proba_XZ = new TH2D("proba_XZ","proba_XZ",step_x,x_min,x_max,step_z,z_Down,z_Up);
-	TH2D * proba_YZ = new TH2D("proba_YZ","proba_YZ",step_y,y_min,y_max,step_z,z_Down,z_Up);
+	TH2D * proba_XY = new TH2D("proba_XY","proba_XY",step_x,x_min_,x_max_,step_y,y_min_,y_max_);
+	TH2D * proba_XZ = new TH2D("proba_XZ","proba_XZ",step_x,x_min_,x_max_,step_z,z_Down_,z_Up_);
+	TH2D * proba_YZ = new TH2D("proba_YZ","proba_YZ",step_y,y_min_,y_max_,step_z,z_Down_,z_Up_);
 	proba_XY->SetStats(false);
 	proba_XZ->SetStats(false);
 	proba_YZ->SetStats(false);
 	int n = 0;
 	for(int i=0;i<step_x;i++){
-		double x = x_min + i*(x_max-x_min)/step_x;
+		double x = x_min_ + i*(x_max_-x_min_)/step_x;
 		for(int j=0;j<step_y;j++){
-			double y = y_min + j*(y_max-y_min)/step_y;
+			double y = y_min_ + j*(y_max_-y_min_)/step_y;
 			for(int k=0;k<step_z;k++){
-				double z = z_Down + k*(z_Up-z_Down)/step_z;
-				double proba = current_proba(x,y,z);
+				double z = z_Down_ + k*(z_Up_-z_Down_)/step_z;
+				double proba = this(x,y,z);
 				proba_XY->Fill(x,y,proba);
 				proba_XZ->Fill(x,z,proba);
 				proba_YZ->Fill(y,z,proba);
@@ -153,29 +139,21 @@ void Proba(){
 
 }
 
-void AbsorptionNorm(double z){
+void acceptanceFunction::plot_XY(double z){
 	int step_x = 2000;
 	int step_y = 2000;
-	double x_min = 0;
-	double x_max = 500;
-	double y_min = 0;
-	double y_max = 500;
-	double z_Up = 1270;
-	double z_Down = 0;
-	double sigma_theta = Pi()/3.;
-	ProbaFunction current_proba(x_min,x_max,y_min,y_max,z_Up,z_Down,sigma_theta);
-	x_min = -200;
-	x_max = 700;
-	y_min = -200;
-	y_max = 700;
+	double x_min_ = -200;
+	double x_max_ = 700;
+	double y_min_ = -200;
+	double y_max_ = 700;
 	TCanvas * cDisplay = new TCanvas();
-	TH2D * proba_XY = new TH2D("proba_XY","proba_XY",step_x,x_min,x_max,step_y,y_min,y_max);
+	TH2D * proba_XY = new TH2D("proba_XY","proba_XY",step_x,x_min_,x_max_,step_y,y_min_,y_max_);
 	proba_XY->SetStats(false);
 	for(int i=0;i<step_x;i++){
-		double x = x_min + i*(x_max-x_min)/step_x;
+		double x = x_min_ + i*(x_max_-x_min_)/step_x;
 		for(int j=0;j<step_y;j++){
-			double y = y_min + j*(y_max-y_min)/step_y;
-			double proba = current_proba(x,y,z);
+			double y = y_min_ + j*(y_max_-y_min_)/step_y;
+			double proba = *this(x,y,z);
 			proba_XY->Fill(x,y,proba);
 		}
 	}
@@ -183,15 +161,4 @@ void AbsorptionNorm(double z){
 	proba_XY->Draw("colz");
 	cDisplay->Modified();
 	cDisplay->Update();
-}
-
-int main(int argc, char ** argv){
-	int argcR = 1;
-	char * argvR[1];
-	argvR[0] = argv[0];
-	TRint * theApp = new TRint("Rint",&argcR,argvR,0,0,true);
-	//Proba();
-	AbsorptionNorm(1600);
-	theApp->Run(true);
-	return 0;
 }
