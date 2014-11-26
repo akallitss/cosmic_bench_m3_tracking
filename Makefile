@@ -16,7 +16,7 @@ ROOTGLIBS     = $(shell root-config --glibs)
 
 # Linux with egcs
 CXX           = g++
-CXXFLAGS2      = -O2 -Wall -Wno-deprecated -fno-exceptions -fPIC  $(ROOTCFLAGS) -I$(MYINCLUDE) 
+#CXXFLAGS      = -O2 -Wall -Wno-deprecated -fno-exceptions -fPIC  $(ROOTCFLAGS) -I$(MYINCLUDE) 
 CXXFLAGS      = -g -O -Wall -Wno-deprecated -fexceptions -fPIC  $(ROOTCFLAGS) -I$(MYINCLUDE)
 LD            = g++
 LIBS          = $(ROOTLIBS) -lNetx -lm -ldl -rdynamic 
@@ -28,7 +28,7 @@ SOFLAGS       = -shared -fPIC
 
 all: exec
 
-exec: tracking absorptionMap MultiCluster testCapa
+exec: tracking absorptionMap MultiCluster testCapa DataReader
 
 execDict: trackingDict absorptionMapDict MultiClusterDict testCapaDict
 
@@ -37,8 +37,8 @@ lib: libAnalyse.so
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
-acceptanceFunction: acceptanceFunction.cpp
-	$(LD) $^ -o $@ $(LDFLAGS) $(CXXFLAGS2)
+DataReader: NewDataReader.o datareader.o header.o dataline.o
+	$(LD) $^ -o $@ $(LDFLAGS)
 
 absorptionMap: absorptionMap.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o
 	$(LD) $^ -o $@ $(LDFLAGS)
@@ -71,5 +71,4 @@ MyDict.cpp: analyse.h T.h event.h ray.h cluster.h detector.h point.h Tanalyse.h 
 	rootcint -f $@ -c $(CXXFLAGS) -p $^
 
 clean:
-	rm -f *.o *.so *Dict* *dict* Linkdef absorptionMap tracking MultiCluster acceptanceFunction
-
+	rm -f *.o *.so *Dict* *dict* Linkdef absorptionMap tracking MultiCluster acceptanceFunction DataReader
