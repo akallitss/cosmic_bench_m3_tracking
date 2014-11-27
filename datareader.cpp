@@ -596,8 +596,9 @@ int FeminosDataReader::mapping(string det_type, int channel){
 		else if(channel<48) tmpchan = channel-4;
 		else if(channel<59) tmpchan = channel-5;
 		else tmpchan = channel-6;
-		if(tmpchan<16 || tmpchan>47) return tmpchan + 1 - (2*(tmpchan%2));
-		else return tmpchan;
+		if(tmpchan<16 || tmpchan>47) tmpchan = 62 + (2*(tmpchan%2)) - tmpchan;
+		if(tmpchan>15 && tmpchan<48) return tmpchan;
+		else return 63 - tmpchan;
 	}
 	return channel;
 }
