@@ -317,15 +317,15 @@ void DataReader::do_common_noise_sub(){
 		for(unsigned int i=0;i<MG_N;i++){
 			for(int k=0;k<Nsample;k++){
 				for(int det_div=0;det_div<detector_div_MG;det_div++){
-					int strip_nb = Nstrip_MG/detector_div_MG;
+					int strip_nb = (Nstrip_MG/detector_div_MG) + (Nstrip_MG%detector_div_MG);
 					int strip_offset = det_div*strip_nb;
 					vector<float> current_sample(strip_nb,0);
-					for(int j=0;j<strip_nb;j++){
+					for(int j=0;(j<strip_nb && j+strip_offset<Nstrip_MG);j++){
 						current_sample[j] = StripAmpl_MG_ped[i][j+strip_offset][k];
 					}
 					sort(current_sample.begin(),current_sample.end());
 					float median = current_sample[strip_nb/2];
-					for(int j=0;j<strip_nb;j++){
+					for(int j=0;(j<strip_nb && j+strip_offset<Nstrip_MG);j++){
 						StripAmpl_MG_corr[i][j+strip_offset][k] = StripAmpl_MG_ped[i][j+strip_offset][k] - median;
 					}
 				}
@@ -334,15 +334,15 @@ void DataReader::do_common_noise_sub(){
 		for(unsigned int i=0;i<CM_N;i++){
 			for(int k=0;k<Nsample;k++){
 				for(int det_div=0;det_div<detector_div_CM;det_div++){
-					int strip_nb = Nstrip_CM/detector_div_CM;
+					int strip_nb = Nstrip_CM/detector_div_CM + (Nstrip_CM%detector_div_CM);
 					int strip_offset = det_div*strip_nb;
 					vector<float> current_sample(strip_nb,0);
-					for(int j=0;j<strip_nb;j++){
+					for(int j=0;(j<strip_nb && j+strip_offset<Nstrip_CM);j++){
 						current_sample[j] = StripAmpl_CM_ped[i][j+strip_offset][k];
 					}
 					sort(current_sample.begin(),current_sample.end());
 					float median = current_sample[strip_nb/2];
-					for(int j=0;j<strip_nb;j++){
+					for(int j=0;(j<strip_nb && j+strip_offset<Nstrip_CM);j++){
 						StripAmpl_CM_corr[i][j+strip_offset][k] = StripAmpl_CM_ped[i][j+strip_offset][k] - median;
 					}
 				}
