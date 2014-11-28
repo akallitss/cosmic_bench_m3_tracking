@@ -84,7 +84,8 @@ class MG_Detector: public Detector{
 		MG_Detector& operator=(const MG_Detector& other);
 		MG_Detector(double z_, bool is_X_, bool is_up_, int mg_n, bool is_ref_, double offset_, bool direction_, double angle_, int perp_n_, int clustering_holes_);
 		~MG_Detector();
-		static unsigned int StripToChannel(unsigned int strip_nb);
+		static unsigned int StripToChannel_f(unsigned int strip_nb);
+		static const vector<unsigned int> StripToChannel;
 		static vector<unsigned int> ChannelToStrip(unsigned int channel_nb);
 		//MultiGen general charac
 		static const double StripPitch; // distance between the middle of 2 adjacent strips

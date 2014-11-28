@@ -222,7 +222,21 @@ MG_Detector::MG_Detector(double z_, bool is_X_, bool is_up_, int mg_n, bool is_r
 MG_Detector::~MG_Detector(){
 
 }
-unsigned int MG_Detector::StripToChannel(unsigned int strip_nb){
+static vector<unsigned int> generate_StripToChannel(){
+	int p=61; int n=1024;
+	int MultiplexSeries[]={30,10,15,19,5,20,27,22,11,24,18,12,9,6,3,4,1,16,8,2,23,21,7,25,14,28,17,26,13,29};
+	vector<unsigned int> Detector(n,0); // strip to channel correspondance
+	for(int i=0;i<(p-1)/2;i++){
+		for(int j=0;j<p;j++){
+			if(i*p+j<n){
+				Detector[i*p+j]=(0+MultiplexSeries[i]*j)%p;
+			}
+		}
+	}
+	return Detector;
+}
+const vector<unsigned int> MG_Detector::StripToChannel = generate_StripToChannel();
+unsigned int MG_Detector::StripToChannel_f(unsigned int strip_nb){
 	if(strip_nb>=1024) return -1;
 	int p=61; int n=1024;
 	int MultiplexSeries[]={30,10,15,19,5,20,27,22,11,24,18,12,9,6,3,4,1,16,8,2,23,21,7,25,14,28,17,26,13,29};

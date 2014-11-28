@@ -37,6 +37,7 @@ class Event{
 		bool get_is_X() const;
 		virtual ~Event();
 		virtual void MultiCluster() = 0;
+		virtual void do_cuts() = 0;
 		virtual void set_strip_ampl(vector<vector<double> > strip_ampl_) = 0;
 	protected:
 		Event();
@@ -71,6 +72,7 @@ class CM_Event: public Event{
 		CM_Event(CM_Detector detector_, vector<vector<double> > strip_ampl_, bool use_srf_, int evn_);
 		~CM_Event();
 		void MultiCluster();
+		void do_cuts();
 		vector<CM_Cluster> get_clusters() const;
 		void set_strip_ampl(vector<vector<double> > strip_ampl_);
 	protected:
@@ -90,6 +92,7 @@ class CM_Demux_Event: public Event{
 		void set_strip_ampl(vector<vector<double> > strip_ampl_);
 		~CM_Demux_Event();
 		void MultiCluster();
+		void do_cuts();
 	protected:
 		vector<CM_Demux_Cluster> clusters;
 };
@@ -106,6 +109,7 @@ class MG_Event: public Event{
 		~MG_Event();
 		void MultiCluster();
 		void HoughCluster();
+		void do_cuts();
 		vector<MG_Cluster> get_clusters() const;
 		TH1D get_ampl_hist() const;
 	protected:

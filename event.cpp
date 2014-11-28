@@ -30,6 +30,7 @@ using std::vector;
 using std::numeric_limits;
 using std::cout;
 using std::endl;
+using std::flush;
 using std::ostringstream;
 using std::max_element;
 
@@ -197,6 +198,13 @@ void CM_Event::set_strip_ampl(vector<vector<double> > strip_ampl_){
 vector<CM_Cluster> CM_Event::get_clusters() const{
 	return clusters;
 }
+void CM_Event::do_cuts(){
+	vector<CM_Cluster>::iterator clus_it = clusters.begin();
+	while(clus_it!= clusters.end()){
+		if(clus_it->is_suitable(&detector)) ++clus_it;
+		else clus_it = clusters.erase(clus_it);
+	}
+}
 CM_Event::~CM_Event(){
 	clusters.clear();
 }
@@ -257,6 +265,9 @@ void CM_Demux_Event::set_strip_ampl(vector<vector<double> > strip_ampl_){
 	}
 	strip_ampl = strip_ampl_;
 }
+void CM_Demux_Event::do_cuts(){
+	cout << "you shouldn't call this function" << endl;
+}
 CM_Demux_Event::~CM_Demux_Event(){
 	clusters.clear();
 }
@@ -315,6 +326,7 @@ MG_Event::MG_Event(MG_Detector detector_, vector<vector<double> > strip_ampl_, b
 vector<MG_Cluster> MG_Event::get_clusters() const{
 	return clusters;
 }
+
 void MG_Event::MultiCluster(){
 	clusters.clear();
 	//first loop : find channels with signal and store them with their caracteristics
@@ -356,19 +368,19 @@ void MG_Event::MultiCluster(){
 		pair<int,int> biggest_current_cluster(0,-1);
 		vector<int> current_used_channel;
 		for(int i=0;i<n;i++){
-			if(channelOverThreshold.count(MG_Detector::StripToChannel(i))>0 && find(global_used_channel.begin(),global_used_channel.end(),MG_Detector::StripToChannel(i)) == global_used_channel.end()){
+			if(channelOverThreshold.count(MG_Detector::StripToChannel[i])>0 && find(global_used_channel.begin(),global_used_channel.end(),MG_Detector::StripToChannel[i]) == global_used_channel.end()){
 				pair<int,int> current_cluster(i,i);
 				vector<int> used_channel;
-				used_channel.push_back(MG_Detector::StripToChannel(i));
+				used_channel.push_back(MG_Detector::StripToChannel[i]);
 				map<int,int> hole_channel;
 				for(int j=i+1;j<n;j++){
-					if(/*find(used_channel.begin(),used_channel.end(),MG_Detector::StripToChannel(j)) == used_channel.end() &&*/ find(global_used_channel.begin(),global_used_channel.end(),MG_Detector::StripToChannel(j)) == global_used_channel.end() /*&& !(hole_channel.count(MG_Detector::StripToChannel(j))>0)*/){
-						if(channelOverThreshold.count(MG_Detector::StripToChannel(j))>0){
+					if(/*find(used_channel.begin(),used_channel.end(),MG_Detector::StripToChannel[j]) == used_channel.end() &&*/ find(global_used_channel.begin(),global_used_channel.end(),MG_Detector::StripToChannel[j]) == global_used_channel.end() /*&& !(hole_channel.count(MG_Detector::StripToChannel[j])>0)*/){
+						if(channelOverThreshold.count(MG_Detector::StripToChannel[j])>0){
 							current_cluster.second = j;
-							used_channel.push_back(MG_Detector::StripToChannel(j));
+							used_channel.push_back(MG_Detector::StripToChannel[j]);
 						}
 						else if(hole_channel.size()<max_hole_size){
-							hole_channel.insert(pair<int,int>(MG_Detector::StripToChannel(j),j));
+							hole_channel.insert(pair<int,int>(MG_Detector::StripToChannel[j],j));
 						}
 						else break;
 					}		
@@ -414,8 +426,8 @@ void MG_Event::MultiCluster(){
 		double ClusT = 0;
 		double ClusTOT = 0;
 		for(int j = cluster_list[i].first;j<((cluster_list[i].second)+1);j++){
-			StripInfo current_strip = allChannels[MG_Detector::StripToChannel(j)];
-			double effective_ampl = current_strip.MaxAmpl/count(global_used_channel.begin(),global_used_channel.end(),MG_Detector::StripToChannel(j));
+			StripInfo current_strip = allChannels[MG_Detector::StripToChannel[j]];
+			double effective_ampl = current_strip.MaxAmpl/count(global_used_channel.begin(),global_used_channel.end(),MG_Detector::StripToChannel[j]);
 			ClusPos = (ClusPos*ClusAmpl + j*effective_ampl)/(ClusAmpl + effective_ampl);
 			ClusAmpl += effective_ampl;
 			if(effective_ampl>ClusMaxStripAmpl){
@@ -427,7 +439,7 @@ void MG_Event::MultiCluster(){
 			}
 			if(current_strip.TOT>ClusTOT) ClusTOT = current_strip.TOT;
 			SRFgraph->SetPoint(graph_point_n,j,effective_ampl);
-			SRFgraph->SetPointError(graph_point_n,0.5*500./1024.,detector.get_RMS(MG_Detector::StripToChannel(j)));
+			SRFgraph->SetPointError(graph_point_n,0.5*500./1024.,detector.get_RMS(MG_Detector::StripToChannel[j]));
 			graph_point_n++;
 		}
 
@@ -437,7 +449,7 @@ void MG_Event::MultiCluster(){
 				double y_current = -1;
 				SRFgraph->GetPoint(iPoint,x_current,y_current);
 				y_current /= ClusMaxStripAmpl;
-				//y_current = strip_ampl[MG_Detector::StripToChannel(static_cast<int>(x_current))][static_cast<int>(ClusMaxSample)]/ClusMaxStripAmpl;
+				//y_current = strip_ampl[MG_Detector::StripToChannel[static_cast<int>(x_current)]][static_cast<int>(ClusMaxSample)]/ClusMaxStripAmpl;
 				SRFgraph->SetPoint(iPoint,x_current,y_current);
 				SRFgraph->SetPointError(iPoint,500./1024.,(SRFgraph->GetEY())[iPoint]/ClusMaxStripAmpl);
 			}
@@ -508,10 +520,10 @@ void MG_Event::HoughCluster(){
 	vector<pair<int,int> > cluster_list;
 	int k = 0;
 	while(k<n){
-		if(channelOverThreshold.count(MG_Detector::StripToChannel(k))>0){
+		if(channelOverThreshold.count(MG_Detector::StripToChannel[k])>0){
 			pair<int,int> current_cluster(k,k);
 			for(int j=k+1;j<n;j++){
-				if(channelOverThreshold.count(MG_Detector::StripToChannel(j))>0){
+				if(channelOverThreshold.count(MG_Detector::StripToChannel[j])>0){
 					current_cluster.second = j;
 				}
 				else break;
@@ -537,7 +549,7 @@ void MG_Event::HoughCluster(){
 		double ClusT = 0;
 		double ClusTOT = 0;
 		for(int j = cluster_list[i].first;j<((cluster_list[i].second)+1);j++){
-			StripInfo current_strip = allChannels[MG_Detector::StripToChannel(j)];
+			StripInfo current_strip = allChannels[MG_Detector::StripToChannel[j]];
 			double effective_ampl = current_strip.MaxAmpl;
 			ClusPos = (ClusPos*ClusAmpl + j*effective_ampl)/(ClusAmpl + effective_ampl);
 			ClusAmpl += effective_ampl;
@@ -550,7 +562,7 @@ void MG_Event::HoughCluster(){
 			}
 			if(current_strip.TOT>ClusTOT) ClusTOT = current_strip.TOT;
 			SRFgraph->SetPoint(graph_point_n,j,effective_ampl);
-			SRFgraph->SetPointError(graph_point_n,0.5*500./1024.,detector.get_RMS(MG_Detector::StripToChannel(j)));
+			SRFgraph->SetPointError(graph_point_n,0.5*500./1024.,detector.get_RMS(MG_Detector::StripToChannel[j]));
 			graph_point_n++;
 		}
 
@@ -560,7 +572,7 @@ void MG_Event::HoughCluster(){
 				double y_current = -1;
 				SRFgraph->GetPoint(iPoint,x_current,y_current);
 				y_current /= ClusMaxStripAmpl;
-				//y_current = strip_ampl[MG_Detector::StripToChannel(static_cast<int>(x_current))][static_cast<int>(ClusMaxSample)]/ClusMaxStripAmpl;
+				//y_current = strip_ampl[MG_Detector::StripToChannel[static_cast<int>(x_current)]][static_cast<int>(ClusMaxSample)]/ClusMaxStripAmpl;
 				SRFgraph->SetPoint(iPoint,x_current,y_current);
 				SRFgraph->SetPointError(iPoint,500./1024.,(SRFgraph->GetEY())[iPoint]/ClusMaxStripAmpl);
 			}
@@ -617,12 +629,19 @@ TH1D MG_Event::get_ampl_hist() const{
 		if(it->second>1023) it->second = 1023;
 		for(int strip=it->first;strip<=it->second;strip++){
 			if(is_used[strip]) continue;
-			int channel = MG_Detector::StripToChannel(strip);
+			int channel = MG_Detector::StripToChannel[strip];
 			histo.Fill(strip,*max_element(strip_ampl[channel].begin(),strip_ampl[channel].end()));
 			is_used[strip] = true;
 		}
 	}
 	return histo;
+}
+void MG_Event::do_cuts(){
+	vector<MG_Cluster>::iterator clus_it = clusters.begin();
+	while(clus_it!= clusters.end()){
+		if(clus_it->is_suitable(&detector)) ++clus_it;
+		else clus_it = clusters.erase(clus_it);
+	}
 }
 MG_Event::~MG_Event(){
 	clusters.clear();
