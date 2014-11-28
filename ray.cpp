@@ -120,15 +120,15 @@ void Ray_2D::process(){
 	}
 	if(!(has_up && has_down)) return;
 	pos->Sort();
-	TF1 * line = new TF1("line","[0]*x+[1]",minZ-10,maxZ+10);
+	TF1 * line = new TF1("line","pol1",minZ-10,maxZ+10);
 	double maxSlope = 500./(maxZ-minZ);
 	line->SetParameters(0,250);
 	line->SetParLimits(1,0,500);
 	line->SetParLimits(0,-maxSlope,maxSlope);
 	pos->Fit(line,"QN");
 	chiSquare = line->GetChisquare();
-	Z_intercept = line->GetParameter(1);
-	slope = line->GetParameter(0);
+	Z_intercept = line->GetParameter(0);
+	slope = line->GetParameter(1);
 	if(line->Eval(1398.)>600. || line->Eval(1398.)<-100. || line->Eval(27.)>600. || line->Eval(27.)<-100.) chiSquare = numeric_limits<double>::max();
 	delete pos; delete line;
 }
