@@ -35,13 +35,12 @@ class liveDisplay: public CosmicBench{
 		string current_file;
 		map<int,string> det_type_by_asic;
 		map<int,int> det_n_by_asic;
-		int MG_N;
-		int CM_N;
 		bool use_srf;
 		string data_file_basename;
 		long max_file_size;
-		float (*Pedestal_MG)[61];
-		float (*Pedestal_CM)[64];
+		map<string,vector<vector<float> > > Pedestal;
+		//float (*Pedestal_MG)[61];
+		//float (*Pedestal_CM)[64];
 };
 
 #endif

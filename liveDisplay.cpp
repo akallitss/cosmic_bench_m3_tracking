@@ -12,6 +12,7 @@
 #include <sstream>
 #include <iomanip>
 #include <iostream>
+#include <time.h>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -19,6 +20,7 @@
 
 #include <TH2D.h>
 #include <TCanvas.h>
+#include <TStyle.h>
 
 using std::string;
 using std::ifstream;
@@ -28,6 +30,7 @@ using std::setfill;
 using std::cout;
 using std::endl;
 using std::flush;
+using std::bitset;
 
 using boost::property_tree::ptree;
 
@@ -122,8 +125,9 @@ liveDisplay::liveDisplay(string config_file, int max_event_){
 	electronic_type = config_tree.get<string>("electronic_type");
 	data_file_basename = config_tree.get<string>("data_file_basename");
 	ifstream pedFile((config_tree.get<string>("Ped")).c_str());
-	Pedestal_CM = new float[CM_N][Nstrip_CM];
-	Pedestal_MG = new float[MG_N][Nstrip_MG];
+	/*
+	Pedestal_CM = new float[CM_N][DataReader::Nstrip_CM];
+	Pedestal_MG = new float[MG_N][DataReader::Nstrip_MG];
 	for(int i=0;i<CM_N;i++){
 		for(int j=0;j<DataReader::Nstrip_CM;j++){
 			pedFile >> i >> j >> Pedestal_CM[i][j];
@@ -132,6 +136,19 @@ liveDisplay::liveDisplay(string config_file, int max_event_){
 	for(int i=0;i<MG_N;i++){
 		for(int j=0;j<DataReader::Nstrip_MG;j++){
 			pedFile >> i >> j >> Pedestal_MG[i][j];
+		}
+	}
+	*/
+	Pedestal["CM"] = vector<vector<float> >(CM_N,vector<float>(DataReader::Nstrip_CM,0));
+	Pedestal["MG"] = vector<vector<float> >(MG_N,vector<float>(DataReader::Nstrip_MG,0));
+	for(int i=0;i<CM_N;i++){
+		for(int j=0;j<DataReader::Nstrip_CM;j++){
+			pedFile >> i >> j >> Pedestal["CM"][i][j];
+		}
+	}
+	for(int i=0;i<MG_N;i++){
+		for(int j=0;j<DataReader::Nstrip_MG;j++){
+			pedFile >> i >> j >> Pedestal["MG"][i][j];
 		}
 	}
 	pedFile.close();
@@ -196,6 +213,7 @@ unsigned int liveDisplay::read_inotify(){
 }
 
 void liveDisplay::flux_map(double z){
+	gStyle->SetPalette(55,0);
 	TCanvas * cDisplay = new TCanvas();
 	int bin_n = 1000;
 	double margin = 200;
@@ -203,8 +221,16 @@ void liveDisplay::flux_map(double z){
 	double x_max = 500;
 	double y_min = 0;
 	double y_max = 500;
-	int detector_div_MG = 2;
-	int detector_div_CM = 2;
+	map<string,int> detector_div;
+	detector_div["CM"] = 2;
+	detector_div["MG"] = 2;
+	map<string,int> Nstrip;
+	Nstrip["CM"] = DataReader::Nstrip_CM;
+	Nstrip["MG"] = DataReader::Nstrip_MG;
+	int eventReconstructed = 0;
+	int eventSuitable = 0;
+	int processed = 0;
+	clock_t last_time = clock();
 	TH2D * flux_map = new TH2D("flux_map","flux_map",bin_n,x_min-margin,x_max+margin,bin_n,y_min-margin,y_max+margin);
 	DataReader * current_data_reader = NULL;
 	int event_nb = 0;
@@ -215,17 +241,23 @@ void liveDisplay::flux_map(double z){
 	else if(electronic_type == "dream"){
 		current_data_reader = new DreamDataReader("live",det_type_by_asic,det_n_by_asic);
 	}
-	for(vector<string>::iterator filename_it = filenames.begin(),filename_it!=filenames.end();++filename_it){
+	else return;
+	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
+	for(vector<string>::iterator filename_it = filenames.begin();filename_it!=filenames.end();++filename_it){
+		cout << *filename_it << endl;
 		ifstream data_file(filename_it->c_str(),ifstream::binary);
 		start_inotify(*filename_it);
 		bool is_open = true;
 		int current_pos = data_file.tellg();
 		while(is_open){
 			current_pos = data_file.tellg();
+			data_file.seekg(0,data_file.end);
+			bool is_complete = !(data_file.tellg()<max_file_size);
+			data_file.seekg(current_pos);
 			unsigned int read_mask = 0x00000000;
-			if(current_pos<max_file_size) read_mask = read_inotify();
-			else read_mask = IN_MODIFY & IN_CLOSE;
-			if(read_mask & IN_CLOSE) is_open = false;
+			if(!(current_pos>=max_file_size || is_complete)) read_mask = read_inotify();
+			else read_mask = IN_MODIFY | IN_CLOSE;
+			if((read_mask & IN_CLOSE) || is_complete) is_open = false;
 			if(!(read_mask & IN_MODIFY)) continue;
 			while(data_file.good()){
 				map<string,vector<vector<vector<double> > > > event_ampl = current_data_reader->read_event(&data_file,event_nb);
@@ -233,6 +265,7 @@ void liveDisplay::flux_map(double z){
 					data_file.seekg(current_pos);
 					break;
 				}
+				event_nb++;
 				/*
 				//pedestal sub
 				for(unsigned int i=0;i<MG_N;i++){
@@ -286,6 +319,7 @@ void liveDisplay::flux_map(double z){
 				}
 				*/
 				//Ped + CMN sub
+				/*
 				for(int i=0;i<MG_N;i++){
 					for(int k=0;k<DataReader::Nsample;k++){
 						for(int det_div=0;det_div<detector_div_MG;det_div++){
@@ -320,22 +354,70 @@ void liveDisplay::flux_map(double z){
 						}
 					}
 				}
+				*/
+				map<string,vector<vector<float> > >::iterator ped_it = Pedestal.begin();
+				for(map<string,vector<vector<vector<double> > > >::iterator it = event_ampl.begin();it!=event_ampl.end();++it){
+					vector<vector<float> >::iterator ped_jt = (ped_it->second).begin();
+					for(vector<vector<vector<double> > >::iterator jt = (it->second).begin();jt!=(it->second).end();++jt){
+						for(int k=0;k<DataReader::Nsample;k++){
+							for(int det_div=0;det_div<detector_div[it->first];det_div++){
+								int strip_nb = Nstrip[it->first]/detector_div[it->first] + Nstrip[it->first]%detector_div[it->first];
+								int strip_offset = det_div*strip_nb;
+								vector<float> current_sample(strip_nb,0);
+								for(int j=0;(j<strip_nb && (j+strip_offset)<Nstrip[it->first]);j++){
+									current_sample[j] = (*jt)[j+strip_offset][k] - (*ped_jt)[j+strip_offset];
+								}
+								sort(current_sample.begin(),current_sample.end());
+								float median = current_sample[strip_nb/2];
+								for(int j=0;(j<strip_nb && (j+strip_offset)<Nstrip[it->first]);j++){
+									(*jt)[j+strip_offset][k] -= median + (*ped_jt)[j+strip_offset];
+								}
+							}
+						}
+						++ped_jt;
+					}
+					++ped_it;
+				}
 				vector<Event*> events;
-
 				for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
 					if((*it)->get_type() == "MG"){
 						MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
 						events.push_back(new MG_Event(*current_det,event_ampl["MG"][current_det->get_mg_n_in_tree()],use_srf,event_nb));
 						(events.back())->MultiCluster();
+						(events.back())->do_cuts();
 					}
 					else if((*it)->get_type() == "CM"){
 						CM_Detector * current_det = dynamic_cast<CM_Detector*>(*it);
 						events.push_back(new CM_Event(*current_det,event_ampl["CM"][current_det->get_cm_n_in_tree()],use_srf,event_nb));
 						(events.back())->MultiCluster();
+						(events.back())->do_cuts();
 					}
 				}
-				CosmicBenchEvent current_full_event(this,events);
+				CosmicBenchEvent * current_full_event = new CosmicBenchEvent(this,events);
+				vector<Ray> currentRays = current_full_event->get_absorption_rays();
+				eventReconstructed+=currentRays.size();
+				eventSuitable+=current_full_event->get_clus_N()/(CM_N+MG_N);
+				delete current_full_event;
+				for(vector<Event*>::iterator it = events.begin();it!=events.end();++it){
+					delete *it;
+				}
+				processed++;
+				for(vector<Ray>::iterator it=currentRays.begin();it!=currentRays.end();++it){
+					if(it->get_chiSquare_X()>-1 && it->get_chiSquare_Y()>-1){
+						flux_map->Fill(it->eval_X(z),it->eval_Y(z));
+					}
+				}
+				if((static_cast<float>(clock()-last_time)/CLOCKS_PER_SEC) >1.){
+					last_time = clock();
+					cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << eventSuitable << "|" << setw(20) << processed << flush;
+					cDisplay->cd();
+					flux_map->Draw("colz");
+					cDisplay->Modified();
+					cDisplay->Update();
+				}
 			}
 		}
+		cout << endl;
 	}
+	delete current_data_reader;
 }
