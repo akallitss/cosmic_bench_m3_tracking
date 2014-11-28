@@ -16,16 +16,16 @@ using std::ifstream;
 class DataReader{
 	public:
 		DataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
-		~DataReader();
+		virtual ~DataReader();
 		void add_file_to_process(string inFileName);
 		virtual void process() = 0;
 		void compute_ped();
 		void do_ped_sub(string ped_file = "");
 		void do_common_noise_sub();
 		void compute_RMSPed();
-		static const int Nsample;
-		static const int Nstrip_MG;
-		static const int Nstrip_CM;
+		static const int Nsample = 32;
+		static const int Nstrip_MG = 61;
+		static const int Nstrip_CM = 64;
 		virtual map<string,vector<vector<vector<double> > > > read_event(ifstream * file,int event_nb, bool fill_tree = true) = 0;
 	protected:
 		void read_ped(string ped_file = "");

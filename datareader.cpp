@@ -32,9 +32,9 @@ using std::ostringstream;
 
 using TMath::Min;
 
-const int DataReader::Nsample = 32;
-const int DataReader::Nstrip_MG = 61;
-const int DataReader::Nstrip_CM = 64;
+//const int DataReader::Nsample = 32;
+//const int DataReader::Nstrip_MG = 61;
+//const int DataReader::Nstrip_CM = 64;
 
 DataReader::DataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_){
 	exists = exists_;
@@ -135,6 +135,18 @@ DataReader::DataReader(string baseFileName, map<int,string> det_type_by_asic_, m
 	dumb_branch = new TBranch();
 }
 DataReader::~DataReader(){
+	if(MG_N>0){
+		delete StripAmpl_MG;
+		delete StripAmpl_MG_ped;
+		delete StripAmpl_MG_corr;
+		delete Pedestal_MG;
+	}
+	if(CM_N>0){
+		delete StripAmpl_CM;
+		delete StripAmpl_CM_ped;
+		delete StripAmpl_CM_corr;
+		delete Pedestal_CM;
+	}
 	delete dumb_branch;
 	outFile->Close();
 	delete outFile;
