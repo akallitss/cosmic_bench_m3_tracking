@@ -82,8 +82,8 @@ int main(int argc, char ** argv){
 	for(int i=first_data_file;i<last_data_file;i++){
 		ostringstream dataFileName;
 		dataFileName << data_file_basename << setw(3) << setfill('0') << i;
-		if(electronic_type == "dream") dataFileName << ".aqs";
-		else if(electronic_type == "feminos") dataFileName << ".fdf";
+		if(electronic_type == "dream") dataFileName << ".fdf";
+		else if(electronic_type == "feminos") dataFileName << ".aqs";
 		else dataFileName << ".txt";
 		blah->add_file_to_process(dataFileName.str());
 	}
