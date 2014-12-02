@@ -118,13 +118,17 @@ void Ray_2D::process(){
 		if((*it)->get_is_up()) has_up = true;
 		else has_down = true;
 	}
-	if(!(has_up && has_down)) return;
+	if(!(has_up && has_down)){
+		delete pos;
+		return;
+	}
 	pos->Sort();
-	TF1 * line = new TF1("line","pol1",minZ-10,maxZ+10);
+	//TF1 * line = new TF1("line","pol1",minZ-10,maxZ+10);
+	TF1 * line = new TF1("line","[0] + [1]*x",minZ-10,maxZ+10);
 	double maxSlope = 500./(maxZ-minZ);
-	line->SetParameters(0,250);
-	line->SetParLimits(1,0,500);
-	line->SetParLimits(0,-maxSlope,maxSlope);
+	line->SetParameters(250,0);
+	line->SetParLimits(0,0,500);
+	line->SetParLimits(1,-maxSlope,maxSlope);
 	pos->Fit(line,"QN");
 	chiSquare = line->GetChisquare();
 	Z_intercept = line->GetParameter(0);
@@ -164,7 +168,10 @@ double Ray_2D::get_residu(Detector * det) const{
 			is_in_ray = true;
 		}
 	}
-	if(!is_in_ray) return numeric_limits<double>::min();
+	if(!is_in_ray){
+		delete pos;
+		return numeric_limits<double>::min();
+	}
 	TF1 * line = new TF1("line","[0]*x+[1]",minZ-10,maxZ+10);
 	double maxSlope = 500./(maxZ-minZ);
 	line->SetParameters(0,250);
