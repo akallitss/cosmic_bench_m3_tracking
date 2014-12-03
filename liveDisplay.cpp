@@ -233,7 +233,7 @@ void liveDisplay::flux_map(double z){
 	int eventReconstructed = 0;
 	int eventSuitable = 0;
 	int processed = 0;
-	clock_t last_time = clock();
+	time_t last_time = time(NULL);
 	TH2D * flux_map = new TH2D("flux_map","flux_map",bin_n,x_min-margin,x_max+margin,bin_n,y_min-margin,y_max+margin);
 	flux_map->SetStats(0);
 	TPaveText * stat_text = new TPaveText(0,0,1,1);
@@ -258,16 +258,18 @@ void liveDisplay::flux_map(double z){
 			current_pos = data_file.tellg();
 			data_file.seekg(0,data_file.end);
 			bool is_complete = !(data_file.tellg()<max_file_size);
-			data_file.seekg(current_pos);
+			data_file.seekg(current_pos, data_file.beg);
 			unsigned int read_mask = 0x00000000;
 			if(!(current_pos>=max_file_size || is_complete)) read_mask = read_inotify();
 			else read_mask = IN_MODIFY | IN_CLOSE;
 			if((read_mask & IN_CLOSE) || is_complete) is_open = false;
 			if(!(read_mask & IN_MODIFY)) continue;
 			while(data_file.good()){
+				current_pos = data_file.tellg();
 				map<string,vector<vector<vector<double> > > > event_ampl = current_data_reader->read_event(&data_file,event_nb);
 				if(event_ampl.size()==0){
-					data_file.seekg(current_pos);
+					data_file.clear();
+					data_file.seekg(current_pos, data_file.beg);
 					break;
 				}
 				event_nb++;
@@ -408,7 +410,7 @@ void liveDisplay::flux_map(double z){
 						flux_map->Fill(it->eval_X(z),it->eval_Y(z));
 					}
 				}
-				if((static_cast<float>(clock()-last_time)/CLOCKS_PER_SEC) >1.){
+				if((time(NULL)-last_time) > 0){
 					current_full_event->EventDisplay(cDisplay);
 					cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << eventSuitable << "|" << setw(20) << processed << flush;
 					cMap->cd();
@@ -431,7 +433,7 @@ void liveDisplay::flux_map(double z){
 					stat_text->Draw();
 					cStats->Modified();
 					cStats->Update();
-					last_time = clock();
+					last_time = time(NULL);
 				}
 				delete current_full_event;
 				for(vector<Event*>::iterator it = events.begin();it!=events.end();++it){
