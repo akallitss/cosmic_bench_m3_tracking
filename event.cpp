@@ -630,7 +630,7 @@ TH1D MG_Event::get_ampl_hist() const{
 		for(int strip=it->first;strip<=it->second;strip++){
 			if(is_used[strip]) continue;
 			int channel = MG_Detector::StripToChannel[strip];
-			histo.Fill(strip,*max_element(strip_ampl[channel].begin(),strip_ampl[channel].end()));
+			histo.Fill(strip*MG_Detector::StripPitch,*max_element(strip_ampl[channel].begin(),strip_ampl[channel].end()));
 			is_used[strip] = true;
 		}
 	}
@@ -995,6 +995,7 @@ vector<Ray> CosmicBenchEvent::get_absorption_rays(){
 			sizes[it->first][jt->first] = (jt->second).size();
 		}
 		//find the biggest number of good clusters combinaisons
+		// you can adjust the size to require more or less hit
 		while(b && (it->second).size()>1){
 			b = false;
 			//find best combinaison of clusters
@@ -1006,9 +1007,18 @@ vector<Ray> CosmicBenchEvent::get_absorption_rays(){
 			for(vector<map<double,int> >::iterator kt = comb.begin();kt!=comb.end();++kt){
 				//try a comb
 				Ray_2D currentRay = Ray_2D(coord);
+				/*
+				bool has_up = false;
+				bool has_down = false;
+				*/
 				for(map<double,vector<Cluster*> >::iterator nt = (it->second).begin();nt!= (it->second).end();++nt){
 					currentRay.add_cluster(nt->second[(*kt)[nt->first]]);
+					/*
+					if(nt->second[(*kt)[nt->first]]->get_is_up()) has_up = true;
+					else has_down = true;
+					*/
 				}
+				//if(!(has_up && has_down)) continue;
 				currentRay.process();
 				/*double sigma = currentRay.get_t_sigma();*/
 				if(currentRay.get_chiSquare()<current_chiSquare/*sigma<current_chiSquare*/ && currentRay.get_chiSquare()>-1){
@@ -1024,7 +1034,11 @@ vector<Ray> CosmicBenchEvent::get_absorption_rays(){
 					delete (it->second)[kt->first][kt->second];
 					(it->second)[kt->first].erase((it->second)[kt->first].begin()+kt->second);
 					sizes[it->first][kt->first]--;
-					if(sizes[it->first][kt->first]<1) b = false;
+					if(sizes[it->first][kt->first]<1){
+						//b = false;
+						(it->second).erase((it->second).find(kt->first));
+						sizes[it->first].erase(sizes[it->first].find(kt->first))
+					}
 				}
 			}
 		}
@@ -1047,9 +1061,9 @@ vector<Ray> CosmicBenchEvent::get_absorption_rays(){
 	}
 	return returnRays;
 }
-void CosmicBenchEvent::EventDisplay(){
+void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 	gStyle->SetOptStat(false);
-	double chisquare_threshold = 10000;
+	double chisquare_threshold = 10000000000;
 	int detector_color = 1;
 	int ray_color = 2;
 	int pos_color = 3;
@@ -1103,11 +1117,11 @@ void CosmicBenchEvent::EventDisplay(){
 	}
 	double scale_factor = 1;
 	for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
-		cout << map_it->first << " : " << map_it->second->GetMaximum() << endl;
+		//cout << map_it->first << " : " << map_it->second->GetMaximum() << endl;
 		if(map_it->second->GetMaximum()>scale_factor) scale_factor = map_it->second->GetMaximum();
 	}
 	for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
-		cout << map_it->first << " : " << map_it->second->GetMaximum() << endl;
+		//cout << map_it->first << " : " << map_it->second->GetMaximum() << endl;
 		if(map_it->second->GetMaximum()>scale_factor) scale_factor = map_it->second->GetMaximum();
 	}
 	double scale = 1.1;
@@ -1115,7 +1129,7 @@ void CosmicBenchEvent::EventDisplay(){
 	scale_factor = min_dist/scale_factor;
 	for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
 		//map_it->second->Scale(scale_factor);
-		map_it->second->Scale(min_dist/(scale*map_it->second->GetMaximum()));
+		if(map_it->second->GetMaximum() > 0) map_it->second->Scale(min_dist/(scale*map_it->second->GetMaximum()));
 		TF1 * offset = new TF1("offset","[0]",0,500);
 		offset->SetParameter(0,map_it->first);
 		map_it->second->Add(offset);
@@ -1123,7 +1137,7 @@ void CosmicBenchEvent::EventDisplay(){
 	}
 	for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
 		//map_it->second->Scale(scale_factor);
-		map_it->second->Scale(min_dist/(scale*map_it->second->GetMaximum()));
+		if(map_it->second->GetMaximum() > 0) map_it->second->Scale(min_dist/(scale*map_it->second->GetMaximum()));
 		TF1 * offset = new TF1("offset","[0]",0,500);
 		offset->SetParameter(0,map_it->first);
 		map_it->second->Add(offset);
@@ -1175,7 +1189,11 @@ void CosmicBenchEvent::EventDisplay(){
 	bg_Y->Fill(0.,min_z);
 	bg_Y->Fill(500.,max_z);
 	bg_Y->SetAxisRange(min_z,max_z,"Y");
-	TCanvas * cDisplay = new TCanvas();
+	TCanvas * cDisplay = NULL;
+	bool is_null = (c1==0);
+	if(is_null) cDisplay = new TCanvas();
+	else cDisplay = c1;
+	cDisplay->Clear();
 	cDisplay->Divide(2);
 	cDisplay->cd(1);
 	bg_X->Draw("AXIS");
@@ -1207,4 +1225,31 @@ void CosmicBenchEvent::EventDisplay(){
 	}
 	cDisplay->Modified();
 	cDisplay->Update();
+	if(!is_null){
+		delete bg_X; delete bg_Y;
+		for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
+			delete map_it->second;
+		}
+		for(vector<TLine*>::iterator line_it = clus_X.begin();line_it!=clus_X.end();++line_it){
+			delete (*line_it);
+		}
+		for(vector<TLine*>::iterator line_it = rays_X.begin();line_it!=rays_X.end();++line_it){
+			delete (*line_it);
+		}
+		for(vector<TLine*>::iterator line_it = det_X.begin();line_it!=det_X.end();++line_it){
+			delete (*line_it);
+		}
+		for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
+			delete map_it->second;
+		}
+		for(vector<TLine*>::iterator line_it = clus_Y.begin();line_it!=clus_Y.end();++line_it){
+			delete (*line_it);
+		}
+		for(vector<TLine*>::iterator line_it = rays_Y.begin();line_it!=rays_Y.end();++line_it){
+			delete (*line_it);
+		}
+		for(vector<TLine*>::iterator line_it = det_Y.begin();line_it!=det_Y.end();++line_it){
+			delete (*line_it);
+		}
+	}
 }

@@ -21,6 +21,7 @@
 #include <TH2D.h>
 #include <TCanvas.h>
 #include <TStyle.h>
+#include <TPaveText.h>
 
 using std::string;
 using std::ifstream;
@@ -214,7 +215,9 @@ unsigned int liveDisplay::read_inotify(){
 
 void liveDisplay::flux_map(double z){
 	gStyle->SetPalette(55,0);
-	TCanvas * cDisplay = new TCanvas();
+	TCanvas * cMap = new TCanvas("flux_map");
+	TCanvas * cDisplay = new TCanvas("event_display");
+	TCanvas * cStats = new TCanvas("stats");
 	int bin_n = 100;
 	double margin = 200;
 	double x_min = 0;
@@ -233,6 +236,7 @@ void liveDisplay::flux_map(double z){
 	clock_t last_time = clock();
 	TH2D * flux_map = new TH2D("flux_map","flux_map",bin_n,x_min-margin,x_max+margin,bin_n,y_min-margin,y_max+margin);
 	flux_map->SetStats(0);
+	TPaveText * stat_text = new TPaveText(0,0,1,1);
 	DataReader * current_data_reader = NULL;
 	int event_nb = 0;
 	if(electronic_type == "feminos"){
@@ -398,10 +402,6 @@ void liveDisplay::flux_map(double z){
 				vector<Ray> currentRays = current_full_event->get_absorption_rays();
 				eventReconstructed+=currentRays.size();
 				eventSuitable+=current_full_event->get_clus_N()/(CM_N+MG_N);
-				delete current_full_event;
-				for(vector<Event*>::iterator it = events.begin();it!=events.end();++it){
-					delete *it;
-				}
 				processed++;
 				for(vector<Ray>::iterator it=currentRays.begin();it!=currentRays.end();++it){
 					if(it->get_chiSquare_X()>-1 && it->get_chiSquare_Y()>-1){
@@ -409,12 +409,33 @@ void liveDisplay::flux_map(double z){
 					}
 				}
 				if((static_cast<float>(clock()-last_time)/CLOCKS_PER_SEC) >1.){
-					last_time = clock();
+					current_full_event->EventDisplay(cDisplay);
 					cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << eventSuitable << "|" << setw(20) << processed << flush;
-					cDisplay->cd();
+					cMap->cd();
 					flux_map->Draw("colz");
-					cDisplay->Modified();
-					cDisplay->Update();
+					cMap->Modified();
+					cMap->Update();
+					stat_text->Clear();
+					ostringstream text;
+					text << "processed events : " << processed;
+					stat_text->AddText(text.str().c_str());
+					/*
+					text.str("");
+					text << "potential tracks : " << eventSuitable;
+					stat_text->AddText(text.str().c_str());
+					*/
+					text.str("");
+					text << "actual tracks : " << eventReconstructed;
+					stat_text->AddText(text.str().c_str());
+					cStats->cd();
+					stat_text->Draw();
+					cStats->Modified();
+					cStats->Update();
+					last_time = clock();
+				}
+				delete current_full_event;
+				for(vector<Event*>::iterator it = events.begin();it!=events.end();++it){
+					delete *it;
 				}
 			}
 		}

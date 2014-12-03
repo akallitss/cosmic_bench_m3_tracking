@@ -9,6 +9,7 @@
 #include "detector.h"
 #include "analyse.h"
 #include <TH1D.h>
+#include <TCanvas.h>
 
 using std::string;
 using std::vector;
@@ -128,7 +129,7 @@ class CosmicBenchEvent{
 		CosmicBenchEvent(CosmicBench * detectors, vector<Event*> events_);
 		~CosmicBenchEvent();
 		void createPairs();
-		void EventDisplay();
+		void EventDisplay(TCanvas * c1 = 0);
 		RayPair get_rayPair(unsigned int i) const;
 		unsigned int get_rayPairs_N() const;
 		unsigned int get_event_N() const;
