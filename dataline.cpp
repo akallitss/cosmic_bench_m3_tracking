@@ -18,6 +18,9 @@ bool DataLineDream::is_final_trailer() const{
 bool DataLineDream::is_first_line() const{
 	return GET_TYPE(data)==3;
 }
+bool DataLineDream::is_final_header() const{
+	return GET_TYPE(data)==2;
+}
 bool DataLineDream::is_data() const{
 	return GET_TYPE(data)==0;
 }

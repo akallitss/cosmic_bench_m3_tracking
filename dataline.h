@@ -10,6 +10,7 @@ class DataLineDream{
 		bool is_first_line() const;
 		bool is_data() const;
 		bool is_channel_ID() const;
+		bool is_final_header() const;
 		int get_channel_ID() const;
 		int get_dream_ID() const;
 		float get_data() const;

@@ -552,6 +552,7 @@ void DreamDataReader::read_file(string file_name,int evn_offset){
 					if(current_data.is_first_line()){
 						iFile.ignore(2*sizeof(current_data));
 						iFile.read((char*)&current_data,sizeof(current_data));
+						cout << current_data<is_final_header() << endl;
 						current_data.ntohs_();
 						asicN = current_data.get_dream_ID();
 						detN = det_n_by_asic[asicN];
