@@ -996,7 +996,7 @@ vector<Ray> CosmicBenchEvent::get_absorption_rays(){
 		}
 		//find the biggest number of good clusters combinaisons
 		// you can adjust the size to require more or less hit
-		while(b && (it->second).size()>1){
+		while(b && (it->second).size()>2){
 			b = false;
 			//find best combinaison of clusters
 			vector<map<double,int> > comb = combinaisons(sizes[it->first]);
@@ -1063,14 +1063,14 @@ vector<Ray> CosmicBenchEvent::get_absorption_rays(){
 }
 void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 	gStyle->SetOptStat(false);
-	double chisquare_threshold = 10000000000;
+	double chisquare_threshold = 100;
 	int detector_color = 1;
 	int ray_color = 2;
 	int pos_color = 3;
 	vector<Ray> eventRays = this->get_absorption_rays();
 	vector<Ray>::iterator rays_it = eventRays.begin();
 	while(rays_it!=eventRays.end()){
-		if((rays_it->get_chiSquare_X()+rays_it->get_chiSquare_Y())>chisquare_threshold){
+		if(((rays_it->get_chiSquare_X()+rays_it->get_chiSquare_Y())/rays_it->get_clus_n())>chisquare_threshold){
 			eventRays.erase(rays_it);
 			rays_it = eventRays.begin();
 		}

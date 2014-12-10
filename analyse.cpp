@@ -478,6 +478,7 @@ void Analyse::Residus_ref_2D(){
 		return;
 	}
 	gStyle->SetPalette(55,0);
+	gStyle->SetNumberContours(512);
 	TCanvas* c_MM;
 	TH2D* muon_seen;
 	TH2D* muon_total;
@@ -486,7 +487,7 @@ void Analyse::Residus_ref_2D(){
 	int nbins = 200;
 	int lim = 500;
 	double marge = 1./10.;
-	int nbins_2D = 200*(1+2*marge);
+	int nbins_2D = 100*(1+2*marge);
 	int eventReconstructed = 0;
 	double eventSuitable = 0;
 	unsigned int nref_x_n = 0;
@@ -894,6 +895,7 @@ void Analyse::Efficacity(){
 TH2D * Analyse::AbsorptionFluxMap(double z, int nbins, TCanvas * c1){
 	int eventReconstructed = 0;
 	int eventSuitable = 0;
+	double chisquare_threshold = 100;
 
 	//gStyle->SetPalette(1);
 	//double z_Pb = 1553;
@@ -912,13 +914,16 @@ TH2D * Analyse::AbsorptionFluxMap(double z, int nbins, TCanvas * c1){
 		fChain->GetEntry(jentry);
 		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
 		vector<Ray> currentRays = currentCBEvent->get_absorption_rays();
+		vector<Ray>::iterator ray_it = currentRays.begin();
+		while(ray_it!= currentRays.end()){
+			if(ray_it->get_chiSquare_X()>-1 && ray_it->get_chiSquare_Y()>-1 && ((ray_it->get_chiSquare_X()+ray_it->get_chiSquare_Y())/ray_it->get_clus_n())<chisquare_threshold) ++ray_it;
+			else ray_it = currentRays.erase(ray_it);
+		}
 		eventReconstructed+=currentRays.size();
 		eventSuitable+=currentCBEvent->get_clus_N()/(CM_N+MG_N);
 		delete currentCBEvent;
 		for(vector<Ray>::iterator it=currentRays.begin();it!=currentRays.end();++it){
-			if(it->get_chiSquare_X()>-1 && it->get_chiSquare_Y()>-1){
-				fluxMapZ->Fill(it->eval_X(z),it->eval_Y(z));
-			}
+			fluxMapZ->Fill(it->eval_X(z),it->eval_Y(z));
 		}
 		if(jentry%500 == 0) cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << eventSuitable << "|" << setw(20) << jentry << flush;
 		if(jentry%5000 == 0){

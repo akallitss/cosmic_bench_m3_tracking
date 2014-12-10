@@ -51,7 +51,7 @@ int main(int argc, char ** argv){
 		}
 		else{
 			float z = atof(argv[3]);
-			blah->AbsorptionFluxMap(z);
+			blah->AbsorptionFluxMap(z,700);
 		}
 	}
 	else if(argv[2] == raypairs){
