@@ -9,8 +9,13 @@ class DataLineDream{
 		bool is_final_trailer() const;
 		bool is_first_line() const;
 		bool is_data() const;
+		bool is_data_zs() const;
 		bool is_channel_ID() const;
-		bool is_final_header() const;
+		bool is_Feu_header() const;
+		bool is_data_header() const;
+		bool get_zs_mode() const;
+		int get_Feu_ID() const;
+		int get_sample_ID() const;
 		int get_channel_ID() const;
 		int get_dream_ID() const;
 		float get_data() const;

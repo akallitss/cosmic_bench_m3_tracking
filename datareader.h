@@ -76,6 +76,7 @@ class DreamDataReader: public DataReader{
 		map<string,vector<vector<vector<double> > > > read_event(ifstream * file,int event_nb, bool fill_tree = true);
 	protected:
 		void read_file(string file_name,int evn_offset);
+		void read_file_2(string file_name,int evn_offset);
 		int mapping(string det_type, int channel);
 };
 

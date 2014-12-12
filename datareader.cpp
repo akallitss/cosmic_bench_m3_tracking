@@ -552,7 +552,6 @@ void DreamDataReader::read_file(string file_name,int evn_offset){
 					if(current_data.is_first_line()){
 						iFile.ignore(2*sizeof(current_data));
 						iFile.read((char*)&current_data,sizeof(current_data));
-						cout << current_data<is_final_header() << endl;
 						current_data.ntohs_();
 						asicN = current_data.get_dream_ID();
 						detN = det_n_by_asic[asicN];
@@ -600,6 +599,132 @@ void DreamDataReader::read_file(string file_name,int evn_offset){
 		if((evNinFile%100) == 0) cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << evNinFile + evn_offset - global_offset << ")" << flush;
 		evNinFile++;
 		Fill();
+	}
+	cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << evNinFile + evn_offset - global_offset << ")" << endl;
+	iFile.close();
+}
+void DreamDataReader::read_file_2(string file_name,int evn_offset){
+	ifstream iFile(file_name.c_str(),ifstream::binary);
+	if(!iFile.is_open()){
+		cout << "file : " << file_name << " can't be opened" << endl;
+		return;
+	}
+	HeaderC current_header;
+	int evNinFile = 0;
+	// Loop on event
+	int isample=-1; int isample_prev=-2;
+	int isample_nb=0;
+	int ichannel=0;
+	int asicN=0;
+	int det=0;
+	int detN=0;
+	int channelN=0;
+	int FeuN=0;
+	int FeuHeaderLine=0;
+	int DataHeaderLine=0;
+	bool zs_mode = false;
+	bool got_channel_id=false;
+	reset_tree_leaf();
+	DataLineDream current_data;
+	iFile.read((char*)&current_data,sizeof(current_data));
+	current_data.ntohs_();
+	while(iFile.good() && evNinFile<26000 && !(((evNinFile + evn_offset - global_offset)>max_event)*(max_event>0))){
+		if(FeuHeaderLine<4 && current_data.is_Feu_header()){
+			if(FeuHeaderLine==0){
+				zs_mode = current_data.get_zs_mode();
+				FeuN = current_data.get_Feu_ID();
+			}
+			else if(FeuHeaderLine==3){
+				isample_prev = isample;
+				isample = current_data.get_sample_ID();
+				if(isample!=isample_prev+1){
+					cout << "problem in sample index" << endl;
+					break;
+				}
+			}
+			FeuHeaderLine++;
+		}
+		else if(FeuHeaderLine>3 && current_data.is_Feu_header()){
+			cout << "problem in Feu header" << endl;
+			break;
+		}
+		else if(DataHeaderLine<4 && current_data.is_data_header()){
+			asicN = current_data.get_dream_ID();
+			det = FeuN*8 + asicN;
+			detN = det_n_by_asic[det];
+			DataHeaderLine++;
+		}
+		else{
+			if(FeuHeaderLine!=3){
+				cout << "problem in Feu header" << endl;
+				break;
+			}
+			if(DataHeaderLine != 0 && DataHeaderLine !=3){
+				cout << "problem in data header" << endl;
+				break;
+			}
+			if(current_data.is_Feu_header() || current_data.is_data_header()){
+				cout << "problem in file" << endl;
+				break;
+			}
+		}
+		if(current_data.is_data() && !zs_mode){
+			channelN = mapping(det_type_by_asic[det],ichannel);
+			if(det_type_by_asic[det] == "MG"){
+				if(channelN>-1 && channelN<Nstrip_MG) StripAmpl_MG[detN][channelN][isample] = current_data.get_data();
+			}
+			else if(det_type_by_asic[det] == "CM"){
+				if(channelN>-1 && channelN<Nstrip_CM) StripAmpl_CM[detN][channelN][isample] = current_data.get_data();
+			}
+			ichannel++;
+		}
+		else if(current_data.is_data_zs() && zs_mode){
+			if(!got_channel_id){
+				ichannel = current_data.get_channel_ID();
+				channelN = mapping(det_type_by_asic[asicN],ichannel);
+				got_channel_id = true;
+			}
+			else{
+				if(det_type_by_asic[det] == "MG"){
+					if(channelN>-1 && channelN<Nstrip_MG) StripAmpl_MG[detN][channelN][isample] = current_data.get_data();
+				}
+				else if(det_type_by_asic[det] == "CM"){
+					if(channelN>-1 && channelN<Nstrip_CM) StripAmpl_CM[detN][channelN][isample] = current_data.get_data();
+				}
+				got_channel_id = false;
+			}
+		}
+		else if(current_data.is_final_trailer()){
+			if(ichannel!=64 && !zs_mode){
+				cout << "problem in channel number" << endl;
+				break;
+			}
+			if(got_channel_id){
+				cout << "problem in ZS data" << endl;
+				break;
+			}
+			isample_nb++;
+			ichannel=0;
+			asicN=0;
+			det=0;
+			detN=0;
+			channelN=0;
+			FeuN=0;
+			FeuHeaderLine=0;
+			DataHeaderLine=0;
+			zs_mode = false;
+			got_channel_id=false;
+			if(isample == Nsample){
+				Nevent = evNinFile+evn_offset;
+				if((evNinFile%100) == 0) cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << evNinFile + evn_offset - global_offset << ")" << flush;
+				evNinFile++;
+				Fill();
+				isample=-1; isample_prev=-2;
+				reset_tree_leaf();
+			}
+		}
+		iFile.read((char*)&current_data,sizeof(current_data));
+		current_data.ntohs_();	
 	}
 	cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << evNinFile + evn_offset - global_offset << ")" << endl;
 	iFile.close();

@@ -1,6 +1,5 @@
 #define dataline_cpp
 #include "dataline.h"
-#include "mygblink.h"
 #include <arpa/inet.h>
 
 DataLineDream::DataLineDream(){
@@ -13,28 +12,43 @@ void DataLineDream::ntohs_(){
 	data = ntohs(data);
 }
 bool DataLineDream::is_final_trailer() const{
-	return GET_TYPE(data)==7;
+	return (((data) & 0x7000)>>12)==7;
 }
 bool DataLineDream::is_first_line() const{
-	return GET_TYPE(data)==3;
+	return (((data) & 0x7000)>>12)==3;
 }
-bool DataLineDream::is_final_header() const{
-	return GET_TYPE(data)==2;
+bool DataLineDream::is_Feu_header() const{
+	return (((data) & 0x7000)>>12)==6;
+}
+bool DataLineDream::is_data_header() const{
+	return (((data) & 0x6000)>>13)==1;
 }
 bool DataLineDream::is_data() const{
-	return GET_TYPE(data)==0;
+	return (((data) & 0x7000)>>12)==0;
+}
+bool DataLineDream::is_data_zs() const{
+	return (((data) & 0x6000)>>13)==0;
 }
 bool DataLineDream::is_channel_ID() const{
-	return GET_TYPE(data)==1;
+	return (((data) & 0x7000)>>12)==1;
+}
+bool DataLineDream::get_zs_mode() const{
+	return (((data) & 0x400)>>10);
+}
+int DataLineDream::get_sample_ID() const{
+	return (((data) & 0xFF8)>>3);
+}
+int DataLineDream::get_Feu_ID() const{
+	return (((data) & 0xFF));
 }
 int DataLineDream::get_dream_ID() const{
-	return GET_DREAMID(data);
+	return (((data) & 0xE00)>>9);
 }
 int DataLineDream::get_channel_ID() const{
-	return GET_CHANNELID(data);
+	return (((data) & 0x3F));
 }
 float DataLineDream::get_data() const{
-	return GET_DATA(data);
+	return (((data) & 0xFFF));
 }
 
 DataLineFeminos::DataLineFeminos(){
