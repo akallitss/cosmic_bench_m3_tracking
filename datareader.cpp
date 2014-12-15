@@ -704,7 +704,7 @@ void DreamDataReader::read_file_2(string file_name,int evn_offset){
 				}
 			}
 			else if(current_data.is_final_trailer()){
-				if(ichannel!=64 && !zs_mode){
+				if(ichannel!=0){
 					cout << "problem in channel number" << endl;
 					break;
 				}
