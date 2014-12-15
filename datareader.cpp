@@ -624,6 +624,7 @@ void DreamDataReader::read_file_2(string file_name,int evn_offset){
 	int DataHeaderLine=0;
 	bool zs_mode = false;
 	bool got_channel_id=false;
+	bool in_data = false;
 	reset_tree_leaf();
 	DataLineDream current_data;
 	iFile.read((char*)&current_data,sizeof(current_data));
@@ -654,7 +655,7 @@ void DreamDataReader::read_file_2(string file_name,int evn_offset){
 			detN = det_n_by_asic[det];
 			DataHeaderLine++;
 		}
-		else{
+		else if(in_data){
 			if(FeuHeaderLine!=3){
 				cout << "problem in Feu header" << endl;
 				break;
@@ -668,6 +669,13 @@ void DreamDataReader::read_file_2(string file_name,int evn_offset){
 				break;
 			}
 		}
+		else{
+			// theoritical empty bit
+			iFile.read((char*)&current_data,sizeof(current_data));
+			current_data.ntohs_();
+			continue;
+		}
+		in_data = true;
 		if(current_data.is_data() && !zs_mode){
 			channelN = mapping(det_type_by_asic[det],ichannel);
 			if(det_type_by_asic[det] == "MG"){
@@ -703,6 +711,7 @@ void DreamDataReader::read_file_2(string file_name,int evn_offset){
 				cout << "problem in ZS data" << endl;
 				break;
 			}
+			in_data = false;
 			isample_nb++;
 			ichannel=0;
 			asicN=0;
