@@ -14,6 +14,9 @@ void DataLineDream::ntohs_(){
 bool DataLineDream::is_final_trailer() const{
 	return (((data) & 0x7000)>>12)==7;
 }
+bool DataLineDream::is_data_trailer() const{
+	return (((data) & 0x6000)>>13)==2;
+}
 bool DataLineDream::is_first_line() const{
 	return (((data) & 0x7000)>>12)==3;
 }

@@ -7,6 +7,7 @@ class DataLineDream{
 		~DataLineDream();
 		void ntohs_();
 		bool is_final_trailer() const;
+		bool is_data_trailer() const;
 		bool is_first_line() const;
 		bool is_data() const;
 		bool is_data_zs() const;
