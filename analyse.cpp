@@ -1745,6 +1745,7 @@ void Analyse::Correlation(){
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
 		CosmicBenchEvent * CBEvent = new CosmicBenchEvent(this,this,false,-1);
+		CBEvent->do_cuts();
 		eventSuitable+=CBEvent->get_clus_N()/(CM_N+MG_N);
 		bool is_single_event = true;
 		for(vector<Detector*>::iterator it=detectors.begin();it!=detectors.end();++it){
@@ -1755,12 +1756,12 @@ void Analyse::Correlation(){
 				double ampl_1 = 0;
 				double t_1 = 0;
 				if((*it)->get_type() == "MG"){
-					MG_Cluster current_cluster = (dynamic_cast<MG_Event*>(*it)).get_clusters().front();
+					MG_Cluster current_cluster = ((dynamic_cast<MG_Event*>(*it))->get_clusters()).front();
 					ampl_1 = current_cluster.get_ampl();
 					t_1 = current_cluster.get_t();
 				}
 				else if((*it)->get_type() == "CM_Demux"){
-					CM_Demux_Cluster current_cluster = (dynamic_cast<CM_Demux_Event*>(*it)).get_clusters().front();
+					CM_Demux_Cluster current_cluster = ((dynamic_cast<CM_Demux_Event*>(*it))->get_clusters()).front();
 					ampl_1 = current_cluster.get_ampl();
 					t_1 = current_cluster.get_t();
 				}
@@ -1770,12 +1771,12 @@ void Analyse::Correlation(){
 					double ampl_2 = 0;
 					double t_2 = 0;
 					if((*it)->get_type() == "MG"){
-						MG_Cluster current_cluster = (dynamic_cast<MG_Event*>(*it)).get_clusters().front();
+						MG_Cluster current_cluster = ((dynamic_cast<MG_Event*>(*it))->get_clusters()).front();
 						ampl_2 = current_cluster.get_ampl();
 						t_2 = current_cluster.get_t();
 					}
 					else if((*it)->get_type() == "CM_Demux"){
-						CM_Demux_Cluster current_cluster = (dynamic_cast<CM_Demux_Event*>(*it)).get_clusters().front();
+						CM_Demux_Cluster current_cluster = ((dynamic_cast<CM_Demux_Event*>(*it))->get_clusters()).front();
 						ampl_2 = current_cluster.get_ampl();
 						t_2 = current_cluster.get_t();
 					}

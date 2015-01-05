@@ -136,6 +136,7 @@ class CosmicBenchEvent{
 		unsigned int get_clus_N() const;
 		unsigned int get_clus_N_by_det(Detector * det) const;
 		void Demux_CM();
+		void do_cuts();
 		vector<Ray> get_absorption_rays();
 		static vector<map<double,int> > combinaisons(map<double,int> sizes);
 		//void MultiCluster();

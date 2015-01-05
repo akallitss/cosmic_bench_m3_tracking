@@ -1253,3 +1253,10 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 		}
 	}
 }
+
+void CosmicBenchEvent::do_cuts(){
+	Demux_CM();
+	for(vector<Event*>::iterator it = events.begin(); it!=events.end(); ++it){
+		(*it)->do_cuts();
+	}
+}
