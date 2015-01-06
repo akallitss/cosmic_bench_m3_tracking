@@ -243,10 +243,12 @@ void Signal::ElecToAnalyse(){
 			Nevent++;
 			event_nb++;
 			event_nb_file++;
-			if(event_nb_file%100 == 0) cout << "\r" << "processing " << name.str() << " : " << event_nb_file << "(total : " << event_nb << ")" << flush;
+			if(event_nb_file%100 == 0) cout << "\r" << "processing " << name.str() << " : " << event_nb_file << " (total : " << event_nb << ")" << flush;
 		}
 		cout << "\r" << "processing " << name.str() << " : " << event_nb_file << "(total : " << event_nb << ")" << endl;
 	}
+	analyseFile->Write();
+	analyseFile->CloseFile();
 }
 
 void Signal::HoughTracking(int event_nb){
