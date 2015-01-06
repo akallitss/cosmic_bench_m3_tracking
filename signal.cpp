@@ -58,8 +58,9 @@ Signal::Signal(string configFilePath){
 	cout << RMSName << endl;
 	CM_n = 0;
 	MG_n = 0;
-	TFile *fIn = new TFile(signalName.c_str(),"READ");
-	TTree * treeIn = (TTree*)(fIn->Get("T"));
+	ifstream fIn_test(signalName.c_str());
+	bool exists = fIn_test.good();
+	fIn_test.close();
 	int total_CM_N = config_tree.get<int>("total_CM_N");
 	int total_MG_N = config_tree.get<int>("total_MG_N");
 	ifstream in;
@@ -114,7 +115,15 @@ Signal::Signal(string configFilePath){
 	CM_N = CM_n;
 	MG_N = MG_n;
 	if(total_CM_N!=0) cout << "warning, CosMultis are not fully supported !" << endl;
-	Init(treeIn,CM_n,MG_n);
+	if(exists){
+		TFile *fIn = new TFile(signalName.c_str(),"READ");
+		TTree * treeIn = (TTree*)(fIn->Get("T"));
+		Init(treeIn,CM_n,MG_n);
+	}
+	else{
+		Init(0,CM_n,MG_n);
+		cout << "Waring, signal file is missing !" << endl;
+	}
 	analyseTree = config_tree.get<string>("Tree");
 	use_srf = config_tree.get<bool>("use_SRF");
 }
@@ -245,7 +254,7 @@ void Signal::ElecToAnalyse(){
 			event_nb_file++;
 			if(event_nb_file%100 == 0) cout << "\r" << "processing " << name.str() << " : " << event_nb_file << " (total : " << event_nb << ")" << flush;
 		}
-		cout << "\r" << "processing " << name.str() << " : " << event_nb_file << "(total : " << event_nb << ")" << endl;
+		cout << "\r" << "processing " << name.str() << " : " << event_nb_file << " (total : " << event_nb << ")" << endl;
 	}
 	analyseFile->Write();
 	analyseFile->CloseFile();

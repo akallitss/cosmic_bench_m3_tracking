@@ -57,6 +57,17 @@ void Tsignal::Init(TTree *tree, int CMN, int MGN)
    // Init() will be called many times when running on PROOF
    // (once per file to be processed).
 
+   if(MGN>0){
+      StripAmpl_MG = new Float_t[MGN][61][32];
+      StripAmpl_MG_ped = new Float_t[MGN][61][32];
+      StripAmpl_MG_corr = new Float_t[MGN][61][32];
+   }
+   if(CMN>0){
+      StripAmpl_CM = new Float_t[CMN][64][32];
+      StripAmpl_CM_ped = new Float_t[CMN][64][32];
+      StripAmpl_CM_corr = new Float_t[CMN][64][32];
+   }
+
    // Set branch addresses and branch pointers
    if (!tree) return;
    fChain = tree;
@@ -66,17 +77,11 @@ void Tsignal::Init(TTree *tree, int CMN, int MGN)
    fChain->SetBranchAddress("Nevent", &Nevent, &b_Nevent);
    fChain->SetBranchAddress("TsampleNum", TsampleNum, &b_TsampleNum);
    if(MGN>0){
-   		StripAmpl_MG = new Float_t[MGN][61][32];
-   		StripAmpl_MG_ped = new Float_t[MGN][61][32];
-   		StripAmpl_MG_corr = new Float_t[MGN][61][32];
 	   fChain->SetBranchAddress("StripAmpl_MG", StripAmpl_MG, &b_StripAmpl_MG);
 	   fChain->SetBranchAddress("StripAmpl_MG_ped", StripAmpl_MG_ped, &b_StripAmpl_MG_ped);
 	   fChain->SetBranchAddress("StripAmpl_MG_corr", StripAmpl_MG_corr, &b_StripAmpl_MG_corr);
 	}
 	if(CMN>0){
-		StripAmpl_CM = new Float_t[CMN][64][32];
-   		StripAmpl_CM_ped = new Float_t[CMN][64][32];
-   		StripAmpl_CM_corr = new Float_t[CMN][64][32];
 	   fChain->SetBranchAddress("StripAmpl_CM", StripAmpl_MG, &b_StripAmpl_MG);
 	   fChain->SetBranchAddress("StripAmpl_CM_ped", StripAmpl_MG_ped, &b_StripAmpl_MG_ped);
 	   fChain->SetBranchAddress("StripAmpl_CM_corr", StripAmpl_MG_corr, &b_StripAmpl_MG_corr);
