@@ -537,7 +537,7 @@ void DreamDataReader::read_file(string file_name,int evn_offset){
 				isample_prev = isample;
 				isample = current_data.get_sample_ID();
 				if(isample!=isample_prev+1){
-					cout << "problem in sample index" << endl;
+					cout << "problem in sample index : " << isample << "; " << isample_prev << endl;
 					break;
 				}
 			}

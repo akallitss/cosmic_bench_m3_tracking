@@ -32,6 +32,7 @@ int main(int argc, char ** argv){
 	string raypairs = "raypairs";
 	string bugtest = "bugtest";
 	string srf = "srf";
+	string correlation = "correlation";
 	string eventdisplay = "eventdisplay";
 	if(argv[2] == efficacity){
 		blah->Efficacity();
@@ -87,6 +88,9 @@ int main(int argc, char ** argv){
 			int i = atoi(argv[3]);
 			blah->EventDisplay(i);
 		}
+	}
+	else if(argv[2] == correlation){
+		blah->Correlation();
 	}
 	else{
 		cout << "function not found" << endl;

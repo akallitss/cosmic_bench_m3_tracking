@@ -1235,14 +1235,18 @@ void Analyse::bugtest(){
 		cout << evn << " : " << endl;
 		CosmicBenchEvent * CBEvent = new CosmicBenchEvent(this,this,false,-1);
 		for(vector<Event*>::iterator it = (CBEvent->events).begin();it!=(CBEvent->events).end();++it){
-			if((*it)->get_type() == "MG")cout << dynamic_cast<MG_Event*>(*it)->get_clusters().front().get_pos() << " | ";
+			if((*it)->get_type() == "MG"){
+				vector<MG_Cluster> current_clusters = dynamic_cast<MG_Event*>(*it)->get_clusters();
+				if(current_clusters.size()>0) cout << setw(10) << current_clusters.front().get_pos() << " | ";
+				else cout << "No Cluster" << " | ";
+			}
 		}
 		cout << endl;
 		delete CBEvent;
 		for(int i=0;i<MG_N-1;i++){
-			cout << MG_ClusPos[i][0] << " | ";
+			cout << setw(10) << MG_ClusPos[i][0] << " | ";
 		}
-		cout << MG_ClusPos[MG_N-1][0] << endl;
+		cout << setw(10) << MG_ClusPos[MG_N-1][0] << endl;
 	}
 }
 
@@ -1730,16 +1734,42 @@ void Analyse::EventDisplay(int event_nb){
 }
 
 void Analyse::Correlation(){
+	gStyle->SetPalette(55,0);
 	TCanvas * cDisplay = new TCanvas();
-	cDisplay->Divide(4);
-	TH2D * correlation_X_ampl = new TH2D("correlation_X_ampl","correlation_X_ampl",1000,0,4000,1000,0,4000);
-	TH2D * correlation_X_t = new TH2D("correlation_X_t","correlation_X_t",1000,-1000,1000,1000,-1000,1000);
-	TH2D * correlation_Y_ampl = new TH2D("correlation_Y_ampl","correlation_Y_ampl",1000,0,4000,1000,0,4000);
-	TH2D * correlation_Y_t = new TH2D("correlation_Y_t","correlation_Y_t",1000,-1000,1000,1000,-1000,1000);
+	cDisplay->Divide(4,3);
+	TH2D * correlation_X_ampl = new TH2D("correlation_X_ampl","correlation_X_ampl",1000,0,5000,1000,0,5000);
+	TH2D * correlation_X_t = new TH2D("correlation_X_t","correlation_X_t",100,0,32,100,0,32);
+	TH2D * correlation_Y_ampl = new TH2D("correlation_Y_ampl","correlation_Y_ampl",1000,0,50000,1000,0,50000);
+	TH2D * correlation_Y_t = new TH2D("correlation_Y_t","correlation_Y_t",100,0,32,100,0,32);
+	TH1D * sigma_X_ampl = new TH1D("sigma_X_ampl","sigma_X_ampl",100,0,5000);
+	TH1D * sigma_X_t = new TH1D("sigma_X_t","sigma_X_t",100,0,32);
+	TH1D * sigma_Y_ampl = new TH1D("sigma_Y_ampl","sigma_Y_ampl",100,0,50000);
+	TH1D * sigma_Y_t = new TH1D("sigma_Y_t","sigma_Y_t",100,0,32);
+	TH1D * corr_X_ampl = new TH1D("corr_X_ampl","corr_X_ampl",100,-1,1);
+	TH1D * corr_X_t = new TH1D("corr_X_t","corr_X_t",100,-1,1);
+	TH1D * corr_Y_ampl = new TH1D("corr_Y_ampl","corr_Y_ampl",100,-1,1);
+	TH1D * corr_Y_t = new TH1D("corr_Y_t","corr_Y_t",100,-1,1);
+	TCanvas * cCorrXY = new TCanvas();
+	cCorrXY->Divide(2,2);
+	TH2D * correlation_XY_ampl = new TH2D("correlation_XY_ampl","correlation_XY_ampl",1000,0,50000,1000,0,5000);
+	TH2D * correlation_XY_t = new TH2D("correlation_XY_t","correlation_XY_t",100,0,32,100,0,32);
+	TH1D * corr_XY_ampl = new TH1D("corr_XY_ampl","corr_XY_ampl",100,-1,1);
+	TH1D * corr_XY_t = new TH1D("corr_XY_t","corr_XY_t",100,-1,1);
 	if (fChain == 0) return;
 	Long64_t nentries = fChain->GetEntriesFast();
 	int eventSuitable = 0;
 	cout << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
+	double global_meanXY_ampl = 0;
+	double global_meanXY_t = 0;
+	double global_sigmaXY_ampl = 0;
+	double global_sigmaXY_t = 0;
+	double global_meanXY_ampl_perp = 0;
+	double global_meanXY_t_perp = 0;
+	double global_sigmaXY_ampl_perp = 0;
+	double global_sigmaXY_t_perp = 0;
+	double global_corrXY_ampl = 0;
+	double global_corrXY_t = 0;
+	int global_sizeXY = 0;
 	for (Long64_t jentry=0; jentry<nentries;jentry++){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
@@ -1747,9 +1777,10 @@ void Analyse::Correlation(){
 		CosmicBenchEvent * CBEvent = new CosmicBenchEvent(this,this,false,-1);
 		CBEvent->do_cuts();
 		eventSuitable+=CBEvent->get_clus_N()/(CM_N+MG_N);
+		/*
 		bool is_single_event = true;
 		for(vector<Detector*>::iterator it=detectors.begin();it!=detectors.end();++it){
-			if(CBEvent->get_clus_N_by_det(*it)>1) is_single_event = false;
+			if((CBEvent->get_clus_N_by_det(*it))!=1) is_single_event = false;
 		}
 		if(is_single_event){
 			for(vector<Event*>::iterator it=(CBEvent->events).begin();it!=(CBEvent->events).end();++it){
@@ -1771,12 +1802,12 @@ void Analyse::Correlation(){
 					double ampl_2 = 0;
 					double t_2 = 0;
 					if((*it)->get_type() == "MG"){
-						MG_Cluster current_cluster = ((dynamic_cast<MG_Event*>(*it))->get_clusters()).front();
+						MG_Cluster current_cluster = ((dynamic_cast<MG_Event*>(*jt))->get_clusters()).front();
 						ampl_2 = current_cluster.get_ampl();
 						t_2 = current_cluster.get_t();
 					}
 					else if((*it)->get_type() == "CM_Demux"){
-						CM_Demux_Cluster current_cluster = ((dynamic_cast<CM_Demux_Event*>(*it))->get_clusters()).front();
+						CM_Demux_Cluster current_cluster = ((dynamic_cast<CM_Demux_Event*>(*jt))->get_clusters()).front();
 						ampl_2 = current_cluster.get_ampl();
 						t_2 = current_cluster.get_t();
 					}
@@ -1791,30 +1822,263 @@ void Analyse::Correlation(){
 				}
 			}
 		}
+		*/
+
+		vector<Ray> currentRays = CBEvent->get_absorption_rays();
+		for(vector<Ray>::iterator ray_it = currentRays.begin();ray_it!=currentRays.end();++ray_it){
+			vector<Cluster*> currentClusters = ray_it->get_clus();
+			double sigmaX_ampl = 0;
+			double sigmaY_ampl = 0;
+			double meanX_ampl = 0;
+			double meanY_ampl = 0;
+			double sigmaX_t = 0;
+			double sigmaY_t = 0;
+			double meanX_t = 0;
+			double meanY_t = 0;
+			double corrX_ampl = 0;
+			double corrY_ampl = 0;
+			double corrX_t = 0;
+			double corrY_t = 0;
+			int sizeX_corr = 0;
+			int sizeY_corr = 0;
+			int sizeX = 0;
+			int sizeY = 0;
+			for(vector<Cluster*>::iterator clus_it = currentClusters.begin();clus_it!=currentClusters.end();++clus_it){
+				double ampl_1 = (*clus_it)->get_ampl();
+				double t_1 = (*clus_it)->get_t();
+				//double t_1 = (*clus_it)->get_maxSample();
+				bool is_X = (*clus_it)->get_is_X();
+				if(is_X){
+					meanX_ampl += ampl_1;
+					sigmaX_ampl += ampl_1*ampl_1;
+					meanX_t += t_1; 
+					sigmaX_t += t_1*t_1;
+					sizeX++;
+				}
+				else{
+					meanY_ampl += ampl_1;
+					sigmaY_ampl += ampl_1*ampl_1;
+					meanY_t += t_1; 
+					sigmaY_t += t_1*t_1;
+					sizeY++;
+				}
+				for(vector<Cluster*>::iterator clus_jt = (clus_it+1);clus_jt!=currentClusters.end();++clus_jt){
+					if(is_X != (*clus_jt)->get_is_X()) continue;
+					if(is_X){
+						correlation_X_ampl->Fill(ampl_1,(*clus_jt)->get_ampl());
+						correlation_X_t->Fill(t_1,(*clus_jt)->get_t());
+						//correlation_X_t->Fill(t_1,(*clus_jt)->get_maxSample());
+						corrX_ampl += ampl_1*((*clus_jt)->get_ampl());
+						corrX_t += t_1*((*clus_jt)->get_t());
+						//corrX_t += t_1*((*clus_jt)->get_maxSample());
+						sizeX_corr++;
+					}
+					else{
+						correlation_Y_ampl->Fill(ampl_1,(*clus_jt)->get_ampl());
+						correlation_Y_t->Fill(t_1,(*clus_jt)->get_t());
+						//correlation_Y_t->Fill(t_1,(*clus_jt)->get_maxSample());
+						corrY_ampl += ampl_1*((*clus_jt)->get_ampl());
+						corrY_t += t_1*((*clus_jt)->get_t());
+						//corrY_t += t_1*((*clus_jt)->get_maxSample());
+						sizeY_corr++;
+					}
+				}
+			}
+			meanX_ampl /= sizeX;
+			meanX_t /= sizeX;
+			meanY_ampl /= sizeY;
+			meanY_t /= sizeY;
+			sigmaX_ampl = Sqrt((sigmaX_ampl/sizeX) - (meanX_ampl*meanX_ampl));
+			sigmaX_t = Sqrt((sigmaX_t/sizeX) - (meanX_t*meanX_t));
+			sigmaY_ampl = Sqrt((sigmaY_ampl/sizeY) - (meanY_ampl*meanY_ampl));
+			sigmaY_t = Sqrt((sigmaY_t/sizeY) - (meanY_t*meanY_t));
+			sigma_X_ampl->Fill(sigmaX_ampl);
+			sigma_X_t->Fill(sigmaX_t);
+			sigma_Y_ampl->Fill(sigmaY_ampl);
+			sigma_Y_t->Fill(sigmaY_t);
+			corrX_ampl = (corrX_ampl/sizeX_corr - meanX_ampl*meanX_ampl)/(sigmaX_ampl*sigmaX_ampl);
+			corrX_t = (corrX_t/sizeX_corr - meanX_t*meanX_t)/(sigmaX_t*sigmaX_t);
+			corrY_ampl = (corrY_ampl/sizeY_corr - meanY_ampl*meanY_ampl)/(sigmaY_ampl*sigmaY_ampl);
+			corrY_t = (corrY_t/sizeY_corr - meanY_t*meanY_t)/(sigmaY_t*sigmaY_t);
+			corr_X_ampl->Fill(corrX_ampl);
+			corr_X_t->Fill(corrX_t);
+			corr_Y_ampl->Fill(corrY_ampl);
+			corr_Y_t->Fill(corrY_t);
+			double meanXY_ampl = 0;
+			double meanXY_t = 0;
+			double sigmaXY_ampl = 0;
+			double sigmaXY_t = 0;
+			double meanXY_ampl_perp = 0;
+			double meanXY_t_perp = 0;
+			double sigmaXY_ampl_perp = 0;
+			double sigmaXY_t_perp = 0;
+			double corrXY_ampl = 0;
+			double corrXY_t = 0;
+			int sizeXY = 0;
+			for(vector<Detector*>::iterator det_it = detectors.begin();det_it!=detectors.end();++det_it){
+				if((*det_it)->get_perp_n()<0) continue;
+				if((*det_it)->get_is_X()) continue;
+				int n = -1;
+				if((*det_it)->get_type() == "MG") n = dynamic_cast<MG_Detector*>(*det_it)->get_mg_n_in_tree();
+				else if((*det_it)->get_type() == "CM") n = dynamic_cast<CM_Detector*>(*det_it)->get_cm_n_in_tree();
+				else continue;
+				vector<Detector*>::iterator det_jt = detectors.begin();
+				while((*det_jt)->get_perp_n() != n && det_jt != detectors.end()){
+					++det_jt;
+				}
+				double amplXY = 0;
+				double amplXY_perp = 0;
+				double tXY = 0;
+				double tXY_perp = 0;
+				int check = 0;
+				for(vector<Cluster*>::iterator clus_it = currentClusters.begin();clus_it!=currentClusters.end();++clus_it){
+					if((*clus_it)->is_in_det(*det_it)){
+						amplXY = (*clus_it)->get_ampl();
+						tXY = (*clus_it)->get_t();
+						//tXY = (*clus_it)->get_maxSample();
+						check++;
+					}
+					else if((*clus_it)->is_in_det(*det_jt)){
+						amplXY_perp = (*clus_it)->get_ampl();
+						tXY_perp = (*clus_it)->get_t();
+						//tXY_perp = (*clus_it)->get_maxSample();
+						check++;
+					}
+				}
+				if(check!=2) continue;
+				meanXY_ampl += amplXY;
+				meanXY_t += tXY;
+				sigmaXY_ampl += amplXY*amplXY;
+				sigmaXY_t += tXY*tXY;
+				meanXY_ampl_perp += amplXY_perp;
+				meanXY_t_perp += tXY_perp;
+				sigmaXY_ampl_perp += amplXY_perp*amplXY_perp;
+				sigmaXY_t_perp += tXY_perp*tXY_perp;
+				corrXY_ampl += amplXY*amplXY_perp;
+				corrXY_t += tXY*tXY_perp;
+				sizeXY++;
+				correlation_XY_ampl->Fill(amplXY,amplXY_perp);
+				correlation_XY_t->Fill(tXY,tXY_perp);
+			}
+			if(sizeXY>0){
+				global_meanXY_ampl += meanXY_ampl;
+				global_meanXY_t += meanXY_t;
+				global_sigmaXY_ampl += sigmaXY_ampl;
+				global_sigmaXY_t += sigmaXY_t;
+				global_meanXY_ampl_perp += meanXY_ampl_perp;
+				global_meanXY_t_perp += meanXY_t_perp;
+				global_sigmaXY_ampl_perp += sigmaXY_ampl_perp;
+				global_sigmaXY_t_perp += sigmaXY_t_perp;
+				global_corrXY_ampl += corrXY_ampl;
+				global_corrXY_t += corrXY_t;
+				global_sizeXY += sizeXY;
+
+				meanXY_ampl /= sizeXY;
+				meanXY_t /= sizeXY;
+				sigmaXY_ampl = Sqrt((sigmaXY_ampl/sizeXY) - (meanXY_ampl*meanXY_ampl));
+				sigmaXY_t = Sqrt((sigmaXY_t/sizeXY) - (meanXY_t*meanXY_t));
+				meanXY_ampl_perp /= sizeXY;
+				meanXY_t_perp /= sizeXY;
+				sigmaXY_ampl_perp = Sqrt((sigmaXY_ampl_perp/sizeXY) - (meanXY_ampl_perp*meanXY_ampl_perp));
+				sigmaXY_t_perp = Sqrt((sigmaXY_t_perp/sizeXY) - (meanXY_t_perp*meanXY_t_perp));
+				corrXY_ampl = ((corrXY_ampl/sizeXY) - (meanXY_ampl*meanXY_ampl_perp))/(sigmaXY_ampl*sigmaXY_ampl_perp);
+				corrXY_t = ((corrXY_t/sizeXY) - (meanXY_t*meanXY_t_perp))/(sigmaXY_t*sigmaXY_t_perp);
+				corr_XY_ampl->Fill(corrXY_ampl);
+				corr_XY_t->Fill(corrXY_t);
+			}
+			for(vector<Cluster*>::iterator clus_it = currentClusters.begin();clus_it!=currentClusters.end();++clus_it){
+				delete *clus_it;
+			}
+		}
+
 		if(jentry%500 == 0) cout << "\r" << setw(20) << eventSuitable << "|" << setw(20) << jentry << flush;
 		if(jentry%5000 == 0){
 			cDisplay->cd(1);
-			correlation_X_ampl->Draw();
+			correlation_X_ampl->Draw("colz");
 			cDisplay->cd(2);
-			correlation_Y_ampl->Draw();
+			correlation_Y_ampl->Draw("colz");
 			cDisplay->cd(3);
-			correlation_X_t->Draw();
+			correlation_X_t->Draw("colz");
 			cDisplay->cd(4);
-			correlation_Y_t->Draw();
+			correlation_Y_t->Draw("colz");
+			cDisplay->cd(5);
+			sigma_X_ampl->Draw();
+			cDisplay->cd(6);
+			sigma_Y_ampl->Draw();
+			cDisplay->cd(7);
+			sigma_X_t->Draw();
+			cDisplay->cd(8);
+			sigma_Y_t->Draw();
+			cDisplay->cd(9);
+			corr_X_ampl->Draw();
+			cDisplay->cd(10);
+			corr_Y_ampl->Draw();
+			cDisplay->cd(11);
+			corr_X_t->Draw();
+			cDisplay->cd(12);
+			corr_Y_t->Draw();
 			cDisplay->Modified();
 			cDisplay->Update();
+			cCorrXY->cd(1);
+			correlation_XY_ampl->Draw("colz");
+			cCorrXY->cd(2);
+			correlation_XY_t->Draw("colz");
+			cCorrXY->cd(3);
+			corr_XY_ampl->Draw();
+			cCorrXY->cd(4);
+			corr_XY_t->Draw();
+			cCorrXY->Modified();
+			cCorrXY->Update();
 		}
 		delete CBEvent;
 	}
 	cout << "\r" << setw(20) << eventSuitable << "|" << setw(20) << nentries << endl;
 	cDisplay->cd(1);
-	correlation_X_ampl->Draw();
+	correlation_X_ampl->Draw("colz");
 	cDisplay->cd(2);
-	correlation_Y_ampl->Draw();
+	correlation_Y_ampl->Draw("colz");
 	cDisplay->cd(3);
-	correlation_X_t->Draw();
+	correlation_X_t->Draw("colz");
 	cDisplay->cd(4);
-	correlation_Y_t->Draw();
+	correlation_Y_t->Draw("colz");
+	cDisplay->cd(5);
+	sigma_X_ampl->Draw();
+	cDisplay->cd(6);
+	sigma_Y_ampl->Draw();
+	cDisplay->cd(7);
+	sigma_X_t->Draw();
+	cDisplay->cd(8);
+	sigma_Y_t->Draw();
+	cDisplay->cd(9);
+	corr_X_ampl->Draw();
+	cDisplay->cd(10);
+	corr_Y_ampl->Draw();
+	cDisplay->cd(11);
+	corr_X_t->Draw();
+	cDisplay->cd(12);
+	corr_Y_t->Draw();
 	cDisplay->Modified();
 	cDisplay->Update();
+	cCorrXY->cd(1);
+	correlation_XY_ampl->Draw("colz");
+	cCorrXY->cd(2);
+	correlation_XY_t->Draw("colz");
+	cCorrXY->cd(3);
+	corr_XY_ampl->Draw();
+	cCorrXY->cd(4);
+	corr_XY_t->Draw();
+	cCorrXY->Modified();
+	cCorrXY->Update();
+	global_meanXY_ampl /= global_sizeXY;
+	global_meanXY_t /= global_sizeXY;
+	global_sigmaXY_ampl = Sqrt((global_sigmaXY_ampl/global_sizeXY) - (global_meanXY_ampl*global_meanXY_ampl));
+	global_sigmaXY_t = Sqrt((global_sigmaXY_t/global_sizeXY) - (global_meanXY_t*global_meanXY_t));
+	global_meanXY_ampl_perp /= global_sizeXY;
+	global_meanXY_t_perp /= global_sizeXY;
+	global_sigmaXY_ampl_perp = Sqrt((global_sigmaXY_ampl_perp/global_sizeXY) - (global_meanXY_ampl_perp*global_meanXY_ampl_perp));
+	global_sigmaXY_t_perp = Sqrt((global_sigmaXY_t_perp/global_sizeXY) - (global_meanXY_t_perp*global_meanXY_t_perp));
+	global_corrXY_ampl = ((global_corrXY_ampl/global_sizeXY) - (global_meanXY_ampl*global_meanXY_ampl_perp))/(global_sigmaXY_ampl*global_sigmaXY_ampl_perp);
+	global_corrXY_t = ((global_corrXY_t/global_sizeXY) - (global_meanXY_t*global_meanXY_t_perp))/(global_sigmaXY_t*global_sigmaXY_t_perp);
+	cout << "correlation XY en amplitude : " <<  global_corrXY_ampl << endl;
+	cout << "correlation XY en temps : " << global_corrXY_t << endl;
 }
