@@ -30,6 +30,7 @@
 #include <boost/foreach.hpp>
 //std
 #include <sstream>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <vector>
@@ -46,6 +47,7 @@ using std::flush;
 using std::setw;
 using std::vector;
 using std::ostringstream;
+using std::ifstream;
 using std::numeric_limits;
 using std::max_element;
 using std::left;
