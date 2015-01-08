@@ -21,6 +21,9 @@
 #include <TGraphErrors.h>
 #include <TGraph2D.h>
 #include <TPolyLine3D.h>
+#include <TLine.h>
+#include <TFitResultPtr.h>
+#include <TFitResult.h>
 //Boost
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -2105,4 +2108,68 @@ void Analyse::Correlation(){
 	global_corrXY_t = ((global_corrXY_t/global_sizeXY) - (global_meanXY_t*global_meanXY_t_perp))/(global_sigmaXY_t*global_sigmaXY_t_perp);
 	cout << "correlation XY en amplitude : " <<  global_corrXY_ampl << endl;
 	cout << "correlation XY en temps : " << global_corrXY_t << endl;
+}
+
+void Analyse::SignalOverNoise(){
+	if(CM_N!=0){
+		cout << "not implemented with CM" << endl;
+		return;
+	}
+	map<int,TCanvas*> cDisplay;
+	map<int,TH1D*> global_signal;
+	map<int,TH1D*> global_noise;
+	map<int,TProfile*> global_signal_over_noise;
+	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
+		if((*it)->get_type() == "MG"){
+			MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
+			ostringstream name;
+			name << "Multigen_" << current_det->get_mg_n_in_tree();
+			cDisplay[current_det->get_mg_n_in_tree()] = new TCanvas(name.str().c_str());
+			cDisplay[current_det->get_mg_n_in_tree()]->Divide(3);
+			name << "_";
+			global_signal[current_det->get_mg_n_in_tree()] = new TH1D((name.str() + "signal").c_str(),(name.str() + "signal").c_str(),500,0,4000);
+			global_noise[current_det->get_mg_n_in_tree()] = new TH1D((name.str() + "noise").c_str(),(name.str() + "noise").c_str(),100,0,100);
+			for(int i=0;i<61;i++){
+				global_noise[current_det->get_mg_n_in_tree()]->Fill(current_det->get_RMS(i));
+			}
+			global_signal_over_noise[current_det->get_mg_n_in_tree()] = new TProfile((name.str() + "S/B").c_str(),(name.str() + "S/B").c_str(),61,0,61);
+		}
+	}
+	long nentries = fChain->GetEntriesFast();
+	for(int i=0;i<nentries;i++){
+		LoadTree(i);
+		GetEntry(i);
+
+		for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
+			if((*it)->get_type() == "MG"){
+				MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
+				MG_Event current_event(this,current_det,false,evn);
+				current_event.MultiCluster();
+				vector<MG_Cluster> current_cluster = current_event.get_clusters();
+				for(vector<MG_Cluster>::iterator jt=current_cluster.begin();jt!=current_cluster.end();++jt){
+					double current_signal = jt->get_maxStripAmpl();
+					double current_noise = current_det->get_RMS(MG_Detector::StripToChannel[jt->get_maxStrip()]);
+					global_signal[current_det->get_mg_n_in_tree()]->Fill(current_signal);
+					global_signal_over_noise[current_det->get_mg_n_in_tree()]->Fill(MG_Detector::StripToChannel[jt->get_maxStrip()],current_signal/current_noise);
+				}
+			}
+		}
+		if(i%100 == 0) cout << "\r" << i << "/" << nentries << flush;
+	}
+	cout << "\r" << nentries << "/" << nentries << endl;
+	
+	for(map<int,TCanvas*>::iterator it = cDisplay.begin();it!=cDisplay.end();++it){
+		it->second->cd(1);
+		TFitResultPtr res_signal = global_signal[it->first]->Fit("landau","SQ");
+		global_signal[it->first]->Draw();
+		it->second->cd(2);
+		TFitResultPtr res_noise = global_noise[it->first]->Fit("gaus","SQ");
+		global_noise[it->first]->Draw();
+		it->second->cd(3);
+		TLine * average_SoN = new TLine(0,(res_signal->Parameter(1))/(res_noise->Parameter(1)),61,(res_signal->Parameter(1))/(res_noise->Parameter(1)));
+		average_SoN->SetLineStyle(2);
+		average_SoN->SetLineColor(2);
+		global_signal_over_noise[it->first]->Draw();
+		average_SoN->Draw();
+	}
 }

@@ -27,6 +27,7 @@ class Analyse: public T, public CosmicBench{
 		//void MultiGenDebug(int i);
 		void bugtest();
 		void EventDisplay(int event_nb);
+		void SignalOverNoise();
 	protected:
 		string signal_file_name;
 
