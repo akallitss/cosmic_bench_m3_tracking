@@ -2180,7 +2180,11 @@ void Analyse::SignalOverNoise(){
 		TLine * average_SoN = new TLine(0,(res_signal->Parameter(1))/(res_noise->Parameter(1)),61,(res_signal->Parameter(1))/(res_noise->Parameter(1)));
 		average_SoN->SetLineStyle(2);
 		average_SoN->SetLineColor(2);
+		TLine * mean_SoN = new TLine(0,(global_signal[it->first]->GetMean())/(global_noise[it->first]->GetMean()),61,(global_signal[it->first]->GetMean())/(global_noise[it->first]->GetMean()));
+		mean_SoN->SetLineStyle(2);
+		mean_SoN->SetLineColor(4);
 		global_signal_over_noise[it->first]->Draw();
 		average_SoN->Draw();
+		mean_SoN->Draw();
 	}
 }
