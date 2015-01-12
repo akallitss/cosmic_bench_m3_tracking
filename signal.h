@@ -19,6 +19,7 @@ class Signal: public Tsignal, public CosmicBench{
 		void ElecToAnalyse();
 		void HoughTracking(int event_nb);
 		map<int,TProfile*> SignalOverNoise();
+		void SignalOverNoiseDisplay();
 	protected:
 		string analyseTree;
 		bool use_srf;

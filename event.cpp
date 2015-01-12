@@ -348,6 +348,8 @@ void MG_Event::MultiCluster(){
 			if(strip_ampl[i][j]>current_strip.MaxAmpl){
 				current_strip.MaxAmpl = strip_ampl[i][j];
 				current_strip.MaxSample = j;
+				// time calculation with maximum
+				/*
 				if(j>0 && j<31){
 					double a = (0.5*strip_ampl[i][j+1]) - strip_ampl[i][j] + (0.5*strip_ampl[i][j-1]);
 					//double b = strip_ampl[i][j] - strip_ampl[i][j-1] - a*((2*j)-1);
@@ -355,9 +357,23 @@ void MG_Event::MultiCluster(){
 					current_strip.Time = -0.5*b/a;
 				}
 				else current_strip.Time = 0;
+				*/
+				// --
 			}
-			if(strip_ampl[i][j]>sigma*(detector.get_RMS(i))) current_strip.TOT++;
+			if(strip_ampl[i][j]>(sigma*(detector.get_RMS(i)))) current_strip.TOT++;
 		}
+		// time calculation with rising edge
+		int k=current_strip.MaxSample;
+		TGraph * rising_edge = new TGraph();
+		while(k>=SampleMin && strip_ampl[i][k]>(sigma*(detector.get_RMS(i)))){
+			rising_edge->SetPoint(current_strip.MaxSample - k,k,strip_ampl[i][k]);
+			k--;
+		}
+		TF1 * rising_fit = new TF1("rising_fit","pol1(0)",k-1,current_strip.MaxSample +1);
+		rising_edge->Fit(rising_fit,"QN");
+		current_strip.Time = rising_fit->GetParameter(0);
+		delete rising_edge; delete rising_fit;
+		// --
 		if(current_strip.TOT>TOTCut) channelOverThreshold.insert(pair<int,bool>(i,true));
 		allChannels.insert(pair<int,StripInfo>(i,current_strip));
 	}

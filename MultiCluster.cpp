@@ -35,7 +35,7 @@ int main(int argc, char ** argv){
 		blah->ElecToAnalyse();
 	}
 	else if(argv[2] == SoB){
-		blah->SignalOverNoise();
+		blah->SignalOverNoiseDisplay();
 		theApp->Run(true);
 	}
 	else if(argv[2] == hough){
