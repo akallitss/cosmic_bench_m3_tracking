@@ -115,14 +115,40 @@ void DataReader::Init(string signalName, string pedName, string RMSName, map<int
 		if(CM_N>0) outTree->SetBranchAddress("StripAmpl_CM",StripAmpl_CM);
 		if(MG_N>0) outTree->SetBranchAddress("StripAmpl_MG",StripAmpl_MG);
 	}
-	if(ped_done){
-		if(CM_N>0) outTree->SetBranchAddress("StripAmpl_CM_ped",StripAmpl_CM_ped);
-		if(MG_N>0) outTree->SetBranchAddress("StripAmpl_MG_ped",StripAmpl_MG_ped);
+	bool ped_done_CM = false;
+	bool ped_done_MG = false;
+	bool cns_done_CM = false;
+	bool cns_done_MG = false;
+	if(CM_N>0){
+		if(outTree->GetListOfBranches()->FindObject("StripAmpl_CM_ped") != 0){
+			outTree->SetBranchAddress("StripAmpl_CM_ped",StripAmpl_CM_ped);
+			ped_done_CM = true;
+		}
+		if(outTree->GetListOfBranches()->FindObject("StripAmpl_CM_corr") != 0){
+			outTree->SetBranchAddress("StripAmpl_CM_corr",StripAmpl_CM_corr);
+			cns_done_CM = true;
+		}
 	}
-	if(cns_done){
-		if(CM_N>0) outTree->SetBranchAddress("StripAmpl_CM_corr",StripAmpl_CM_corr);
-		if(MG_N>0) outTree->SetBranchAddress("StripAmpl_MG_corr",StripAmpl_MG_corr);
+	else{
+		ped_done_CM = true;
+		cns_done_CM = true;
 	}
+	if(MG_N>0){
+		if(outTree->GetListOfBranches()->FindObject("StripAmpl_MG_ped") != 0){
+			outTree->SetBranchAddress("StripAmpl_MG_ped",StripAmpl_MG_ped);
+			ped_done_MG = true;
+		}
+		if(outTree->GetListOfBranches()->FindObject("StripAmpl_MG_corr") != 0){
+			outTree->SetBranchAddress("StripAmpl_MG_corr",StripAmpl_MG_corr);
+			cns_done_MG = true;
+		}
+	}
+	else{
+		ped_done_MG = true;
+		cns_done_MG = true;
+	}
+	ped_done = ped_done_CM && ped_done_MG;
+	cns_done = cns_done_CM && cns_done_MG;
 	for(int k=0;k<Nsample;k++){
 		TsampleNum[k] = k;
 	}
