@@ -2187,7 +2187,7 @@ void Analyse::SignalOverNoise(){
 		average_SoN->Draw();
 		mean_SoN->Draw();
 		cout << "MG" << it->first << endl;
-		cout << "    mean : " << global_signal_over_noise[it->first]->GetMean() << " ; " << (global_signal[it->first]->GetMean())/(global_noise[it->first]->GetMean()) << endl;
-		cout << "    sigma : " << global_signal_over_noise[it->first]->GetRMS() << endl;
+		cout << "    mean : " << global_signal_over_noise[it->first]->GetMean(2) << " ; " << (global_signal[it->first]->GetMean())/(global_noise[it->first]->GetMean()) << endl;
+		cout << "    sigma : " << global_signal_over_noise[it->first]->GetRMS() << " ; " << global_signal_over_noise[it->first]->GetRMS(2) << endl;
 	}
 }
