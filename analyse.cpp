@@ -2191,7 +2191,7 @@ void Analyse::SignalOverNoise(){
 		it->second->Modified();
 		it->second->Update();
 		cout << "MG" << it->first << endl;
-		cout << "    mean S/B : " << global_signal_over_noise[it->first]->GetMean(2) << end;
+		cout << "    mean S/B : " << global_signal_over_noise[it->first]->GetMean(2) << endl;
 		cout << "    mean S/mean B : " << (global_signal[it->first]->GetMean())/(global_noise[it->first]->GetMean()) << endl;
 		cout << "    sigma S/B : " << global_signal_over_noise[it->first]->GetRMS(2) << endl;
 		cout << "    delta mean S/B : " << global_signal_over_noise[it->first]->GetMean(11) << endl;
