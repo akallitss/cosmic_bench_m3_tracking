@@ -363,16 +363,19 @@ void MG_Event::MultiCluster(){
 			if(strip_ampl[i][j]>(sigma*(detector.get_RMS(i)))) current_strip.TOT++;
 		}
 		// time calculation with rising edge
-		int k=current_strip.MaxSample;
-		TGraph * rising_edge = new TGraph();
-		while(k>=SampleMin && strip_ampl[i][k]>(sigma*(detector.get_RMS(i)))){
-			rising_edge->SetPoint(current_strip.MaxSample - k,k,strip_ampl[i][k]);
-			k--;
+		if(current_strip.TOT>2){
+			int k=current_strip.MaxSample;
+			TGraph * rising_edge = new TGraph();
+			while(k>=SampleMin && strip_ampl[i][k]>(sigma*(detector.get_RMS(i)))){
+				rising_edge->SetPoint(current_strip.MaxSample - k,k,strip_ampl[i][k]);
+				k--;
+			}
+			TF1 * rising_fit = new TF1("rising_fit","pol1(0)",k-1,current_strip.MaxSample +1);
+			rising_edge->Fit(rising_fit,"QN");
+			current_strip.Time = rising_fit->GetParameter(0);
+			delete rising_edge; delete rising_fit;
 		}
-		TF1 * rising_fit = new TF1("rising_fit","pol1(0)",k-1,current_strip.MaxSample +1);
-		rising_edge->Fit(rising_fit,"QN");
-		current_strip.Time = rising_fit->GetParameter(0);
-		delete rising_edge; delete rising_fit;
+		else current_strip.Time = 0;
 		// --
 		if(current_strip.TOT>TOTCut) channelOverThreshold.insert(pair<int,bool>(i,true));
 		allChannels.insert(pair<int,StripInfo>(i,current_strip));
