@@ -494,6 +494,9 @@ void Signal::SignalOverNoiseDisplay(){
 		global_signal_over_noise[it->first]->Draw();
 		average_SoN->Draw();
 		mean_SoN->Draw();
+		cout << "MG" << it->first << endl;
+		cout << "    mean : " << global_signal_over_noise[it->first]->GetMean() << " ; " << (global_signal[it->first]->GetMean())/(global_noise[it->first]->GetMean()) << endl;
+		cout << "    sigma : " << global_signal_over_noise[it->first]->GetRMS() << endl;
 	}
 }
 
