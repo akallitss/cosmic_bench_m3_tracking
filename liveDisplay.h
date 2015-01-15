@@ -2,6 +2,7 @@
 #define livedisplay_h
 
 #include "detector.h"
+#include "tomography.h"
 
 #include <vector>
 #include <map>
@@ -26,19 +27,19 @@ class liveDisplay: public CosmicBench{
 		void add_files(int first,int last);
 		void flux_map(double z);
 	protected:
-		string electronic_type;
+		Tomography::elec_type electronic_type;
 		vector<string> filenames;
 		int max_event;
 		int inotify_descriptor;
 		int file_descriptor;
 		bool inotify_started;
 		string current_file;
-		map<int,string> det_type_by_asic;
+		map<int,Tomography::det_type> det_type_by_asic;
 		map<int,int> det_n_by_asic;
 		bool use_srf;
 		string data_file_basename;
 		long max_file_size;
-		map<string,vector<vector<float> > > Pedestal;
+		map<Tomography::det_type,vector<vector<float> > > Pedestal;
 		//float (*Pedestal_MG)[61];
 		//float (*Pedestal_CM)[64];
 };

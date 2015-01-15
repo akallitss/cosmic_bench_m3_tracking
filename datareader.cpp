@@ -36,17 +36,17 @@ using TMath::Min;
 //const int DataReader::Nstrip_MG = 61;
 //const int DataReader::Nstrip_CM = 64;
 
-DataReader::DataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_){
+DataReader::DataReader(string baseFileName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_){
 	string signalName = baseFileName + "_signal.root";
 	string pedName = baseFileName + "_Ped.dat";
 	string RMSName = baseFileName + "_RMSPed.dat";
 	Init(signalName, pedName, RMSName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_);
 }
-DataReader::DataReader(string signalName, string pedName, string RMSName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_){
+DataReader::DataReader(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_){
 	Init(signalName, pedName, RMSName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_);
 }
 
-void DataReader::Init(string signalName, string pedName, string RMSName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_){
+void DataReader::Init(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_){
 	exists = exists_;
 	ped_done = ped_done_;
 	cns_done = cns_done_;
@@ -60,10 +60,10 @@ void DataReader::Init(string signalName, string pedName, string RMSName, map<int
 		cout << "problem in detector caracs" << endl;
 		return;
 	}
-	for(map<int,string>::iterator it=det_type_by_asic.begin();it!=det_type_by_asic.end();++it){
+	for(map<int,Tomography::det_type>::iterator it=det_type_by_asic.begin();it!=det_type_by_asic.end();++it){
 		if(det_n_by_asic[it->first]>=0){
-			if(it->second == "MG") MG_N++;
-			else if(it->second == "CM") CM_N++;
+			if(it->second == Tomography::MG) MG_N++;
+			else if(it->second == Tomography::CM) CM_N++;
 			else{
 				cout << "detector type unknown : " << it->second << endl;
 				return;
@@ -167,7 +167,6 @@ void DataReader::Init(string signalName, string pedName, string RMSName, map<int
 		}
 	}
 	is_first = true;
-	DAQType = "";
 	dumb_branch = new TBranch();
 }
 DataReader::~DataReader(){
@@ -504,17 +503,17 @@ void DataReader::compute_RMSPed(){
 	outTree->SetBranchStatus("*",1);
 	RMSPedFile.close();
 }
-DreamDataReader::DreamDataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_): DataReader(baseFileName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
-	DAQType = "Dream";
+DreamDataReader::DreamDataReader(string baseFileName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_): DataReader(baseFileName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
+	DAQType = Tomography::Dream;
 }
-DreamDataReader::DreamDataReader(string signalName, string pedName, string RMSName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_): DataReader(signalName,pedName,RMSName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
-	DAQType = "Dream";
+DreamDataReader::DreamDataReader(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_): DataReader(signalName,pedName,RMSName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
+	DAQType = Tomography::Dream;
 }
 DreamDataReader::~DreamDataReader(){
 
 }
-int DreamDataReader::mapping(string det_type, int channel){
-	if(det_type == "MG"){
+int DreamDataReader::mapping(Tomography::det_type det_type, int channel){
+	if(det_type == Tomography::MG){
 		return channel + 1 - (2*(channel%2));
 	}
 	return channel;
@@ -589,10 +588,10 @@ void DreamDataReader::read_file(string file_name,int evn_offset){
 			else if(DataHeaderLine>3){
 				if(current_data.is_data() && !zs_mode){
 					channelN = mapping(det_type_by_asic[det],ichannel);
-					if(det_type_by_asic[det] == "MG"){
+					if(det_type_by_asic[det] == Tomography::MG){
 						if(channelN>-1 && channelN<Nstrip_MG) StripAmpl_MG[detN][channelN][isample] = current_data.get_data();
 					}
-					else if(det_type_by_asic[det] == "CM"){
+					else if(det_type_by_asic[det] == Tomography::CM){
 						if(channelN>-1 && channelN<Nstrip_CM) StripAmpl_CM[detN][channelN][isample] = current_data.get_data();
 					}
 					ichannel++;
@@ -604,10 +603,10 @@ void DreamDataReader::read_file(string file_name,int evn_offset){
 						got_channel_id = true;
 					}
 					else{
-						if(det_type_by_asic[det] == "MG"){
+						if(det_type_by_asic[det] == Tomography::MG){
 							if(channelN>-1 && channelN<Nstrip_MG) StripAmpl_MG[detN][channelN][isample] = current_data.get_data();
 						}
-						else if(det_type_by_asic[det] == "CM"){
+						else if(det_type_by_asic[det] == Tomography::CM){
 							if(channelN>-1 && channelN<Nstrip_CM) StripAmpl_CM[detN][channelN][isample] = current_data.get_data();
 						}
 						got_channel_id = false;
@@ -660,7 +659,7 @@ void DreamDataReader::read_file(string file_name,int evn_offset){
 	cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << evNinFile + evn_offset - global_offset << ")" << endl;
 	iFile.close();
 }
-map<string,vector<vector<vector<double> > > > DreamDataReader::read_event(ifstream * file,int event_nb, bool fill_tree){
+map<Tomography::det_type,vector<vector<vector<double> > > > DreamDataReader::read_event(ifstream * file,int event_nb, bool fill_tree){
 	int isample=-1; int isample_prev=-2;
 	int isample_nb=0;
 	int ichannel=0;
@@ -712,10 +711,10 @@ map<string,vector<vector<vector<double> > > > DreamDataReader::read_event(ifstre
 			else if(DataHeaderLine>3){
 				if(current_data.is_data() && !zs_mode){
 					channelN = mapping(det_type_by_asic[det],ichannel);
-					if(det_type_by_asic[det] == "MG"){
+					if(det_type_by_asic[det] == Tomography::MG){
 						if(channelN>-1 && channelN<Nstrip_MG) StripAmpl_MG[detN][channelN][isample] = current_data.get_data();
 					}
-					else if(det_type_by_asic[det] == "CM"){
+					else if(det_type_by_asic[det] == Tomography::CM){
 						if(channelN>-1 && channelN<Nstrip_CM) StripAmpl_CM[detN][channelN][isample] = current_data.get_data();
 					}
 					ichannel++;
@@ -727,10 +726,10 @@ map<string,vector<vector<vector<double> > > > DreamDataReader::read_event(ifstre
 						got_channel_id = true;
 					}
 					else{
-						if(det_type_by_asic[det] == "MG"){
+						if(det_type_by_asic[det] == Tomography::MG){
 							if(channelN>-1 && channelN<Nstrip_MG) StripAmpl_MG[detN][channelN][isample] = current_data.get_data();
 						}
-						else if(det_type_by_asic[det] == "CM"){
+						else if(det_type_by_asic[det] == Tomography::CM){
 							if(channelN>-1 && channelN<Nstrip_CM) StripAmpl_CM[detN][channelN][isample] = current_data.get_data();
 						}
 						got_channel_id = false;
@@ -777,7 +776,7 @@ map<string,vector<vector<vector<double> > > > DreamDataReader::read_event(ifstre
 		file->read((char*)&current_data,sizeof(current_data));
 		current_data.ntohs_();	
 	}
-	map<string,vector<vector<vector<double> > > > event_ampl;
+	map<Tomography::det_type,vector<vector<vector<double> > > > event_ampl;
 	if(!event_complete) return event_ampl;
 	Nevent = event_nb;
 	if(fill_tree && !exists) Fill();
@@ -797,21 +796,21 @@ map<string,vector<vector<vector<double> > > > DreamDataReader::read_event(ifstre
 			}
 		}
 	}
-	event_ampl["MG"] = MG_Ampl;
-	event_ampl["CM"] = CM_Ampl;
+	event_ampl[Tomography::MG] = MG_Ampl;
+	event_ampl[Tomography::CM] = CM_Ampl;
 	return event_ampl;
 }
-FeminosDataReader::FeminosDataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_): DataReader(baseFileName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
-	DAQType = "Feminos";
+FeminosDataReader::FeminosDataReader(string baseFileName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_): DataReader(baseFileName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
+	DAQType = Tomography::Feminos;
 }
-FeminosDataReader::FeminosDataReader(string signalName, string pedName, string RMSName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_): DataReader(signalName,pedName,RMSName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
-	DAQType = "Feminos";
+FeminosDataReader::FeminosDataReader(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_): DataReader(signalName,pedName,RMSName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
+	DAQType = Tomography::Feminos;
 }
 FeminosDataReader::~FeminosDataReader(){
 
 }
-int FeminosDataReader::mapping(string det_type, int channel){
-	if(det_type == "MG"){
+int FeminosDataReader::mapping(Tomography::det_type det_type, int channel){
+	if(det_type == Tomography::MG){
 		int tmpchan = -1;
 		if(channel<14) tmpchan = channel-2;
 		else if(channel<25) tmpchan = channel-3;
@@ -896,11 +895,11 @@ void FeminosDataReader::read_file(string file_name,int evn_offset){
 					itime= current_data.get_time();
 				}
 				else if(current_data.is_data()){
-					if(det_type_by_asic[det] == "MG" && channelN>-1 && channelN<61){
+					if(det_type_by_asic[det] == Tomography::MG && channelN>-1 && channelN<61){
 						StripAmpl_MG[detN][channelN][itime] = current_data.get_data();
 						itime++;
 					}
-					else if(det_type_by_asic[det] == "CM" && channelN>-1 && channelN<64){
+					else if(det_type_by_asic[det] == Tomography::CM && channelN>-1 && channelN<64){
 						StripAmpl_CM[detN][channelN][itime] = current_data.get_data();
 						itime++;
 					}
@@ -939,7 +938,7 @@ void FeminosDataReader::read_file(string file_name,int evn_offset){
 	iFile.close();
 }
 
-map<string,vector<vector<vector<double> > > > FeminosDataReader::read_event(ifstream * file,int event_nb, bool fill_tree){
+map<Tomography::det_type,vector<vector<vector<double> > > > FeminosDataReader::read_event(ifstream * file,int event_nb, bool fill_tree){
 	int card=0;
 	int chip=0;
 	int channel=0;
@@ -953,7 +952,7 @@ map<string,vector<vector<vector<double> > > > FeminosDataReader::read_event(ifst
 	DataLineFeminos current_data;
 	file->read((char*)&current_data,sizeof(current_data));
 	bool event_complete = false;
-	map<string,vector<vector<vector<double> > > > event_ampl;
+	map<Tomography::det_type,vector<vector<vector<double> > > > event_ampl;
 	while(file->good()){
 
 
@@ -989,11 +988,11 @@ map<string,vector<vector<vector<double> > > > FeminosDataReader::read_event(ifst
 					itime= current_data.get_time();
 				}
 				else if(current_data.is_data()){
-					if(det_type_by_asic[det] == "MG" && channelN>-1 && channelN<61){
+					if(det_type_by_asic[det] == Tomography::MG && channelN>-1 && channelN<61){
 						StripAmpl_MG[detN][channelN][itime] = current_data.get_data();
 						itime++;
 					}
-					else if(det_type_by_asic[det] == "CM" && channelN>-1 && channelN<64){
+					else if(det_type_by_asic[det] == Tomography::CM && channelN>-1 && channelN<64){
 						StripAmpl_CM[detN][channelN][itime] = current_data.get_data();
 						itime++;
 					}
@@ -1045,8 +1044,8 @@ map<string,vector<vector<vector<double> > > > FeminosDataReader::read_event(ifst
 			}
 		}
 	}
-	event_ampl["MG"] = MG_Ampl;
-	event_ampl["CM"] = CM_Ampl;
+	event_ampl[Tomography::MG] = MG_Ampl;
+	event_ampl[Tomography::MG] = CM_Ampl;
 	return event_ampl;
 }
 

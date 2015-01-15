@@ -6,6 +6,7 @@
 #include "ray.h"
 #include "event.h"
 #include "Tsignal.h"
+#include "tomography.h"
 //ROOT
 #include <TTree.h>
 #include <TFile.h>
@@ -173,12 +174,12 @@ void Analyse::Residus(){
 			for(vector<Detector*>::iterator jt=detectors.begin();jt!=detectors.end();++jt){
 				double residu = it->get_residu(*jt);
 				if(residu != numeric_limits<double>::min()){
-					if((*jt)->get_type() == "CM"){
+					if((*jt)->get_type() == Tomography::CM){
 						CM_Detector * currentDet = dynamic_cast<CM_Detector*>(*jt);
 						CM_residus[i_CM]->Fill(it->get_residu(currentDet));
 						i_CM++;
 					}
-					if((*jt)->get_type() == "MG"){
+					if((*jt)->get_type() == Tomography::MG){
 						MG_Detector * currentDet = dynamic_cast<MG_Detector*>(*jt);
 						MG_residus[i_MG]->Fill(it->get_residu(currentDet));
 						i_MG++;
@@ -254,7 +255,7 @@ void Analyse::Residus_ref(){
 	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
 		if(!((*it)->get_is_ref())){
 			ostringstream name;
-			if((*it)->get_type() == "CM"){
+			if((*it)->get_type() == Tomography::CM){
 				name << "Cosmulti_" << (dynamic_cast<CM_Detector*>(*it))->get_cm_n_in_tree();
 				c_MM[name.str()] = new TCanvas(name.str().c_str(),name.str().c_str(),1200,1000);
 				c_MM[name.str()]->Divide(2,2);
@@ -268,7 +269,7 @@ void Analyse::Residus_ref(){
 				point_nb[name.str()] = 0;
 				efficacity[name.str()] = 0;
 			}
-			else if((*it)->get_type() == "MG"){
+			else if((*it)->get_type() == Tomography::MG){
 				name << "Multigen_" << (dynamic_cast<MG_Detector*>(*it))->get_mg_n_in_tree();
 				c_MM[name.str()] = new TCanvas(name.str().c_str(),name.str().c_str(),1200,1000);
 				c_MM[name.str()]->Divide(2,2);
@@ -331,7 +332,7 @@ void Analyse::Residus_ref(){
 		
 		for(vector<Event*>::iterator it = (currentCBEvent->events).begin();it!=(currentCBEvent->events).end();++it){
 			if(!((*it)->get_is_ref())){
-				if((*it)->get_type() == "CM_Demux"){
+				if((*it)->get_type() == Tomography::CM_Demux){
 					ostringstream name;
 					name << "Cosmulti_" << (*it)->get_n_in_tree();
 					vector<CM_Demux_Cluster> current_clusters = (dynamic_cast<CM_Demux_Event*>(*it))->get_clusters();
@@ -375,7 +376,7 @@ void Analyse::Residus_ref(){
 						}
 					}
 				}
-				else if((*it)->get_type() == "MG"){
+				else if((*it)->get_type() == Tomography::MG){
 					ostringstream name;
 					name << "Multigen_" << (*it)->get_n_in_tree();
 					vector<MG_Cluster> current_clusters = (dynamic_cast<MG_Event*>(*it))->get_clusters();
@@ -527,11 +528,11 @@ void Analyse::Residus_ref_2D(){
 	ostringstream name;
 	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
 		if(!((*it)->get_is_ref())){
-			if((*it)->get_type() == "CM"){
+			if((*it)->get_type() == Tomography::CM){
 				if(name.str().size()>0) name << "_";
 				name << "Cosmulti_" << (dynamic_cast<CM_Detector*>(*it))->get_cm_n_in_tree();
 			}
-			else if((*it)->get_type() == "MG"){
+			else if((*it)->get_type() == Tomography::MG){
 				if(name.str().size()>0) name << "_";
 				name << "Multigen_" << (dynamic_cast<MG_Detector*>(*it))->get_mg_n_in_tree();
 				if((*it)->get_perp_n()>-1) perp_pairs[(dynamic_cast<MG_Detector*>(*it))->get_mg_n_in_tree()] = (*it)->get_perp_n();
@@ -592,10 +593,10 @@ void Analyse::Residus_ref_2D(){
 		vector<Event*> nref_event;
 		for(vector<Event*>::iterator it = (currentCBEvent->events).begin();it!=(currentCBEvent->events).end();++it){
 			if(!((*it)->get_is_ref())){
-				if((*it)->get_type() == "CM_Demux"){
+				if((*it)->get_type() == Tomography::CM_Demux){
 					nref_event.push_back(new CM_Demux_Event(*dynamic_cast<CM_Demux_Event*>(*it)));
 				}
-				else if((*it)->get_type() == "MG"){
+				else if((*it)->get_type() == Tomography::MG){
 					nref_event.push_back(new MG_Event(*dynamic_cast<MG_Event*>(*it)));
 				}
 			}
@@ -614,7 +615,7 @@ void Analyse::Residus_ref_2D(){
 			}
 			vector<unsigned int> seen_clus_in_array;
 			for(vector<Event*>::iterator it = nref_event.begin();it!=nref_event.end();++it){
-				if((*it)->get_type() == "CM_Demux"){
+				if((*it)->get_type() == Tomography::CM_Demux){
 					vector<CM_Demux_Cluster> current_clusters = (dynamic_cast<CM_Demux_Event*>(*it))->get_clusters();
 					double residu = numeric_limits<double>::max();
 					vector<CM_Demux_Cluster>::iterator matching_cluster = current_clusters.end();
@@ -642,7 +643,7 @@ void Analyse::Residus_ref_2D(){
 						seen_clus_in_array.push_back(matching_cluster - current_clusters.begin());
 					}
 				}
-				else if((*it)->get_type() == "MG"){
+				else if((*it)->get_type() == Tomography::MG){
 					vector<MG_Cluster> current_clusters = (dynamic_cast<MG_Event*>(*it))->get_clusters();
 					double residu = numeric_limits<double>::max();
 					vector<MG_Cluster>::iterator matching_cluster = current_clusters.end();
@@ -675,11 +676,11 @@ void Analyse::Residus_ref_2D(){
 			if(seen_clus_in_array.size()==2){
 				muon_seen->Fill(jt->eval_X(det_z[0]),jt->eval_Y(det_z[0]));
 				for(int i_event=0;i_event<2;i_event++){
-					if(nref_event[i_event]->get_type() == "CM_Demux"){
+					if(nref_event[i_event]->get_type() == Tomography::CM_Demux){
 						CM_Demux_Event * current_event = static_cast<CM_Demux_Event*>(nref_event[i_event]);
 						(current_event->clusters).erase((current_event->clusters).begin()+seen_clus_in_array[i_event]);
 					}
-					else if(nref_event[i_event]->get_type() == "MG"){
+					else if(nref_event[i_event]->get_type() == Tomography::MG){
 						MG_Event * current_event = static_cast<MG_Event*>(nref_event[i_event]);
 						(current_event->clusters).erase((current_event->clusters).begin()+seen_clus_in_array[i_event]);
 					}
@@ -835,12 +836,12 @@ void Analyse::Efficacity(){
 			}
 		}
 		for(vector<Detector*>::iterator jt=detectors.begin();jt!=detectors.end();++jt){
-			if((*jt)->get_type() == "CM"){
+			if((*jt)->get_type() == Tomography::CM){
 				CM_Detector * currentDet = dynamic_cast<CM_Detector*>(*jt);
 				CM_residus[currentDet->get_cm_n_in_tree()]->Fill(evttime,currentCBEvent->get_clus_N_by_det(currentDet));
 				CM_spark_h[currentDet->get_cm_n_in_tree()]->Fill(evttime,CM_Spark[currentDet->get_cm_n_in_tree()]);
 			}
-			if((*jt)->get_type() == "MG"){
+			if((*jt)->get_type() == Tomography::MG){
 				MG_Detector * currentDet = dynamic_cast<MG_Detector*>(*jt);
 				MG_residus[currentDet->get_mg_n_in_tree()]->Fill(evttime,currentCBEvent->get_clus_N_by_det(currentDet));
 				MG_spark_h[currentDet->get_mg_n_in_tree()]->Fill(evttime,MG_Spark[currentDet->get_mg_n_in_tree()]);
@@ -1210,7 +1211,7 @@ void Analyse::StoreRayPairs(string outFileName){
 		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
 		eventSuitable+=currentCBEvent->get_clus_N()/(CM_N+MG_N);
 		for(vector<Event*>::iterator it=(currentCBEvent->events).begin();it!=(currentCBEvent->events).end();++it){
-			if((*it)->get_type() == "MG" && (*it)->get_n_in_tree() == i){
+			if((*it)->get_type() == Tomography::MG && (*it)->get_n_in_tree() == i){
 				MG_Event currentMGEvent(*dynamic_cast<MG_Event*>(*it));
 				for(vector<MG_Cluster>::iterator jt = currentMGEvent.clusters.begin();jt!=currentMGEvent.clusters.end();++jt){
 					mgPos->Fill(jt->pos);
@@ -1264,7 +1265,7 @@ void Analyse::bugtest(){
 		cout << evn << " : " << endl;
 		CosmicBenchEvent * CBEvent = new CosmicBenchEvent(this,this,false,-1);
 		for(vector<Event*>::iterator it = (CBEvent->events).begin();it!=(CBEvent->events).end();++it){
-			if((*it)->get_type() == "MG"){
+			if((*it)->get_type() == Tomography::MG){
 				vector<MG_Cluster> current_clusters = dynamic_cast<MG_Event*>(*it)->get_clusters();
 				if(current_clusters.size()>0) cout << setw(10) << current_clusters.front().get_pos() << " | ";
 				else cout << "No Cluster" << " | ";
@@ -1349,7 +1350,7 @@ void Analyse::CalcStripResponseFunction(int bin_nb){
 
 		double limit = 6;
 		int bin_n = 200;
-		if(detectors[i]->get_type() == "MG" && detectors[i]->get_is_X() == false) limit *= 2.;
+		if(detectors[i]->get_type() == Tomography::MG && detectors[i]->get_is_X() == false) limit *= 2.;
 		c = new TCanvas(c_name.str().c_str(),c_name.str().c_str());
 		d = new TCanvas(d_name.str().c_str(),d_name.str().c_str());
 		SRH = new TProfile(SRH_name.str().c_str(),SRH_name.str().c_str(),bin_n,-limit,limit,0,1000);
@@ -1405,10 +1406,10 @@ void Analyse::CalcStripResponseFunction(int bin_nb){
 
 			for(vector<Event*>::iterator it = (currentCBEvent->events).begin();it!=(currentCBEvent->events).end();++it){
 				if(!((*it)->get_is_ref())){
-					if((*it)->get_type() == "CM_Demux"){
+					if((*it)->get_type() == Tomography::CM_Demux){
 						continue;
 					}
-					else if((*it)->get_type() == "MG"){
+					else if((*it)->get_type() == Tomography::MG){
 						vector<MG_Cluster> current_clusters = (dynamic_cast<MG_Event*>(*it))->get_clusters();
 						for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
 
@@ -1587,8 +1588,8 @@ void Analyse::EventDisplay(int event_nb){
 	signalT->LoadTree(event_nb);
 	signalT->GetEntry(event_nb);
 	for(vector<Event*>::iterator ev_it = (CBEvent->events).begin();ev_it!=(CBEvent->events).end();++ev_it){
-		if((*ev_it)->get_type() == "MG") (*ev_it)->set_strip_ampl(signalT->get_mg_ampl((*ev_it)->get_n_in_tree()));
-		else if((*ev_it)->get_type() == "CM" || (*ev_it)->get_type() == "CM_Demux") (*ev_it)->set_strip_ampl(signalT->get_cm_ampl((*ev_it)->get_n_in_tree()));
+		if((*ev_it)->get_type() == Tomography::MG) (*ev_it)->set_strip_ampl(signalT->get_mg_ampl((*ev_it)->get_n_in_tree()));
+		else if((*ev_it)->get_type() == Tomography::CM || (*ev_it)->get_type() == Tomography::CM_Demux) (*ev_it)->set_strip_ampl(signalT->get_cm_ampl((*ev_it)->get_n_in_tree()));
 	}
 	CBEvent->EventDisplay();
 	/*
@@ -1679,7 +1680,7 @@ void Analyse::EventDisplay(int event_nb){
 		vector<Cluster*> ray_clusters = rays_it->get_clus();
 	}
 	for(vector<Event*>::iterator ev_it = (CBEvent->events).begin();ev_it!=(CBEvent->events).end();++ev_it){
-		if((*ev_it)->get_type() == "MG"){
+		if((*ev_it)->get_type() == Tomography::MG){
 			int det_n_in_tree = (*ev_it)->get_n_in_tree();
 			vector<MG_Cluster> current_clusters = (dynamic_cast<MG_Event*>(*ev_it))->get_clusters();
 			for(vector<MG_Cluster>::iterator clus_it = current_clusters.begin();clus_it!=current_clusters.end();++clus_it){
@@ -1717,7 +1718,7 @@ void Analyse::EventDisplay(int event_nb){
 			}
 
 		}
-		else if((*ev_it)->get_type() == "CM_Demux"){
+		else if((*ev_it)->get_type() == Tomography::CM_Demux){
 			//TODO : implement for CM
 		}		
 	}
@@ -1815,12 +1816,12 @@ void Analyse::Correlation(){
 			for(vector<Event*>::iterator it=(CBEvent->events).begin();it!=(CBEvent->events).end();++it){
 				double ampl_1 = 0;
 				double t_1 = 0;
-				if((*it)->get_type() == "MG"){
+				if((*it)->get_type() == Tomography::MG){
 					MG_Cluster current_cluster = ((dynamic_cast<MG_Event*>(*it))->get_clusters()).front();
 					ampl_1 = current_cluster.get_ampl();
 					t_1 = current_cluster.get_t();
 				}
-				else if((*it)->get_type() == "CM_Demux"){
+				else if((*it)->get_type() == Tomography::CM_Demux){
 					CM_Demux_Cluster current_cluster = ((dynamic_cast<CM_Demux_Event*>(*it))->get_clusters()).front();
 					ampl_1 = current_cluster.get_ampl();
 					t_1 = current_cluster.get_t();
@@ -1830,12 +1831,12 @@ void Analyse::Correlation(){
 					if(is_X != (*jt)->get_is_X()) continue;
 					double ampl_2 = 0;
 					double t_2 = 0;
-					if((*it)->get_type() == "MG"){
+					if((*it)->get_type() == Tomography::MG){
 						MG_Cluster current_cluster = ((dynamic_cast<MG_Event*>(*jt))->get_clusters()).front();
 						ampl_2 = current_cluster.get_ampl();
 						t_2 = current_cluster.get_t();
 					}
-					else if((*it)->get_type() == "CM_Demux"){
+					else if((*it)->get_type() == Tomography::CM_Demux){
 						CM_Demux_Cluster current_cluster = ((dynamic_cast<CM_Demux_Event*>(*jt))->get_clusters()).front();
 						ampl_2 = current_cluster.get_ampl();
 						t_2 = current_cluster.get_t();
@@ -1948,8 +1949,8 @@ void Analyse::Correlation(){
 				if((*det_it)->get_perp_n()<0) continue;
 				if((*det_it)->get_is_X()) continue;
 				int n = -1;
-				if((*det_it)->get_type() == "MG") n = dynamic_cast<MG_Detector*>(*det_it)->get_mg_n_in_tree();
-				else if((*det_it)->get_type() == "CM") n = dynamic_cast<CM_Detector*>(*det_it)->get_cm_n_in_tree();
+				if((*det_it)->get_type() == Tomography::MG) n = dynamic_cast<MG_Detector*>(*det_it)->get_mg_n_in_tree();
+				else if((*det_it)->get_type() == Tomography::CM) n = dynamic_cast<CM_Detector*>(*det_it)->get_cm_n_in_tree();
 				else continue;
 				vector<Detector*>::iterator det_jt = detectors.begin();
 				while((*det_jt)->get_perp_n() != n && det_jt != detectors.end()){
@@ -2122,7 +2123,7 @@ void Analyse::SignalOverNoise(){
 	map<int,TH1D*> global_noise;
 	map<int,TProfile*> global_signal_over_noise;
 	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
-		if((*it)->get_type() == "MG"){
+		if((*it)->get_type() == Tomography::MG){
 			MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
 			ostringstream name;
 			name << "Multigen_" << current_det->get_mg_n_in_tree();
@@ -2143,7 +2144,7 @@ void Analyse::SignalOverNoise(){
 		GetEntry(i);
 
 		for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
-			if((*it)->get_type() == "MG"){
+			if((*it)->get_type() == Tomography::MG){
 				MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
 				MG_Event current_event(this,current_det,false,evn);
 				vector<MG_Cluster> current_cluster = current_event.get_clusters();

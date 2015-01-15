@@ -48,7 +48,6 @@ liveDisplay::liveDisplay(): CosmicBench(){
 	file_descriptor = -1;
 	inotify_started = false;
 	current_file = "";
-	electronic_type = "";
 	MG_N = 0;
 	CM_N = 0;
 	det_type_by_asic.clear();
@@ -101,7 +100,7 @@ liveDisplay::liveDisplay(string config_file, int max_event_){
 		detectors.back()->set_RMS(RMS[child.second.get<int>("cm_n")]);
 		(dynamic_cast<CM_Detector*>(detectors.back()))->set_ClusMaxStripAmplCut_Min_Wide(child.second.get<double>("ClusMaxStripAmplCut_Min_Wide"));
 		(dynamic_cast<CM_Detector*>(detectors.back()))->set_ClusSizeCut_Max_Wide(child.second.get<double>("ClusSizeCut_Max_Wide"));
-		det_type_by_asic[child.second.get<int>("asic_n")] = "CM";
+		det_type_by_asic[child.second.get<int>("asic_n")] = Tomography::CM;
 		det_n_by_asic[child.second.get<int>("asic_n")] = child.second.get<int>("cm_n");
 		CM_N++;
 	}
@@ -113,7 +112,7 @@ liveDisplay::liveDisplay(string config_file, int max_event_){
 		detectors.back()->set_RMS(RMS[total_CM_N+child.second.get<int>("mg_n")]);
 		(dynamic_cast<MG_Detector*>(detectors.back()))->set_ClusSizeCut_Min(child.second.get<double>("ClusSizeCut_Min"));
 		(dynamic_cast<MG_Detector*>(detectors.back()))->set_SRF(child.second.get<double>("SRF.offset"),child.second.get<double>("SRF.gauss"),child.second.get<double>("SRF.lorentz"),child.second.get<double>("SRF.ratio"));
-		det_type_by_asic[child.second.get<int>("asic_n")] = "MG";
+		det_type_by_asic[child.second.get<int>("asic_n")] = Tomography::MG;
 		det_n_by_asic[child.second.get<int>("asic_n")] = child.second.get<int>("mg_n");
 		MG_N++;
 	}
@@ -123,7 +122,7 @@ liveDisplay::liveDisplay(string config_file, int max_event_){
 	}
 	if(total_CM_N!=0) cout << "warning, CosMultis are not fully supported !" << endl;
 	use_srf = config_tree.get<bool>("use_SRF");
-	electronic_type = config_tree.get<string>("electronic_type");
+	electronic_type = Tomography::str_to_elec(config_tree.get<string>("electronic_type"));
 	data_file_basename = config_tree.get<string>("data_file_basename");
 	ifstream pedFile((config_tree.get<string>("Ped")).c_str());
 	/*
@@ -140,16 +139,16 @@ liveDisplay::liveDisplay(string config_file, int max_event_){
 		}
 	}
 	*/
-	Pedestal["CM"] = vector<vector<float> >(CM_N,vector<float>(DataReader::Nstrip_CM,0));
-	Pedestal["MG"] = vector<vector<float> >(MG_N,vector<float>(DataReader::Nstrip_MG,0));
+	Pedestal[Tomography::CM] = vector<vector<float> >(CM_N,vector<float>(DataReader::Nstrip_CM,0));
+	Pedestal[Tomography::MG] = vector<vector<float> >(MG_N,vector<float>(DataReader::Nstrip_MG,0));
 	for(int i=0;i<CM_N;i++){
 		for(int j=0;j<DataReader::Nstrip_CM;j++){
-			pedFile >> i >> j >> Pedestal["CM"][i][j];
+			pedFile >> i >> j >> Pedestal[Tomography::CM][i][j];
 		}
 	}
 	for(int i=0;i<MG_N;i++){
 		for(int j=0;j<DataReader::Nstrip_MG;j++){
-			pedFile >> i >> j >> Pedestal["MG"][i][j];
+			pedFile >> i >> j >> Pedestal[Tomography::MG][i][j];
 		}
 	}
 	pedFile.close();
@@ -162,8 +161,8 @@ void liveDisplay::add_file(string filename){
 }
 void liveDisplay::add_files(int first,int last){
 	string extension = "";
-	if(electronic_type == "feminos") extension = ".aqs";
-	else if(electronic_type == "dream") extension = ".fdf";
+	if(electronic_type == Tomography::Feminos) extension = ".aqs";
+	else if(electronic_type == Tomography::Dream) extension = "_01..fdf";
 	else extension = ".txt";
 	for(int i=first;i<=last;i++){
 		ostringstream name;
@@ -225,12 +224,12 @@ void liveDisplay::flux_map(double z){
 	double x_max = 500;
 	double y_min = 0;
 	double y_max = 500;
-	map<string,int> detector_div;
-	detector_div["CM"] = 2;
-	detector_div["MG"] = 2;
-	map<string,int> Nstrip;
-	Nstrip["CM"] = DataReader::Nstrip_CM;
-	Nstrip["MG"] = DataReader::Nstrip_MG;
+	map<Tomography::det_type,int> detector_div;
+	detector_div[Tomography::CM] = 2;
+	detector_div[Tomography::MG] = 2;
+	map<Tomography::det_type,int> Nstrip;
+	Nstrip[Tomography::CM] = DataReader::Nstrip_CM;
+	Nstrip[Tomography::MG] = DataReader::Nstrip_MG;
 	int eventReconstructed = 0;
 	int eventSuitable = 0;
 	int processed = 0;
@@ -240,11 +239,11 @@ void liveDisplay::flux_map(double z){
 	TPaveText * stat_text = new TPaveText(0,0,1,1);
 	DataReader * current_data_reader = NULL;
 	int event_nb = 0;
-	if(electronic_type == "feminos"){
+	if(electronic_type == Tomography::Feminos){
 		current_data_reader = new FeminosDataReader("live",det_type_by_asic,det_n_by_asic);
 		event_nb = dynamic_cast<FeminosDataReader*>(current_data_reader)->get_first_event_nb(filenames.front());
 	}
-	else if(electronic_type == "dream"){
+	else if(electronic_type == Tomography::Dream){
 		current_data_reader = new DreamDataReader("live",det_type_by_asic,det_n_by_asic);
 	}
 	else return;
@@ -267,7 +266,7 @@ void liveDisplay::flux_map(double z){
 			if(!(read_mask & IN_MODIFY)) continue;
 			while(data_file.good()){
 				current_pos = data_file.tellg();
-				map<string,vector<vector<vector<double> > > > event_ampl = current_data_reader->read_event(&data_file,event_nb);
+				map<Tomography::det_type,vector<vector<vector<double> > > > event_ampl = current_data_reader->read_event(&data_file,event_nb);
 				if(event_ampl.size()==0){
 					data_file.clear();
 					data_file.seekg(current_pos, data_file.beg);
@@ -363,8 +362,8 @@ void liveDisplay::flux_map(double z){
 					}
 				}
 				*/
-				map<string,vector<vector<float> > >::iterator ped_it = Pedestal.begin();
-				for(map<string,vector<vector<vector<double> > > >::iterator it = event_ampl.begin();it!=event_ampl.end();++it){
+				map<Tomography::det_type,vector<vector<float> > >::iterator ped_it = Pedestal.begin();
+				for(map<Tomography::det_type,vector<vector<vector<double> > > >::iterator it = event_ampl.begin();it!=event_ampl.end();++it){
 					vector<vector<float> >::iterator ped_jt = (ped_it->second).begin();
 					for(vector<vector<vector<double> > >::iterator jt = (it->second).begin();jt!=(it->second).end();++jt){
 						for(int k=0;k<DataReader::Nsample;k++){
@@ -388,15 +387,15 @@ void liveDisplay::flux_map(double z){
 				}
 				vector<Event*> events;
 				for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
-					if((*it)->get_type() == "MG"){
+					if((*it)->get_type() == Tomography::MG){
 						MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
-						events.push_back(new MG_Event(*current_det,event_ampl["MG"][current_det->get_mg_n_in_tree()],use_srf,event_nb));
+						events.push_back(new MG_Event(*current_det,event_ampl[Tomography::MG][current_det->get_mg_n_in_tree()],use_srf,event_nb));
 						(events.back())->MultiCluster();
 						(events.back())->do_cuts();
 					}
-					else if((*it)->get_type() == "CM"){
+					else if((*it)->get_type() == Tomography::CM){
 						CM_Detector * current_det = dynamic_cast<CM_Detector*>(*it);
-						events.push_back(new CM_Event(*current_det,event_ampl["CM"][current_det->get_cm_n_in_tree()],use_srf,event_nb));
+						events.push_back(new CM_Event(*current_det,event_ampl[Tomography::CM][current_det->get_cm_n_in_tree()],use_srf,event_nb));
 						(events.back())->MultiCluster();
 						(events.back())->do_cuts();
 					}

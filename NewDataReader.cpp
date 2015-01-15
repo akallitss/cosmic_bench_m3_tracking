@@ -10,6 +10,8 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/foreach.hpp>
 
+#include "tomography.h"
+
 using std::string;
 using std::map;
 using std::ostringstream;
@@ -34,15 +36,15 @@ int main(int argc, char ** argv){
 	int total_MG_N = config_tree.get<int>("total_MG_N");
 	int CM_N = 0;
 	int MG_N = 0;
-	map<int,string> det_type_by_asic;
+	map<int,Tomography::det_type> det_type_by_asic;
 	map<int,int> det_n_by_asic;
 	BOOST_FOREACH(const ptree::value_type& child, config_tree.get_child("CosmicBench.CosMultis")){
-		det_type_by_asic[child.second.get<int>("asic_n")] = "CM";
+		det_type_by_asic[child.second.get<int>("asic_n")] = Tomography::CM;
 		det_n_by_asic[child.second.get<int>("asic_n")] = child.second.get<int>("cm_n");
 		CM_N++;
 	}
 	BOOST_FOREACH(const ptree::value_type& child, config_tree.get_child("CosmicBench.MultiGens")){
-		det_type_by_asic[child.second.get<int>("asic_n")] = "MG";
+		det_type_by_asic[child.second.get<int>("asic_n")] = Tomography::MG;
 		det_n_by_asic[child.second.get<int>("asic_n")] = child.second.get<int>("mg_n");
 		MG_N++;
 	}
@@ -50,7 +52,7 @@ int main(int argc, char ** argv){
 		cout << "problem in detectors number" << endl;
 		return 1;
 	}
-	string electronic_type = config_tree.get<string>("electronic_type");
+	Tomography::elec_type electronic_type = Tomography::str_to_elec(config_tree.get<string>("electronic_type"));
 	string data_file_basename = config_tree.get<string>("data_file_basename");
 	string signalName = config_tree.get<string>("signal_file");
 	string PedName = config_tree.get<string>("Ped");
@@ -67,10 +69,10 @@ int main(int argc, char ** argv){
 	bool compute_rms = !(file.good());
 	file.close();
 	DataReader * blah = NULL;
-	if(electronic_type == "dream"){
+	if(electronic_type == Tomography::Dream){
 		blah = new DreamDataReader(signalName,PedName,RMSName,det_type_by_asic,det_n_by_asic,exists,exists,exists,max_event);
 	}
-	else if(electronic_type == "feminos"){
+	else if(electronic_type == Tomography::Feminos){
 		blah = new FeminosDataReader(signalName,PedName,RMSName,det_type_by_asic,det_n_by_asic,exists,exists,exists,max_event);
 	}
 	else{
@@ -82,8 +84,8 @@ int main(int argc, char ** argv){
 	for(int i=first_data_file;i<last_data_file;i++){
 		ostringstream dataFileName;
 		dataFileName << data_file_basename << setw(3) << setfill('0') << i;
-		if(electronic_type == "dream") dataFileName << "_01.fdf";
-		else if(electronic_type == "feminos") dataFileName << ".aqs";
+		if(electronic_type == Tomography::Dream) dataFileName << "_01.fdf";
+		else if(electronic_type == Tomography::Feminos) dataFileName << ".aqs";
 		else dataFileName << ".txt";
 		blah->add_file_to_process(dataFileName.str());
 	}

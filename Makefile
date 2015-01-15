@@ -37,43 +37,43 @@ lib: libAnalyse.so
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
-DataReader: NewDataReader.o datareader.o header.o dataline.o
+DataReader: NewDataReader.o datareader.o header.o dataline.o tomography.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-absorptionMap: absorptionMap.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o
+absorptionMap: absorptionMap.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o tomography.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-tracking: tracking.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o
+tracking: tracking.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o tomography.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-MultiCluster: MultiCluster.o signal.o detector.o event.o cluster.o Tanalyse.o ray.o point.o Tsignal.o datareader.o dataline.o
+MultiCluster: MultiCluster.o signal.o detector.o event.o cluster.o Tanalyse.o ray.o point.o Tsignal.o datareader.o dataline.o tomography.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-testCapa: testCapa.o signal.o detector.o event.o cluster.o Tanalyse.o ray.o point.o Tsignal.o datareader.o dataline.o
+testCapa: testCapa.o signal.o detector.o event.o cluster.o Tanalyse.o ray.o point.o Tsignal.o datareader.o dataline.o tomography.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-live: live.o liveDisplay.o datareader.o header.o dataline.o detector.o event.o cluster.o ray.o point.o
+live: live.o liveDisplay.o datareader.o header.o dataline.o detector.o event.o cluster.o ray.o point.o tomography.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-absorptionMapDict: absorptionMap.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o MyDict.o
+absorptionMapDict: absorptionMap.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o tomography.o MyDict.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-trackingDict: tracking.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o MyDict.o
+trackingDict: tracking.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o tomography.o MyDict.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-MultiClusterDict: MultiCluster.o signal.o detector.o event.o cluster.o Tanalyse.o Tsignal.o ray.o point.o datareader.o dataline.o MyDict.o
+MultiClusterDict: MultiCluster.o signal.o detector.o event.o cluster.o Tanalyse.o Tsignal.o ray.o point.o datareader.o dataline.o tomography.o MyDict.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-testCapaDict: testCapa.o signal.o detector.o event.o cluster.o Tanalyse.o ray.o point.o Tsignal.o datareader.o dataline.o MyDict.o
+testCapaDict: testCapa.o signal.o detector.o event.o cluster.o Tanalyse.o ray.o point.o Tsignal.o datareader.o dataline.o tomography.o MyDict.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-liveDict: live.o liveDisplay.o datareader.o header.o dataline.o detector.o event.o cluster.o ray.o point.o MyDict.o
+liveDict: live.o liveDisplay.o datareader.o header.o dataline.o detector.o event.o cluster.o ray.o point.o tomography.o MyDict.o
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-libAnalyse.so: analyse.o T.o event.o ray.o cluster.o detector.o point.o Tanalyse.o Tsignal.o signal.o MyDict.o
+libAnalyse.so: analyse.o T.o event.o ray.o cluster.o detector.o point.o Tanalyse.o Tsignal.o signal.o tomography.o MyDict.o
 	$(CXX) $(SOFLAGS) $(LDFLAGS) -o $@ $^ 
 
-MyDict.cpp: analyse.h T.h event.h ray.h cluster.h detector.h point.h Tanalyse.h Tsignal.h signal.h acceptanceFunction.h Linkdef.h
+MyDict.cpp: analyse.h T.h event.h ray.h cluster.h detector.h point.h Tanalyse.h Tsignal.h signal.h acceptanceFunction.h tomography.h Linkdef.h
 	rootcint -f $@ -c $(CXXFLAGS) -p $^
 
 clean:

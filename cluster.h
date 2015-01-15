@@ -4,6 +4,7 @@
 #include "T.h"
 #include "cluster.h"
 #include "detector.h"
+#include "tomography.h"
 
 using std::string;
 
@@ -20,7 +21,7 @@ class T;
 class Cluster{
 	public:
 		virtual ~Cluster();
-		string get_type() const;
+		Tomography::det_type get_type() const;
 		virtual double get_pos_mm() const = 0;
 		virtual double correct_strip_nb(int strip_nb) const = 0;
 		bool get_is_X() const;
@@ -56,7 +57,7 @@ class Cluster{
 		double TOT;
 		double t;
 		int maxStrip;
-		string type;
+		Tomography::det_type type;
 		double z;
 		bool is_X;
 		bool is_up;
@@ -78,12 +79,12 @@ class CM_Cluster: public Cluster{
 		static bool is_suitable(T * treeObject,int number_,CM_Detector * detector, int entry = -1);
 		bool is_suitable(CM_Detector * detector);
 		bool is_in_det(Detector * det) const;
-		string get_strip_type() const;
+		Tomography::strip_type get_strip_type() const;
 		virtual double get_pos_mm() const;
 		virtual double correct_strip_nb(int strip_nb) const;
 		int get_n_in_tree() const;
 	protected:
-		string strip_type;
+		Tomography::strip_type strip_type;
 		int cm_n_in_tree;
 };
 

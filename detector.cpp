@@ -16,11 +16,11 @@ using TMath::Log;
 bool operator==(Detector const &det1, Detector const &det2){
 	if(det1.get_type()!= det2.get_type()) return false;
 	else{
-		if(det1.get_type() == "CM"){
+		if(det1.get_type() == Tomography::CM){
 				if(dynamic_cast<const CM_Detector*>(&det1)->get_cm_n_in_tree() != dynamic_cast<const CM_Detector*>(&det2)->get_cm_n_in_tree()) return false;
 				else return true;
 		}
-		else if(det1.get_type() == "MG"){
+		else if(det1.get_type() == Tomography::MG){
 				if(dynamic_cast<const MG_Detector*>(&det1)->get_mg_n_in_tree() != dynamic_cast<const MG_Detector*>(&det2)->get_mg_n_in_tree()) return false;
 				else return true;
 		}
@@ -171,8 +171,6 @@ CM_Detector::CM_Detector(double z_, bool is_X_, bool is_up_, int cm_n, bool use_
 CM_Detector::~CM_Detector(){
 
 }
-const double CM_Detector::thinStripPitch = 500./1024.;
-const double CM_Detector::wideStripPitch = 500./32.;
 void CM_Detector::set_ClusMaxStripAmplCut_Min_Wide(double cut){
 	ClusMaxStripAmplCut_Min_Wide = cut;
 }
@@ -193,8 +191,8 @@ int CM_Detector::get_cm_n_in_tree() const{
 bool CM_Detector::get_use_thin_strip() const{
 	return use_thin_strip;
 }
-string CM_Detector::get_type() const{
-	return "CM";
+Tomography::det_type CM_Detector::get_type() const{
+	return Tomography::CM;
 }
 void CM_Detector::set_RMS(vector<double> RMS_){
 	if(RMS_.size()!=64) return;
@@ -268,7 +266,6 @@ vector<unsigned int> MG_Detector::ChannelToStrip(unsigned int channel_nb){
 	}
 	return channel_list;
 }
-const double MG_Detector::StripPitch = 500./1024.; // distance between the middle of 2 adjacent strips
 void MG_Detector::set_ClusSizeCut_Min(double cut){
 	ClusSizeCut_Min = cut;
 }
@@ -279,8 +276,8 @@ bool MG_Detector::test_ClusSize(double size){
 int MG_Detector::get_mg_n_in_tree() const{
 	return mg_n_in_tree;
 }
-string MG_Detector::get_type() const{
-	return "MG";
+Tomography::det_type MG_Detector::get_type() const{
+	return Tomography::MG;
 }
 void MG_Detector::set_RMS(vector<double> RMS_){
 	if(RMS_.size()!=61) return;

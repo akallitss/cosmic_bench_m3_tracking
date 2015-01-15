@@ -51,7 +51,7 @@ using boost::property_tree::ptree;
 Signal::Signal(string configFilePath){
 	ptree config_tree;
 	read_json(configFilePath, config_tree);
-	electronic_type = config_tree.get<string>("electronic_type");
+	electronic_type = Tomography::str_to_elec(config_tree.get<string>("electronic_type"));
 	data_file_basename = config_tree.get<string>("data_file_basename");
 	signalName = config_tree.get<string>("signal_file");
 	PedName = config_tree.get<string>("Ped");
@@ -97,7 +97,7 @@ Signal::Signal(string configFilePath){
 		detectors.back()->set_RMS(RMS[child.second.get<int>("cm_n")]);
 		(dynamic_cast<CM_Detector*>(detectors.back()))->set_ClusMaxStripAmplCut_Min_Wide(child.second.get<double>("ClusMaxStripAmplCut_Min_Wide"));
 		(dynamic_cast<CM_Detector*>(detectors.back()))->set_ClusSizeCut_Max_Wide(child.second.get<double>("ClusSizeCut_Max_Wide"));
-		det_type_by_asic[child.second.get<int>("asic_n")] = "CM";
+		det_type_by_asic[child.second.get<int>("asic_n")] = Tomography::CM;
 		det_n_by_asic[child.second.get<int>("asic_n")] = child.second.get<int>("cm_n");
 		CM_n++;
 	}
@@ -109,7 +109,7 @@ Signal::Signal(string configFilePath){
 		detectors.back()->set_RMS(RMS[total_CM_N+child.second.get<int>("mg_n")]);
 		(dynamic_cast<MG_Detector*>(detectors.back()))->set_ClusSizeCut_Min(child.second.get<double>("ClusSizeCut_Min"));
 		(dynamic_cast<MG_Detector*>(detectors.back()))->set_SRF(child.second.get<double>("SRF.offset"),child.second.get<double>("SRF.gauss"),child.second.get<double>("SRF.lorentz"),child.second.get<double>("SRF.ratio"));
-		det_type_by_asic[child.second.get<int>("asic_n")] = "MG";
+		det_type_by_asic[child.second.get<int>("asic_n")] = Tomography::MG;
 		det_n_by_asic[child.second.get<int>("asic_n")] = child.second.get<int>("mg_n");
 		MG_n++;
 	}
@@ -146,12 +146,12 @@ void Signal::MultiCluster(){
 		vector<CM_Event> cm_events;
 
 		for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
-			if((*it)->get_type() == "MG"){
+			if((*it)->get_type() == Tomography::MG){
 				MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
 				mg_events.push_back(MG_Event(*current_det,get_mg_ampl(current_det->get_mg_n_in_tree()),use_srf,Nevent));
 				mg_events.back().MultiCluster();
 			}
-			else if((*it)->get_type() == "CM"){
+			else if((*it)->get_type() == Tomography::CM){
 				CM_Detector * current_det = dynamic_cast<CM_Detector*>(*it);
 				cm_events.push_back(CM_Event(*current_det,get_cm_ampl(current_det->get_cm_n_in_tree()),use_srf,Nevent));
 				cm_events.back().MultiCluster();
@@ -169,18 +169,18 @@ void Signal::MultiCluster(){
 
 void Signal::ElecToAnalyse(){
 	cout << "Reading Pedestal : " << PedName << endl;
-	map<string,vector<vector<float> > > Pedestal;
-	Pedestal["CM"] = vector<vector<float> >(CM_N,vector<float>(DataReader::Nstrip_CM,0));
-	Pedestal["MG"] = vector<vector<float> >(MG_N,vector<float>(DataReader::Nstrip_MG,0));
+	map<Tomography::det_type,vector<vector<float> > > Pedestal;
+	Pedestal[Tomography::CM] = vector<vector<float> >(CM_N,vector<float>(DataReader::Nstrip_CM,0));
+	Pedestal[Tomography::MG] = vector<vector<float> >(MG_N,vector<float>(DataReader::Nstrip_MG,0));
 	ifstream pedFile(PedName.c_str());
 	for(int i=0;i<CM_N;i++){
 		for(int j=0;j<DataReader::Nstrip_CM;j++){
-			pedFile >> i >> j >> Pedestal["CM"][i][j];
+			pedFile >> i >> j >> Pedestal[Tomography::CM][i][j];
 		}
 	}
 	for(int i=0;i<MG_N;i++){
 		for(int j=0;j<DataReader::Nstrip_MG;j++){
-			pedFile >> i >> j >> Pedestal["MG"][i][j];
+			pedFile >> i >> j >> Pedestal[Tomography::MG][i][j];
 		}
 	}
 	pedFile.close();
@@ -190,34 +190,34 @@ void Signal::ElecToAnalyse(){
 	int event_nb = 0;
 	string extension = "";
 	DataReader * current_data_reader;
-	if(electronic_type == "feminos"){
+	if(electronic_type == Tomography::Feminos){
 		extension = ".aqs";
 		current_data_reader = new FeminosDataReader("tmp",det_type_by_asic,det_n_by_asic);
 		ostringstream name;
 		name << data_file_basename << setfill('0') << setw(3) << data_file_first << extension;
 		Nevent = dynamic_cast<FeminosDataReader*>(current_data_reader)->get_first_event_nb(name.str());
 	}
-	else if(electronic_type == "dream"){
+	else if(electronic_type == Tomography::Dream){
 		extension = "_01.fdf";
 		current_data_reader = new DreamDataReader("tmp",det_type_by_asic,det_n_by_asic);
 	}
 	else return;
-	map<string,int> detector_div;
-	detector_div["CM"] = 2;
-	detector_div["MG"] = 2;
-	map<string,int> Nstrip;
-	Nstrip["CM"] = DataReader::Nstrip_CM;
-	Nstrip["MG"] = DataReader::Nstrip_MG;
+	map<Tomography::det_type,int> detector_div;
+	detector_div[Tomography::CM] = 2;
+	detector_div[Tomography::MG] = 2;
+	map<Tomography::det_type,int> Nstrip;
+	Nstrip[Tomography::CM] = DataReader::Nstrip_CM;
+	Nstrip[Tomography::MG] = DataReader::Nstrip_MG;
 	for(int i=data_file_first;i<=data_file_last;i++){
 		int event_nb_file = 0;
 		ostringstream name;
 		name << data_file_basename << setfill('0') << setw(3) << i << extension;
 		ifstream data_file(name.str().c_str(),ifstream::binary);
 		while(data_file.good()){
-			map<string,vector<vector<vector<double> > > > event_ampl = current_data_reader->read_event(&data_file,Nevent,false);
+			map<Tomography::det_type,vector<vector<vector<double> > > > event_ampl = current_data_reader->read_event(&data_file,Nevent,false);
 			if(event_ampl.size()==0) break;
-			map<string,vector<vector<float> > >::iterator ped_it = Pedestal.begin();
-			for(map<string,vector<vector<vector<double> > > >::iterator it = event_ampl.begin();it!=event_ampl.end();++it){
+			map<Tomography::det_type,vector<vector<float> > >::iterator ped_it = Pedestal.begin();
+			for(map<Tomography::det_type,vector<vector<vector<double> > > >::iterator it = event_ampl.begin();it!=event_ampl.end();++it){
 				vector<vector<float> >::iterator ped_jt = (ped_it->second).begin();
 				for(vector<vector<vector<double> > >::iterator jt = (it->second).begin();jt!=(it->second).end();++jt){
 					for(int k=0;k<DataReader::Nsample;k++){
@@ -242,14 +242,14 @@ void Signal::ElecToAnalyse(){
 			vector<MG_Event> mg_events;
 			vector<CM_Event> cm_events;
 			for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
-				if((*it)->get_type() == "MG"){
+				if((*it)->get_type() == Tomography::MG){
 					MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
-					mg_events.push_back(MG_Event(*current_det,event_ampl["MG"][current_det->get_mg_n_in_tree()],use_srf,event_nb));
+					mg_events.push_back(MG_Event(*current_det,event_ampl[Tomography::MG][current_det->get_mg_n_in_tree()],use_srf,event_nb));
 					mg_events.back().MultiCluster();
 				}
-				else if((*it)->get_type() == "CM"){
+				else if((*it)->get_type() == Tomography::CM){
 					CM_Detector * current_det = dynamic_cast<CM_Detector*>(*it);
-					cm_events.push_back(CM_Event(*current_det,event_ampl["CM"][current_det->get_cm_n_in_tree()],use_srf,event_nb));
+					cm_events.push_back(CM_Event(*current_det,event_ampl[Tomography::CM][current_det->get_cm_n_in_tree()],use_srf,event_nb));
 					cm_events.back().MultiCluster();
 				}
 			}
@@ -282,7 +282,7 @@ void Signal::HoughTracking(int event_nb){
 	double max_z = -10000;
 	double min_z = 10000;
 	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
-		if((*it)->get_type() == "MG"){
+		if((*it)->get_type() == Tomography::MG){
 			MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
 			MG_Event current_event = MG_Event(*current_det,get_mg_ampl(current_det->get_mg_n_in_tree()),use_srf,Nevent);
 			current_event.HoughCluster();
@@ -380,7 +380,7 @@ map<int,TProfile*> Signal::SignalOverNoise(){
 	map<int,TH1D*> global_signal;
 	map<int,TH1D*> global_noise;
 	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
-		if((*it)->get_type() == "MG"){
+		if((*it)->get_type() == Tomography::MG){
 			MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
 			ostringstream name;
 			name << "Multigen_" << current_det->get_mg_n_in_tree();
@@ -401,7 +401,7 @@ map<int,TProfile*> Signal::SignalOverNoise(){
 		GetEntry(i);
 
 		for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
-			if((*it)->get_type() == "MG"){
+			if((*it)->get_type() == Tomography::MG){
 				MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
 				MG_Event current_event(*current_det,get_mg_ampl(current_det->get_mg_n_in_tree()),use_srf,Nevent);
 				current_event.MultiCluster();
@@ -430,7 +430,7 @@ void Signal::SignalOverNoiseDisplay(){
 	map<int,TH1D*> global_signal;
 	map<int,TH1D*> global_noise;
 	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
-		if((*it)->get_type() == "MG"){
+		if((*it)->get_type() == Tomography::MG){
 			MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
 			ostringstream name;
 			name << "Multigen_" << current_det->get_mg_n_in_tree();
@@ -451,7 +451,7 @@ void Signal::SignalOverNoiseDisplay(){
 		GetEntry(i);
 
 		for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
-			if((*it)->get_type() == "MG"){
+			if((*it)->get_type() == Tomography::MG){
 				MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
 				MG_Event current_event(*current_det,get_mg_ampl(current_det->get_mg_n_in_tree()),use_srf,Nevent);
 				current_event.MultiCluster();
@@ -498,7 +498,7 @@ void Signal::SignalOverNoiseDisplay(){
 		mean_SoN->Draw();
 		it->second->Modified();
 		it->second->Update();
-		cout << "MG" << it->first << endl;
+		cout << Tomography::MG << it->first << endl;
 		cout << "    mean S/B : " << global_signal_over_noise[it->first]->GetMean(2) << endl;
 		cout << "    mean S/mean B : " << (global_signal[it->first]->GetMean())/(global_noise[it->first]->GetMean()) << endl;
 		cout << "    sigma S/B : " << global_signal_over_noise[it->first]->GetRMS(2) << endl;

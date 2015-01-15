@@ -14,7 +14,6 @@ using TMath::Min;
 using TMath::Tan;
 
 Cluster::Cluster(){
-	type.clear();
 	evn = -1;
 	number = -1;
 	ampl = -1;
@@ -25,7 +24,6 @@ Cluster::Cluster(){
 	maxStrip = -1;
 	TOT = -1;
 	t = -1;
-	type = "";
 	z = -1;
 	is_X = -1;
 	is_up = -1;
@@ -35,8 +33,6 @@ Cluster::Cluster(){
 	angle = 0;
 }
 Cluster::Cluster(const Cluster& other){
-	type.clear();
-	type = "";
 	type = other.type;
 	evn = other.evn;
 	number = other.number;
@@ -57,8 +53,6 @@ Cluster::Cluster(const Cluster& other){
 	angle = other.angle;
 }
 Cluster& Cluster::operator=(const Cluster& other){
-	type.clear();
-	type = "";
 	type = other.type;
 	evn = other.evn;
 	number = other.number;
@@ -80,8 +74,6 @@ Cluster& Cluster::operator=(const Cluster& other){
 	return *this;
 }
 Cluster::Cluster(T * treeObject, int entry){
-	type.clear();
-	type = "";
 	if(entry>-1){
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);
@@ -115,7 +107,7 @@ Cluster::Cluster(double pos_, double size_, double ampl_, double maxSample_, dou
 	TOT = TOT_;
 	t = t_;
 }
-string Cluster::get_type() const{
+Tomography::det_type Cluster::get_type() const{
 	return type;
 }
 bool Cluster::get_is_X() const{
@@ -169,21 +161,17 @@ Cluster::~Cluster(){
 }
 
 CM_Cluster::CM_Cluster(): Cluster(){
-	type.clear();
-	type = "CM";
-	strip_type = "";
+	type = Tomography::CM;
 	cm_n_in_tree = -1;
 }
 CM_Cluster::CM_Cluster(const CM_Cluster& other): Cluster(other){
-	type.clear();
-	type = "CM";
+	type = Tomography::CM;
 	strip_type = other.strip_type;
 	cm_n_in_tree = other.cm_n_in_tree;
 }
 CM_Cluster& CM_Cluster::operator=(const CM_Cluster& other){
 	Cluster::operator=(other);
-	type.clear();
-	type = "CM";
+	type = other.type;
 	strip_type = other.strip_type;
 	cm_n_in_tree = other.cm_n_in_tree;
 	return *this;
@@ -209,9 +197,8 @@ CM_Cluster::CM_Cluster(T * treeObject,int number_,CM_Detector * det, int entry):
 	TOT = treeObject->CM_ClusTOT[cm_n_in_tree][number];
 	t = treeObject->CM_ClusT[cm_n_in_tree][number];
 	maxStrip = treeObject->CM_ClusMaxStrip[cm_n_in_tree][number];
-	type.clear();
-	type = "CM";
-	(pos>31) ? strip_type = "Wide" : strip_type = "Thin";
+	type = Tomography::CM;
+	(pos>31) ? strip_type = Tomography::Wide : strip_type = Tomography::Thin;
 }
 CM_Cluster::CM_Cluster(CM_Detector * det, int number_, double pos_, double size_, double ampl_, double maxSample_, double maxStripAmpl_, double TOT_, double t_, int maxStrip_): Cluster(pos_,size_,ampl_,maxSample_, maxStripAmpl_,TOT_,t_, maxStrip_){
 	number = number_;
@@ -222,9 +209,8 @@ CM_Cluster::CM_Cluster(CM_Detector * det, int number_, double pos_, double size_
 	offset = det->get_offset();
 	direction = det->get_direction();
 	angle = det->get_angle();
-	type.clear();
-	type = "CM";
-	(pos>31) ? strip_type = "Wide" : strip_type = "Thin";
+	type = Tomography::CM;
+	(pos>31) ? strip_type = Tomography::Wide : strip_type = Tomography::Thin;
 }
 CM_Cluster::~CM_Cluster(){
 	
@@ -258,14 +244,14 @@ bool CM_Cluster::is_suitable(CM_Detector * detector){
 	return true;
 }
 bool CM_Cluster::is_in_det(Detector * det) const{
-	if(det->get_type() != "CM") return false;
+	if(det->get_type() != Tomography::CM) return false;
 	return ((dynamic_cast<CM_Detector*>(det))->get_cm_n_in_tree() == cm_n_in_tree);
 }
-string CM_Cluster::get_strip_type() const{
+Tomography::strip_type CM_Cluster::get_strip_type() const{
 	return strip_type;
 }
 double CM_Cluster::get_pos_mm() const{
-	if(strip_type == "Wide"){
+	if(strip_type == Tomography::Wide){
 		double pos_mm = 0;
 		if(direction){
 			pos_mm = ((63.-maxStrip)*500./32.);
@@ -282,7 +268,7 @@ double CM_Cluster::get_pos_mm() const{
 	else return -1;
 }
 double CM_Cluster::correct_strip_nb(int strip_nb) const{
-	if(strip_type == "Wide"){
+	if(strip_type == Tomography::Wide){
 		double pos_mm = 0;
 		if(direction){
 			pos_mm = ((63.-strip_nb)*500./32.);
@@ -303,24 +289,21 @@ int CM_Cluster::get_n_in_tree() const{
 }
 
 CM_Demux_Cluster::CM_Demux_Cluster(): CM_Cluster(){
-	type.clear();
-	type = "CM_Demux";
+	type = Tomography::CM_Demux;
 }
 CM_Demux_Cluster::CM_Demux_Cluster(const CM_Demux_Cluster& other): CM_Cluster(other){
-	type.clear();
-	type = "CM_Demux";
-	strip_type = "Demux";
+	type = Tomography::CM_Demux;
+	strip_type = Tomography::Demux;
 }
 CM_Demux_Cluster& CM_Demux_Cluster::operator=(const CM_Demux_Cluster& other){
 	CM_Cluster::operator=(other);
-	type.clear();
-	type = "CM_Demux";
-	strip_type = "Demux";
+	type = Tomography::CM_Demux;
+	strip_type = Tomography::Demux;
 	return *this;
 }
 CM_Demux_Cluster::CM_Demux_Cluster(const CM_Cluster& thinStrip_clus, const CM_Cluster& wideStrip_clus){
-	type.clear();
-	type = "CM_Demux";
+	type = Tomography::CM_Demux;
+	strip_type = Tomography::Demux;
 	if(thinStrip_clus.pos>31 || wideStrip_clus.pos<32) return;
 	if(thinStrip_clus.evn != wideStrip_clus.evn) return;
 	if(thinStrip_clus.cm_n_in_tree != wideStrip_clus.cm_n_in_tree) return;
@@ -341,11 +324,10 @@ CM_Demux_Cluster::CM_Demux_Cluster(const CM_Cluster& thinStrip_clus, const CM_Cl
 	TOT = Min(thinStrip_clus.TOT,wideStrip_clus.TOT);
 	t = (thinStrip_clus.t+wideStrip_clus.t)/2;
 	maxStrip = (thinStrip_clus.maxStripAmpl>wideStrip_clus.maxStripAmpl) ? thinStrip_clus.maxStrip : wideStrip_clus.maxStrip;
-	strip_type = "Demux";
 }
 CM_Demux_Cluster::CM_Demux_Cluster(const CM_Cluster& wideStrip_clus){
-	type.clear();
-	type = "CM_Demux";
+	type = Tomography::CM_Demux;
+	strip_type = Tomography::Demux;
 	if(wideStrip_clus.pos<32) return;
 	cm_n_in_tree = wideStrip_clus.cm_n_in_tree;
 	z = wideStrip_clus.z;
@@ -363,7 +345,6 @@ CM_Demux_Cluster::CM_Demux_Cluster(const CM_Cluster& wideStrip_clus){
 	TOT = wideStrip_clus.TOT;
 	t = wideStrip_clus.t;
 	maxStrip = wideStrip_clus.maxStrip;
-	strip_type = "Demux";
 }
 double CM_Demux_Cluster::get_pos_mm() const{
 	double pos_mm = 0;
@@ -398,19 +379,16 @@ CM_Demux_Cluster::~CM_Demux_Cluster(){
 }
 
 MG_Cluster::MG_Cluster(): Cluster(){
-	type.clear();
-	type = "MG";
+	type = Tomography::MG;
 	mg_n_in_tree = -1;
 }
 MG_Cluster::MG_Cluster(const MG_Cluster& other): Cluster(other){
-	type.clear();
-	type = "MG";
+	type = Tomography::MG;
 	mg_n_in_tree = other.mg_n_in_tree;
 }
 MG_Cluster& MG_Cluster::operator=(const MG_Cluster& other){
 	Cluster::operator=(other);
-	type.clear();
-	type = "MG";
+	type = Tomography::MG;
 	mg_n_in_tree = other.mg_n_in_tree;
 	return *this;
 }
@@ -435,8 +413,7 @@ MG_Cluster::MG_Cluster(T * treeObject,int number_,MG_Detector * det, int entry):
 	TOT = treeObject->MG_ClusTOT[mg_n_in_tree][number];
 	t = treeObject->MG_ClusT[mg_n_in_tree][number];
 	maxStrip = treeObject->MG_ClusMaxStrip[mg_n_in_tree][number];
-	type.clear();
-	type = "MG";
+	type = Tomography::MG;
 }
 MG_Cluster::MG_Cluster(MG_Detector * det, int number_, double pos_, double size_, double ampl_, double maxSample_, double maxStripAmpl_, double TOT_, double t_, int maxStrip_): Cluster(pos_,size_,ampl_,maxSample_, maxStripAmpl_,TOT_,t_,maxStrip_){
 	number = number_;
@@ -447,8 +424,7 @@ MG_Cluster::MG_Cluster(MG_Detector * det, int number_, double pos_, double size_
 	offset = det->get_offset();
 	direction = det->get_direction();
 	angle = det->get_angle();
-	type.clear();
-	type = "MG";
+	type = Tomography::MG;
 }
 
 MG_Cluster::~MG_Cluster(){
@@ -475,7 +451,7 @@ bool MG_Cluster::is_suitable(MG_Detector * detector){
 	return true;
 }
 bool MG_Cluster::is_in_det(Detector * det) const{
-	if(det->get_type() != "MG") return false;
+	if(det->get_type() != Tomography::MG) return false;
 	return ((dynamic_cast<MG_Detector*>(det))->get_mg_n_in_tree() == mg_n_in_tree);
 }
 double MG_Cluster::get_pos_mm() const{

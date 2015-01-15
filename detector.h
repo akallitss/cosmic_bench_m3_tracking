@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include "tomography.h"
+
 using std::string;
 using std::vector;
 
@@ -13,7 +15,7 @@ class Detector{
 		bool get_is_X() const;
 		bool get_is_up() const;
 		bool get_is_ref() const;
-		virtual string get_type() const = 0;
+		virtual Tomography::det_type get_type() const = 0;
 		double get_offset() const;
 		bool get_direction() const;
 		double get_angle() const;
@@ -58,8 +60,9 @@ class CM_Detector: public Detector{
 		CM_Detector(double z_, bool is_X_, bool is_up_, int cm_n, bool use_thin_strip_, bool is_ref_, double offset_, bool direction_, double angle_);
 		~CM_Detector();
 		//CosMulti general charac
-		static const double thinStripPitch; // distance between the middle of 2 adjacent thin strips
-		static const double wideStripPitch; // distance between the middle of 2 adjacent wide strips
+		static const double thinStripPitch = 500./1024.; // distance between the middle of 2 adjacent thin strips
+		static const double wideStripPitch = 500./32.; // distance between the middle of 2 adjacent wide strips
+		static const int Nstrip = 64;
 		//Cut setters
 		void set_ClusMaxStripAmplCut_Min_Wide(double cut);
 		void set_ClusSizeCut_Max_Wide(double cut);
@@ -67,7 +70,7 @@ class CM_Detector: public Detector{
 		bool test_ClusSize_Wide(double size) const;
 		int get_cm_n_in_tree() const;
 		bool get_use_thin_strip() const;
-		string get_type() const;
+		Tomography::det_type get_type() const;
 		void set_RMS(vector<double> RMS_);
 	protected:
 		int cm_n_in_tree;
@@ -88,12 +91,13 @@ class MG_Detector: public Detector{
 		static const vector<unsigned int> StripToChannel;
 		static vector<unsigned int> ChannelToStrip(unsigned int channel_nb);
 		//MultiGen general charac
-		static const double StripPitch; // distance between the middle of 2 adjacent strips
+		static const double StripPitch = 500./1024.; // distance between the middle of 2 adjacent strips
+		static const int Nstrip = 61;
 		//Cut setters
 		void set_ClusSizeCut_Min(double cut);
 		bool test_ClusSize(double size);
 		int get_mg_n_in_tree() const;
-		string get_type() const;
+		Tomography::det_type get_type() const;
 		void set_RMS(vector<double> RMS_);
 		void set_SRF(double offset, double gauss, double lorentz, double ratio);
 		double SRF_fit(double * x, double * p);

@@ -2,6 +2,7 @@
 #define signal_h
 #include "Tsignal.h"
 #include "detector.h"
+#include "tomography.h"
 
 #include <TProfile.h>
 
@@ -24,7 +25,7 @@ class Signal: public Tsignal, public CosmicBench{
 	protected:
 		string analyseTree;
 		bool use_srf;
-		string electronic_type;
+		Tomography::elec_type electronic_type;
 		string data_file_basename;
 		string signalName;
 		string PedName;
@@ -32,7 +33,7 @@ class Signal: public Tsignal, public CosmicBench{
 		int max_event;
 		int data_file_first;
 		int data_file_last;
-		map<int,string> det_type_by_asic;
+		map<int,Tomography::det_type> det_type_by_asic;
 		map<int,int> det_n_by_asic;
 };
 #endif

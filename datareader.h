@@ -7,6 +7,8 @@
 #include <TFile.h>
 #include <TBranch.h>
 #include <fstream>
+#include "detector.h"
+#include "tomography.h"
 
 using std::string;
 using std::vector;
@@ -15,8 +17,8 @@ using std::ifstream;
 
 class DataReader{
 	public:
-		DataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
-		DataReader(string signalName, string pedName, string RMSName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
+		DataReader(string baseFileName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
+		DataReader(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
 		virtual ~DataReader();
 		void add_file_to_process(string inFileName);
 		virtual void process() = 0;
@@ -24,10 +26,10 @@ class DataReader{
 		void do_ped_sub(string ped_file = "");
 		void do_common_noise_sub();
 		void compute_RMSPed();
-		static const int Nsample = 32;
-		static const int Nstrip_MG = 61;
-		static const int Nstrip_CM = 64;
-		virtual map<string,vector<vector<vector<double> > > > read_event(ifstream * file,int event_nb, bool fill_tree = true) = 0;
+		static const int Nsample = Tomography::Nsample;
+		static const int Nstrip_MG = MG_Detector::Nstrip;
+		static const int Nstrip_CM = CM_Detector::Nstrip;
+		virtual map<Tomography::det_type,vector<vector<vector<double> > > > read_event(ifstream * file,int event_nb, bool fill_tree = true) = 0;
 	protected:
 		void read_ped(string ped_file = "");
 		void Fill();
@@ -49,7 +51,7 @@ class DataReader{
 		float (*Pedestal_CM)[64];
 		unsigned int MG_N;
 		unsigned int CM_N;
-		map<int,string> det_type_by_asic;
+		map<int,Tomography::det_type> det_type_by_asic;
 		map<int,int> det_n_by_asic;
 		bool is_first;
 		string outFileName;
@@ -58,38 +60,38 @@ class DataReader{
 		bool exists;
 		bool ped_done;
 		bool cns_done;
-		string DAQType;
+		Tomography::elec_type DAQType;
 		int max_event;
 		int global_offset;
 		TBranch * dumb_branch;
 	private:
-		void Init(string signalName, string pedName, string RMSName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
+		void Init(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
 
 };
 
 class DreamDataReader: public DataReader{
 	public:
-		DreamDataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
-		DreamDataReader(string signalName, string pedName, string RMSName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
+		DreamDataReader(string baseFileName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
+		DreamDataReader(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
 		~DreamDataReader();
 		void process();
-		map<string,vector<vector<vector<double> > > > read_event(ifstream * file,int event_nb, bool fill_tree = true);
+		map<Tomography::det_type,vector<vector<vector<double> > > > read_event(ifstream * file,int event_nb, bool fill_tree = true);
 	protected:
 		void read_file(string file_name,int evn_offset);
-		int mapping(string det_type, int channel);
+		int mapping(Tomography::det_type det_type, int channel);
 };
 
 class FeminosDataReader: public DataReader{
 	public:
-		FeminosDataReader(string baseFileName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
-		FeminosDataReader(string signalName, string pedName, string RMSName, map<int,string> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
+		FeminosDataReader(string baseFileName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
+		FeminosDataReader(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, int max_event_ = -1);
 		~FeminosDataReader();
 		void process();
-		map<string,vector<vector<vector<double> > > > read_event(ifstream * file,int event_nb, bool fill_tree = true);
+		map<Tomography::det_type,vector<vector<vector<double> > > > read_event(ifstream * file,int event_nb, bool fill_tree = true);
 		int get_first_event_nb(string file_name);
 	protected:
 		void read_file(string file_name,int evn_offset);
-		int mapping(string det_type, int channel);
+		int mapping(Tomography::det_type det_type, int channel);
 };
 
 #endif

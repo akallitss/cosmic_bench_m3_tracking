@@ -10,6 +10,7 @@
 #include "analyse.h"
 #include <TH1D.h>
 #include <TCanvas.h>
+#include "tomography.h"
 
 using std::string;
 using std::vector;
@@ -30,7 +31,7 @@ class T;
 class Event{
 	public:
 		int get_evn() const;
-		string get_type() const;
+		Tomography::det_type get_type() const;
 		int get_n_in_tree() const;
 		bool get_is_ref() const;
 		double get_z() const;
@@ -48,7 +49,7 @@ class Event{
 		int evn;
 		double z;
 		bool is_X;
-		string type;
+		Tomography::det_type type;
 		int n_in_tree;
 		bool has_spark;
 		bool is_ref;
