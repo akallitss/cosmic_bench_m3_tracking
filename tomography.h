@@ -29,6 +29,10 @@ namespace Tomography{
 		Feminos
 	};
 	const int Nsample = 32;
+	const int SampleMin = 5;
+	const int SampleMax = 21;
+	const double sigma = 4.;
+	const int TOTCut = 3;
 	elec_type str_to_elec(string str);
 	ostream& operator<<(ostream& os, const det_type& det);
 	ostream& operator<<(ostream& os, const strip_type& strip);

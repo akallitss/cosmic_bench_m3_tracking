@@ -328,10 +328,10 @@ vector<MG_Cluster> MG_Event::get_clusters() const{
 void MG_Event::MultiCluster(){
 	clusters.clear();
 	//first loop : find channels with signal and store them with their caracteristics
-	double sigma = 3;
-	int SampleMin = 5;
-	int SampleMax = 21;
-	int TOTCut = 7;
+	double sigma = Tomography::sigma;
+	int SampleMin = Tomography::SampleMin;
+	int SampleMax = Tomography::SampleMax;
+	int TOTCut = Tomography::TOTCut;
 	int p = 61;
 	int n = 1024;
 	map<int,bool> channelOverThreshold;
@@ -528,10 +528,10 @@ void MG_Event::MultiCluster(){
 void MG_Event::HoughCluster(){
 	clusters.clear();
 	//first loop : find channels with signal and store them with their caracteristics
-	double sigma = 3;
-	int SampleMin = 5;
-	int SampleMax = 21;
-	int TOTCut = 7;
+	double sigma = Tomography::sigma;
+	int SampleMin = Tomography::SampleMin;
+	int SampleMax = Tomography::SampleMax;
+	int TOTCut = Tomography::TOTCut;
 	int p = 61;
 	int n = 1024;
 	map<int,bool> channelOverThreshold;
