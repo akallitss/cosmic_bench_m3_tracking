@@ -27,7 +27,7 @@ ostream& Tomography::operator<<(ostream& os, const elec_type& elec){
 	return os;
 }
 Tomography::elec_type Tomography::str_to_elec(string str){
-	elec_type return_value;
+	elec_type return_value = unknown_elec;
 	if(str == "dream") return_value = Dream;
 	else if(str == "feminos") return_value = Feminos;
 	return return_value;

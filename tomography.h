@@ -12,17 +12,20 @@ using std::string;
 namespace Tomography{
 
 	enum det_type{
+		unknown_det,
 		CM,
 		CM_Demux,
 		MG
 	};
 	enum strip_type{
-		Wide = 10,
+		unknown_strip = 10,
+		Wide,
 		Thin,
 		Demux
 	};
 	enum elec_type{
-		Dream = 100,
+		unknown_elec = 100,
+		Dream,
 		Feminos
 	};
 	const int Nsample = 32;
