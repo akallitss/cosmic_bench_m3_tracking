@@ -352,7 +352,8 @@ void Ray::process(){
 }
 void Ray::angle_correction(){
 	double delta_param = 100;
-	while(delta_param>0.1){
+	double old_delta_param = 100;
+	while(delta_param>0.1 && delta_param<old_delta_param){
 		double current_Z_intercept_X = Z_intercept_X;
 		double current_Z_intercept_Y = Z_intercept_Y;
 		double current_slope_X = slope_X;
@@ -367,6 +368,7 @@ void Ray::angle_correction(){
 			}
 		}
 		this->process();
+		old_delta_param = delta_param;
 		delta_param = Abs(Z_intercept_X - current_Z_intercept_X)+Abs(Z_intercept_Y - current_Z_intercept_Y)+Abs(slope_X - current_slope_X)+Abs(slope_Y - current_slope_Y);
 	}
 	for(vector<Cluster*>::iterator it = clusters.begin();it!=clusters.end();++it){
