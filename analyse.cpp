@@ -1004,6 +1004,7 @@ TH2D * Analyse::AbsorptionFluxMap(double z, TCanvas * c1){
 void Analyse::AbsorptionFluxMapNormTheo(double z, TCanvas * c1, TCanvas * c2, TCanvas * c3, TCanvas * c4){
 	int eventReconstructed = 0;
 	int eventSuitable = 0;
+	double chisquare_threshold = 100;
 
 	gStyle->SetPalette(55,0);
 	gStyle->SetNumberContours(512);
@@ -1055,13 +1056,16 @@ void Analyse::AbsorptionFluxMapNormTheo(double z, TCanvas * c1, TCanvas * c2, TC
 		fChain->GetEntry(jentry);
 		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
 		vector<Ray> currentRays = currentCBEvent->get_absorption_rays();
+		vector<Ray>::iterator ray_it = currentRays.begin();
+		while(ray_it!= currentRays.end()){
+			if(ray_it->get_chiSquare_X()>-1 && ray_it->get_chiSquare_Y()>-1 && ((ray_it->get_chiSquare_X()+ray_it->get_chiSquare_Y())/ray_it->get_clus_n())<chisquare_threshold) ++ray_it;
+			else ray_it = currentRays.erase(ray_it);
+		}
 		eventReconstructed+=currentRays.size();
 		eventSuitable+=currentCBEvent->get_clus_N()/(CM_N+MG_N);
 		delete currentCBEvent;
 		for(vector<Ray>::iterator it=currentRays.begin();it!=currentRays.end();++it){
-			if(it->get_chiSquare_X()>-1 && it->get_chiSquare_Y()>-1){
-				fluxMapZ->Fill(it->eval_X(z),it->eval_Y(z));
-			}
+			fluxMapZ->Fill(it->eval_X(z),it->eval_Y(z));
 		}
 		if(jentry%500 == 0) cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << eventSuitable << "|" << setw(20) << jentry << flush;
 		if(jentry%10000 == 0){
