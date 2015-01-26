@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <TH2D.h>
 #include <TSystem.h>
+#include <TCanvas.h>
 #include "acceptanceFunction.h"
 
 using std::cout;
@@ -38,6 +39,7 @@ int main(int argc, char ** argv){
 	string srf = "srf";
 	string correlation = "correlation";
 	string eventdisplay = "eventdisplay";
+	string eventdisplaymult = "eventdisplaymult";
 	string SoN = "SoN";
 	string acceptance = "acceptance";
 	if(argv[2] == efficacity){
@@ -95,9 +97,26 @@ int main(int argc, char ** argv){
 			blah->CalcStripResponseFunction(i);
 		}
 	}
-	else if(argv[2] == eventdisplay){
+	else if(argv[2] == eventdisplaymult){
 		if(argc<4){
 			cout << "you must indicate the number of the event you wanna see" << endl;
+			delete blah; delete theApp;
+			return 1;
+		}
+		else{
+			int i = atoi(argv[3]);
+			TCanvas * cDisplay = new TCanvas();
+			for(int j=0;j<i;j++){
+				cout << "\r" << "Event : " << j << flush;
+				blah->EventDisplay(j, cDisplay);
+				gSystem->Sleep(2000);
+			}
+			cout << endl;
+		}
+	}
+	else if(argv[2] == eventdisplay){
+		if(argc<4){
+			cout << "you must indicate the index of the event you wanna see" << endl;
 			delete blah; delete theApp;
 			return 1;
 		}

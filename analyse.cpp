@@ -1726,7 +1726,7 @@ void Analyse::CalcStripResponseFunction(int bin_nb){
 	//cout << "\r" << setw(20) << det_N << "|" << setw(20) << nentries << endl;
 }
 
-void Analyse::EventDisplay(int event_nb){
+void Analyse::EventDisplay(int event_nb, TCanvas * c1){
 	long nentries = fChain->GetEntriesFast();
 	if(event_nb<0 || event_nb>nentries){
 		cout << "invalid event number" << endl;
@@ -1749,7 +1749,10 @@ void Analyse::EventDisplay(int event_nb){
 		if((*ev_it)->get_type() == Tomography::MG) (*ev_it)->set_strip_ampl(signalT->get_mg_ampl((*ev_it)->get_n_in_tree()));
 		else if((*ev_it)->get_type() == Tomography::CM || (*ev_it)->get_type() == Tomography::CM_Demux) (*ev_it)->set_strip_ampl(signalT->get_cm_ampl((*ev_it)->get_n_in_tree()));
 	}
-	CBEvent->EventDisplay();
+	CBEvent->EventDisplay(c1);
+	delete CBEvent;
+	delete signal_file;
+	delete signalT;
 	/*
 	long nentries = fChain->GetEntriesFast();
 	if(event_nb<0 || event_nb>nentries){
