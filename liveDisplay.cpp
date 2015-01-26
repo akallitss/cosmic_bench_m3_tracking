@@ -408,8 +408,8 @@ void liveDisplay::flux_map(double z){
 					}
 				}
 				CosmicBenchEvent * current_full_event = new CosmicBenchEvent(this,events);
-				vector<Ray> currentRays = current_full_event->get_absorption_rays();
 				double chisquare_threshold = 100;
+				vector<Ray> currentRays = current_full_event->get_absorption_rays(chisquare_threshold);
 				vector<Ray>::iterator ray_it = currentRays.begin();
 				while(ray_it!= currentRays.end()){
 					if(ray_it->get_chiSquare_X()>-1 && ray_it->get_chiSquare_Y()>-1 && ((ray_it->get_chiSquare_X()+ray_it->get_chiSquare_Y())/ray_it->get_clus_n())<chisquare_threshold) ++ray_it;

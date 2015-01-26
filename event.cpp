@@ -40,7 +40,7 @@ using TMath::Abs;
 using TMath::FloorNint;
 using TMath::CeilNint;
 
-vector<map<double,int> > CosmicBenchEvent::combinaisons(map<double,int> sizes){
+vector<map<double,int> > CosmicBenchEvent::combinaisons(map<double,int> sizes, bool allow_drop){
 	map<double,int> partial_product;
 	int current_product = 1;
 	for(map<double,int>::iterator it = sizes.begin();it!=sizes.end();++it){
@@ -52,6 +52,15 @@ vector<map<double,int> > CosmicBenchEvent::combinaisons(map<double,int> sizes){
 	for(int i=0;i<current_product;i++){
 		for(map<double,int>::iterator it = partial_product.begin();it!=partial_product.end();++it){
 			result[i][it->first] = (i/(it->second)) % sizes[it->first];
+		}
+	}
+	if(allow_drop){
+		for(map<double,int>::iterator it = sizes.begin();it!=sizes.end();++it){
+			if(it->second == 0) continue;
+			map<double,int> current_sizes(sizes);
+			current_sizes[it->first] = 0;
+			vector<map<double,int> > current_result = combinaisons(current_sizes,false);
+			result.insert(result.end(),current_result.begin(),current_result.end());
 		}
 	}
 	return result;
@@ -867,7 +876,7 @@ void CosmicBenchEvent::createPairs(){
 			}
 			*/
 			//find the biggest number of good clusters combinaisons
-			while(b){
+			while(b && (jt->second).size()>1){
 				b = false;
 				//find best combinaison of clusters
 				vector<map<double,int> > comb = combinaisons(sizes[it->first][jt->first]);
@@ -895,7 +904,11 @@ void CosmicBenchEvent::createPairs(){
 						delete (jt->second)[kt->first][kt->second];
 						(jt->second)[kt->first].erase((jt->second)[kt->first].begin()+kt->second);
 						sizes[it->first][jt->first][kt->first]--;
-						if(sizes[it->first][jt->first][kt->first]<1) b = false;
+						if(sizes[it->first][jt->first][kt->first]<1){
+							//b = false;
+							(jt->second).erase((jt->second).find(kt->first));
+							sizes[it->first][jt->first].erase(sizes[it->first][jt->first].find(kt->first));
+						}
 					}
 				}
 			}
@@ -1008,9 +1021,8 @@ unsigned int CosmicBenchEvent::get_clus_N_by_det(Detector * det) const{
 	}
 	return clus_N;
 }
-vector<Ray> CosmicBenchEvent::get_absorption_rays(){
+vector<Ray> CosmicBenchEvent::get_absorption_rays(double chiSquare_threshold){
 	this->Demux_CM();
-	double chiSquare_threshold = numeric_limits<double>::max();
 	map<bool, map<double,vector<Cluster*> > > currentClusters;
 	map<bool, map<double,int> > sizes;
 	for(vector<Event*>::iterator it=events.begin();it!=events.end();++it){
@@ -1049,49 +1061,53 @@ vector<Ray> CosmicBenchEvent::get_absorption_rays(){
 		}
 		*/
 		//find the biggest number of good clusters combinaisons
-		// you can adjust the size to require more or less hit
-		while(b && (it->second).size()>2){
-			b = false;
-			//find best combinaison of clusters
-			vector<map<double,int> > comb = combinaisons(sizes[it->first]);
-			double current_chiSquare = chiSquare_threshold;
-			map<double,int> best_comb;
-			char coord = (it->first) ? 'X' : 'Y';
-			Ray_2D bestRay = Ray_2D(coord);
-			for(vector<map<double,int> >::iterator kt = comb.begin();kt!=comb.end();++kt){
-				//try a comb
-				Ray_2D currentRay = Ray_2D(coord);
-				/*
-				bool has_up = false;
-				bool has_down = false;
-				*/
-				for(map<double,vector<Cluster*> >::iterator nt = (it->second).begin();nt!= (it->second).end();++nt){
-					currentRay.add_cluster(nt->second[(*kt)[nt->first]]);
+		//if no ray found, allow to drop a detector
+		for(int drop = 0;drop<2;drop++){
+			if(suitableRays[it->first].size() > 0) continue;
+			// you can adjust the size to require more or less hit
+			while(b && (it->second).size()>2){
+				b = false;
+				//find best combinaison of clusters
+				vector<map<double,int> > comb = combinaisons(sizes[it->first], (drop>0));
+				double current_chiSquare = chiSquare_threshold;
+				map<double,int> best_comb;
+				char coord = (it->first) ? 'X' : 'Y';
+				Ray_2D bestRay = Ray_2D(coord);
+				for(vector<map<double,int> >::iterator kt = comb.begin();kt!=comb.end();++kt){
+					//try a comb
+					Ray_2D currentRay = Ray_2D(coord);
 					/*
-					if(nt->second[(*kt)[nt->first]]->get_is_up()) has_up = true;
-					else has_down = true;
+					bool has_up = false;
+					bool has_down = false;
 					*/
+					for(map<double,int>::iterator nt = kt->begin();nt!= kt->end();++nt){
+						currentRay.add_cluster(it->second[nt->first][nt->second]);
+						/*
+						if(nt->second[(*kt)[nt->first]]->get_is_up()) has_up = true;
+						else has_down = true;
+						*/
+					}
+					//if(!(has_up && has_down)) continue;
+					currentRay.process();
+					/*double sigma = currentRay.get_t_sigma();*/
+					if(currentRay.get_chiSquare()<current_chiSquare && currentRay.get_chiSquare()>-1 && (currentRay.get_chiSquare()/currentRay.get_clus_n())<chiSquare_threshold){
+						bestRay = currentRay;
+						current_chiSquare = currentRay.get_chiSquare();//sigma;
+						best_comb = *kt;
+						b = true;
+					}
 				}
-				//if(!(has_up && has_down)) continue;
-				currentRay.process();
-				/*double sigma = currentRay.get_t_sigma();*/
-				if(currentRay.get_chiSquare()<current_chiSquare/*sigma<current_chiSquare*/ && currentRay.get_chiSquare()>-1){
-					bestRay = currentRay;
-					current_chiSquare = currentRay.get_chiSquare();//sigma;
-					best_comb = *kt;
-					b = true;
-				}
-			}
-			if(b){
-				suitableRays[it->first].push_back(Ray_2D(bestRay));
-				for(map<double,int>::iterator kt = best_comb.begin();kt!=best_comb.end();++kt){
-					delete (it->second)[kt->first][kt->second];
-					(it->second)[kt->first].erase((it->second)[kt->first].begin()+kt->second);
-					sizes[it->first][kt->first]--;
-					if(sizes[it->first][kt->first]<1){
-						//b = false;
-						(it->second).erase((it->second).find(kt->first));
-						sizes[it->first].erase(sizes[it->first].find(kt->first));
+				if(b){
+					suitableRays[it->first].push_back(Ray_2D(bestRay));
+					for(map<double,int>::iterator kt = best_comb.begin();kt!=best_comb.end();++kt){
+						delete (it->second)[kt->first][kt->second];
+						(it->second)[kt->first].erase((it->second)[kt->first].begin()+kt->second);
+						sizes[it->first][kt->first]--;
+						if(sizes[it->first][kt->first]<1){
+							//b = false;
+							(it->second).erase((it->second).find(kt->first));
+							sizes[it->first].erase(sizes[it->first].find(kt->first));
+						}
 					}
 				}
 			}
@@ -1120,7 +1136,7 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 	int detector_color = 1;
 	int ray_color = 2;
 	int pos_color = 3;
-	vector<Ray> eventRays = this->get_absorption_rays();
+	vector<Ray> eventRays = this->get_absorption_rays(chisquare_threshold);
 	vector<Ray>::iterator rays_it = eventRays.begin();
 	while(rays_it!=eventRays.end()){
 		if(((rays_it->get_chiSquare_X()+rays_it->get_chiSquare_Y())/rays_it->get_clus_n())>chisquare_threshold){

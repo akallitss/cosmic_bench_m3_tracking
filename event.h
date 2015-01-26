@@ -139,8 +139,8 @@ class CosmicBenchEvent{
 		unsigned int get_clus_N_by_det(Detector * det) const;
 		void Demux_CM();
 		void do_cuts();
-		vector<Ray> get_absorption_rays();
-		static vector<map<double,int> > combinaisons(map<double,int> sizes);
+		vector<Ray> get_absorption_rays(double chiSquare_threshold = Tomography::chisquare_threshold);
+		static vector<map<double,int> > combinaisons(map<double,int> sizes, bool allow_drop = false);
 		//void MultiCluster();
 	protected:
 		int evn;

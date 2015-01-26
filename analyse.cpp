@@ -328,7 +328,7 @@ void Analyse::Residus_ref(){
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
 		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
-		vector<Ray> currentRays = currentCBEvent->get_absorption_rays();
+		vector<Ray> currentRays = currentCBEvent->get_absorption_rays(chisquare_threshold);
 		for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
 			if((jt->get_chiSquare_X()+jt->get_chiSquare_Y()) < chisquare_threshold){
 				chisquares->Fill(jt->get_chiSquare_X()+jt->get_chiSquare_Y());
@@ -588,7 +588,7 @@ void Analyse::Residus_ref_2D(){
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
 		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
-		vector<Ray> currentRays = currentCBEvent->get_absorption_rays();
+		vector<Ray> currentRays = currentCBEvent->get_absorption_rays(chisquare_threshold);
 		for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
 			if((jt->get_chiSquare_X()+jt->get_chiSquare_Y()) < chisquare_threshold){
 				chisquares->Fill(jt->get_chiSquare_X()+jt->get_chiSquare_Y());
@@ -974,7 +974,7 @@ TH2D * Analyse::AbsorptionFluxMap(double z, TCanvas * c1){
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
 		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
-		vector<Ray> currentRays = currentCBEvent->get_absorption_rays();
+		vector<Ray> currentRays = currentCBEvent->get_absorption_rays(chisquare_threshold);
 		vector<Ray>::iterator ray_it = currentRays.begin();
 		while(ray_it!= currentRays.end()){
 			if(ray_it->get_chiSquare_X()>-1 && ray_it->get_chiSquare_Y()>-1 && ((ray_it->get_chiSquare_X()+ray_it->get_chiSquare_Y())/ray_it->get_clus_n())<chisquare_threshold) ++ray_it;
@@ -1055,7 +1055,7 @@ void Analyse::AbsorptionFluxMapNormTheo(double z, TCanvas * c1, TCanvas * c2, TC
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
 		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
-		vector<Ray> currentRays = currentCBEvent->get_absorption_rays();
+		vector<Ray> currentRays = currentCBEvent->get_absorption_rays(chisquare_threshold);
 		vector<Ray>::iterator ray_it = currentRays.begin();
 		while(ray_it!= currentRays.end()){
 			if(ray_it->get_chiSquare_X()>-1 && ray_it->get_chiSquare_Y()>-1 && ((ray_it->get_chiSquare_X()+ray_it->get_chiSquare_Y())/ray_it->get_clus_n())<chisquare_threshold) ++ray_it;
@@ -1560,7 +1560,7 @@ void Analyse::CalcStripResponseFunction(int bin_nb){
 				return;
 			}
 			CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
-			vector<Ray> currentRays = currentCBEvent->get_absorption_rays();
+			vector<Ray> currentRays = currentCBEvent->get_absorption_rays(chisquare_threshold);
 
 			for(vector<Event*>::iterator it = (currentCBEvent->events).begin();it!=(currentCBEvent->events).end();++it){
 				if(!((*it)->get_is_ref())){
@@ -1784,7 +1784,7 @@ void Analyse::EventDisplay(int event_nb, TCanvas * c1){
 	signal_tree->LoadTree(event_nb);
 	signal_tree->GetEntry(event_nb);
 	CosmicBenchEvent * CBEvent = new CosmicBenchEvent(this,this,false,-1);
-	vector<Ray> eventRays = CBEvent->get_absorption_rays();
+	vector<Ray> eventRays = CBEvent->get_absorption_rays(chisquare_threshold);
 	vector<Ray>::iterator rays_it = eventRays.begin();
 	//delete rays with too big chi²
 	
