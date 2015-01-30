@@ -1090,7 +1090,7 @@ vector<Ray> CosmicBenchEvent::get_absorption_rays(double chiSquare_threshold){
 					//if(!(has_up && has_down)) continue;
 					currentRay.process();
 					/*double sigma = currentRay.get_t_sigma();*/
-					if(currentRay.get_chiSquare()<current_chiSquare && currentRay.get_chiSquare()>-1 && (currentRay.get_chiSquare()/currentRay.get_clus_n())<chiSquare_threshold){
+					if(currentRay.get_chiSquare()<current_chiSquare && currentRay.get_chiSquare()>-1 && (currentRay.get_chiSquare()/currentRay.get_clus_n())<(10*chiSquare_threshold)){
 						bestRay = currentRay;
 						current_chiSquare = currentRay.get_chiSquare();//sigma;
 						best_comb = *kt;
