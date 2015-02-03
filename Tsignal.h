@@ -27,6 +27,7 @@ public :
 
    // Declaration of leaf types
    Int_t           Nevent;
+   Double_t        evttime;
    Int_t           TsampleNum[Tomography::Nsample];
    int CM_n;
    int MG_n;
@@ -39,6 +40,7 @@ public :
 
    // List of branches
    TBranch        *b_Nevent;   //!
+   TBranch        *b_evttime;   //!
    TBranch        *b_TsampleNum;   //!
    TBranch        *b_StripAmpl_MG;   //!
    TBranch        *b_StripAmpl_MG_ped;   //!

@@ -75,6 +75,7 @@ void Tsignal::Init(TTree *tree, int CMN, int MGN)
    fChain->SetMakeClass(1);
 
    fChain->SetBranchAddress("Nevent", &Nevent, &b_Nevent);
+   fChain->SetBranchAddress("evttime",&evttime, &b_evttime);
    fChain->SetBranchAddress("TsampleNum", TsampleNum, &b_TsampleNum);
    if(MGN>0){
 	   fChain->SetBranchAddress("StripAmpl_MG", StripAmpl_MG, &b_StripAmpl_MG);

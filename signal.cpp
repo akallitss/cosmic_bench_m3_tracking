@@ -164,7 +164,7 @@ void Signal::MultiCluster(){
 			}
 		}
 		
-		analyseFile->fillTree(Nevent,0,mg_events,cm_events);
+		analyseFile->fillTree(Nevent,evttime,mg_events,cm_events);
 		if(i%100 == 0) cout << "\r" << i << "/" << nentries << flush;
 	}
 	cout << "\r" << nentries << "/" << nentries << endl;
