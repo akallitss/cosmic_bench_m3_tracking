@@ -912,7 +912,10 @@ void FeminosDataReader::read_file(string file_name,int evn_offset){
 			if(inFrame){
 				if(current_data.is_event_start()){
 					event_started++;
-					iFile.ignore(3*sizeof(current_data)); //contain timestamp
+					long evttime_int = 0;
+					iFile.read((char*)&evttime_int,3*sizeof(DataLineFeminos));
+					evttime = evttime_int >> 16;
+					//iFile.ignore(3*sizeof(current_data)); //contain timestamp
 					int current_event;
 					iFile.read((char*)&current_event,sizeof(current_event));
 					if(current_event != (evNinFile + evn_offset)){
@@ -1006,7 +1009,10 @@ map<Tomography::det_type,vector<vector<vector<double> > > > FeminosDataReader::r
 			if(inFrame){
 				if(current_data.is_event_start()){
 					event_started++;
-					file->ignore(3*sizeof(current_data)); //contain timestamp
+					long evttime_int = 0;
+					file->read((char*)&evttime_int,3*sizeof(DataLineFeminos));
+					evttime = evttime_int >> 16;
+					//file->ignore(3*sizeof(current_data)); //contain timestamp
 					int current_event;
 					file->read((char*)&current_event,sizeof(current_event));
 					if(current_event != event_nb){
