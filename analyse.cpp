@@ -75,6 +75,7 @@ Analyse::Analyse(string configFilePath){
 	TTree * tree = (TTree*)(f->Get("T"));
 	CM_N = 0;
 	MG_N = 0;
+	max_event = config_tree.get<long>("max_event");
 	int total_CM_N = config_tree.get<int>("total_CM_N");
 	int total_MG_N = config_tree.get<int>("total_MG_N");
 	string RMSName = config_tree.get<string>("RMSPed");
@@ -141,8 +142,8 @@ void Analyse::Residus(){
 	TH1D * MG_residus[MG_N];
 	int nbins = 200;
 	int lim = 500;
-	int eventReconstructed = 0;
-	int eventSuitable = 0;
+	long eventReconstructed = 0;
+	long eventSuitable = 0;
 	for(int i=0;i<CM_N;i++){
 		ostringstream name;
 		name << "Cosmulti_" << i;
@@ -161,7 +162,7 @@ void Analyse::Residus(){
 	TH1D * chiSquareH = new TH1D("chiSquares","chiSquares",nbins,0,3*lim);
 
 	if (fChain == 0) return;
-	Long64_t nentries = fChain->GetEntriesFast();
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
 	for (Long64_t jentry=0; jentry<nentries;jentry++){
 		Long64_t ientry = LoadTree(jentry);
@@ -265,7 +266,7 @@ void Analyse::Residus_ref(){
 	int lim = 500;
 	double marge = 1./10.;
 	int nbins_2D = 100*(1+2*marge);
-	int eventReconstructed = 0;
+	long eventReconstructed = 0;
 	double eventSuitable = 0;
 	map<int,int> perp_pairs;
 	//map<string, unsigned int> det_in_nref_dir;
@@ -504,7 +505,7 @@ void Analyse::Residus_ref(){
 			}
 		}
 		delete currentCBEvent;
-		if(jentry%500 == 0) cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << static_cast<int>(eventSuitable) << "|" << setw(20) << jentry << flush;
+		if(jentry%500 == 0) cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << static_cast<long>(eventSuitable) << "|" << setw(20) << jentry << flush;
 		if(jentry%5000 == 0 && Tomography::live_graphic_display){
 			for(map<string,TCanvas*>::iterator it = c_MM.begin();it!=c_MM.end();++it){
 				it->second->cd(1);
@@ -558,7 +559,7 @@ void Analyse::Residus_ref(){
 			c0->Update();
 		}
 	}
-	cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << static_cast<int>(eventSuitable) << "|" << setw(20) << nentries << endl;
+	cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << static_cast<long>(eventSuitable) << "|" << setw(20) << nentries << endl;
 	for(map<string,TCanvas*>::iterator it = c_MM.begin();it!=c_MM.end();++it){
 		it->second->cd(1);
 		MM_residus[it->first]->Draw();
@@ -645,7 +646,7 @@ void Analyse::Residus_ref_2D(){
 	int lim = 500;
 	double marge = 1./10.;
 	int nbins_2D = 100*(1+2*marge);
-	int eventReconstructed = 0;
+	long eventReconstructed = 0;
 	double eventSuitable = 0;
 	unsigned int nref_x_n = 0;
 	unsigned int det_x_n = 0;
@@ -700,7 +701,7 @@ void Analyse::Residus_ref_2D(){
 	TH1D * ray_clus_n = new TH1D("clus_n","clus_n",MG_N + CM_N + 2,0,MG_N + CM_N + 2);
 
 	if (fChain == 0) return;
-	Long64_t nentries = fChain->GetEntriesFast();
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
 	for (Long64_t jentry=0; jentry<nentries;jentry++){
 		Long64_t ientry = LoadTree(jentry);
@@ -814,7 +815,7 @@ void Analyse::Residus_ref_2D(){
 				}
 			}
 		}
-		if(jentry%500 == 0) cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << static_cast<int>(eventSuitable) << "|" << setw(20) << jentry << flush;
+		if(jentry%500 == 0) cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << static_cast<long>(eventSuitable) << "|" << setw(20) << jentry << flush;
 		if(jentry%5000 == 0 && Tomography::live_graphic_display){
 			for(int i=1;i<=nbins_2D;i++){
 				for(int j=1;j<=nbins_2D;j++){
@@ -836,7 +837,7 @@ void Analyse::Residus_ref_2D(){
 			c0->Update();
 		}
 	}
-	cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << static_cast<int>(eventSuitable) << "|" << setw(20) << nentries << endl;
+	cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << static_cast<long>(eventSuitable) << "|" << setw(20) << nentries << endl;
 	double total_seen = 0;
 	double total_passed = 0;
 	for(int i=1;i<=nbins_2D;i++){
@@ -875,10 +876,10 @@ void Analyse::Efficacity(){
 	TProfile * MG_spark_h[MG_N];
 	int nbins = 200;
 	//int lim = 100;
-	int eventReconstructed = 0;
-	int eventSuitable = 0;
+	long eventReconstructed = 0;
+	long eventSuitable = 0;
 	if (fChain == 0) return;
-	Long64_t nentries = fChain->GetEntriesFast();
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	LoadTree(0);
 	fChain->GetEntry(0);
 	double beginTime = evttime;
@@ -1050,8 +1051,8 @@ void Analyse::Efficacity(){
 	c_test->Update();
 }
 TH2D * Analyse::AbsorptionFluxMap(double z, TCanvas * c1){
-	int eventReconstructed = 0;
-	int eventSuitable = 0;
+	long eventReconstructed = 0;
+	long eventSuitable = 0;
 	double chisquare_threshold = 100;
 
 	gStyle->SetPalette(55,0);
@@ -1082,7 +1083,7 @@ TH2D * Analyse::AbsorptionFluxMap(double z, TCanvas * c1){
 	x_max += 0.05*width;
 
 	//if (fChain == 0) return fluxMapZ;
-	Long64_t nentries = fChain->GetEntriesFast();
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 
 	TH2D * fluxMapZ = new TH2D("fluxMapZ","fluxMapZ",Sqrt(0.02*nentries),x_min,x_max,Sqrt(0.02*nentries),x_min,x_max);
 	fluxMapZ->SetStats(0);
@@ -1121,8 +1122,8 @@ TH2D * Analyse::AbsorptionFluxMap(double z, TCanvas * c1){
 	return fluxMapZ;
 }
 void Analyse::AbsorptionFluxMapNormTheo(double z, TCanvas * c1, TCanvas * c2, TCanvas * c3, TCanvas * c4){
-	int eventReconstructed = 0;
-	int eventSuitable = 0;
+	long eventReconstructed = 0;
+	long eventSuitable = 0;
 	double chisquare_threshold = 100;
 
 	gStyle->SetPalette(55,0);
@@ -1151,7 +1152,7 @@ void Analyse::AbsorptionFluxMapNormTheo(double z, TCanvas * c1, TCanvas * c2, TC
 	x_max += 0.05*width;
 
 	if (fChain == 0) return;
-	Long64_t nentries = fChain->GetEntriesFast();
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	int nbins = Sqrt(0.02*nentries);
 	if(c1==0) c1 = new TCanvas("fluxMap","fluxMap");
 	TH2D * fluxMapZ = new TH2D("fluxMapSignal","fluxMapSignal",nbins,x_min,x_max,nbins,x_min,x_max);
@@ -1246,8 +1247,8 @@ void Analyse::AbsorptionFluxMapNormTheo(double z, TCanvas * c1, TCanvas * c2, TC
 	c3->Update();
 }
 void Analyse::AbsorptionFluxMapNorm(double z,TH2D * background, int nbins, TCanvas * c1, TCanvas * c2, TCanvas * c3){
-	int eventReconstructed = 0;
-	int eventSuitable = 0;
+	long eventReconstructed = 0;
+	long eventSuitable = 0;
 
 	gStyle->SetPalette(55,0);
 	gStyle->SetNumberContours(512);
@@ -1262,7 +1263,7 @@ void Analyse::AbsorptionFluxMapNorm(double z,TH2D * background, int nbins, TCanv
 	if(c3 == 0) c3 = new TCanvas("fluxMap_Sigma","fluxMap_Sigma");
 
 	if (fChain == 0) return;
-	Long64_t nentries = fChain->GetEntriesFast();
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
 	for (Long64_t jentry=0; jentry<nentries;jentry++){
 		Long64_t ientry = LoadTree(jentry);
@@ -1360,8 +1361,8 @@ void Analyse::StoreRayPairs(string outFileName){
 	TCanvas * c3 = new TCanvas("docas","docas");
 	TH1D * doca = new TH1D("doca","doca",100,0,500);
 
-	int eventReconstructed = 0;
-	int eventSuitable = 0;
+	long eventReconstructed = 0;
+	long eventSuitable = 0;
 
 	TFile * outFile = new TFile(outFileName.c_str(),"RECREATE");
 	TTree * outTree = new TTree("T","T");
@@ -1385,7 +1386,7 @@ void Analyse::StoreRayPairs(string outFileName){
 	outTree->Branch("theta_Y_Down", &theta_Y_Down, "theta_Y_Down/D");
 
 	if (fChain == 0) return;
-	Long64_t nentries = fChain->GetEntriesFast();
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
 	for (Long64_t jentry=0; jentry<nentries;jentry++){
 		Long64_t ientry = LoadTree(jentry);
@@ -1471,14 +1472,14 @@ void Analyse::StoreRayPairs(string outFileName){
 }
 
 /*void Analyse::MultiGenDebug(int i){
-	int eventReconstructed = 0;
-	int eventSuitable = 0;
+	long eventReconstructed = 0;
+	long eventSuitable = 0;
 
 	TCanvas * c1 = new TCanvas("MGPos","MGPos");
 	TH1D * mgPos = new TH1D("mgPos","mgPos",1024,0,1023);
 
 	if (fChain == 0) return;
-	Long64_t nentries = fChain->GetEntriesFast();
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
 	for (Long64_t jentry=0; jentry<nentries;jentry++){
 		Long64_t ientry = LoadTree(jentry);
@@ -1531,7 +1532,7 @@ double Analyse::get_z_Down() const{
 
 void Analyse::bugtest(){
 	if (fChain == 0) return;
-	Long64_t nentries = fChain->GetEntriesFast();
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	int limit = 10;
 	if(limit<nentries) nentries = limit;
 	for (Long64_t jentry=0; jentry<nentries;jentry++){
@@ -1580,7 +1581,7 @@ void Analyse::CalcStripResponseFunction(int bin_nb){
 	TGraphErrors * offset_graph;
 
 	double chisquare_threshold = 10;
-	Long64_t nentries = fChain->GetEntriesFast();
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 
 	TFile * signal_file = new TFile(signal_file_name.c_str(),"READ");
 	TTree * signal_tree = (TTree*)(signal_file->Get("T"));
@@ -1845,7 +1846,7 @@ void Analyse::CalcStripResponseFunction(int bin_nb){
 	//cout << "\r" << setw(20) << det_N << "|" << setw(20) << nentries << endl;
 }
 
-void Analyse::EventDisplay(int event_nb, TCanvas * c1){
+void Analyse::EventDisplay(long event_nb, TCanvas * c1){
 	long nentries = fChain->GetEntriesFast();
 	if(event_nb<0 || event_nb>nentries){
 		cout << "invalid event number" << endl;
@@ -2067,8 +2068,8 @@ void Analyse::Correlation(){
 	TH1D * corr_XY_ampl = new TH1D("corr_XY_ampl","corr_XY_ampl",100,-1,1);
 	TH1D * corr_XY_t = new TH1D("corr_XY_t","corr_XY_t",100,-1,1);
 	if (fChain == 0) return;
-	Long64_t nentries = fChain->GetEntriesFast();
-	int eventSuitable = 0;
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
+	long eventSuitable = 0;
 	cout << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
 	double global_meanXY_ampl = 0;
 	double global_meanXY_t = 0;
@@ -2419,8 +2420,8 @@ void Analyse::SignalOverNoise(){
 			global_signal_over_noise[current_det->get_mg_n_in_tree()] = new TProfile((name.str() + "SoB").c_str(),(name.str() + "SoB").c_str(),MG_Detector::Nstrip,0,MG_Detector::Nstrip);
 		}
 	}
-	long nentries = fChain->GetEntriesFast();
-	for(int i=0;i<nentries;i++){
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
+	for(long i=0;i<nentries;i++){
 		LoadTree(i);
 		GetEntry(i);
 

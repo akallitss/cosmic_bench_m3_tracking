@@ -25,7 +25,7 @@ int main(int argc, char ** argv){
 	char * argvR[1];
 	argvR[0] = argv[0];
 	TRint * theApp = new TRint("Rint",&argcR,argvR,0,0,true);
-	liveDisplay * this_display = new liveDisplay(config_file.str(),-1);
+	liveDisplay * this_display = new liveDisplay(config_file.str());
 	this_display->flux_map(1550);
 	theApp->Run(true);
 	return 0;

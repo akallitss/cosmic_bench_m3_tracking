@@ -56,7 +56,7 @@ Signal::Signal(string configFilePath){
 	signalName = config_tree.get<string>("signal_file");
 	PedName = config_tree.get<string>("Ped");
 	RMSName = config_tree.get<string>("RMSPed");
-	max_event = config_tree.get<int>("max_event");
+	max_event = config_tree.get<long>("max_event");
 	data_file_first = config_tree.get<int>("data_file_first");
 	data_file_last = config_tree.get<int>("data_file_last");
 	cout << signalName << endl;
@@ -144,8 +144,8 @@ Signal::~Signal(){
 void Signal::MultiCluster(){
 	cout << "destination file : " << analyseTree << endl;
 	Tanalyse * analyseFile = new Tanalyse(analyseTree,CM_n,MG_n);
-	long nentries = fChain->GetEntriesFast();
-	for(int i=0;i<nentries;i++){
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
+	for(long i=0;i<nentries;i++){
 		LoadTree(i);
 		GetEntry(i);
 		vector<MG_Event> mg_events;
@@ -193,7 +193,7 @@ void Signal::ElecToAnalyse(){
 	cout << "destination file : " << analyseTree << endl;
 	Tanalyse * analyseFile = new Tanalyse(analyseTree,CM_n,MG_n);
 	Nevent = 0;
-	int event_nb = 0;
+	long event_nb = 0;
 	string extension = "";
 	DataReader * current_data_reader;
 	if(electronic_type == Tomography::Feminos){
@@ -271,7 +271,7 @@ void Signal::ElecToAnalyse(){
 	analyseFile->CloseFile();
 }
 
-void Signal::HoughTracking(int event_nb){
+void Signal::HoughTracking(long event_nb){
 	if(CM_n!=0){
 		cout << "not implemented with CM" << endl;
 		return;
@@ -402,8 +402,8 @@ map<int,TProfile*> Signal::SignalOverNoise(){
 			global_signal_over_noise[current_det->get_mg_n_in_tree()] = new TProfile((name.str() + "S/B").c_str(),(name.str() + "S/B").c_str(),61,0,61);
 		}
 	}
-	long nentries = fChain->GetEntriesFast();
-	for(int i=0;i<nentries;i++){
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
+	for(long i=0;i<nentries;i++){
 		LoadTree(i);
 		GetEntry(i);
 
@@ -452,8 +452,8 @@ void Signal::SignalOverNoiseDisplay(){
 			global_signal_over_noise[current_det->get_mg_n_in_tree()] = new TProfile((name.str() + "S/B").c_str(),(name.str() + "S/B").c_str(),61,0,61);
 		}
 	}
-	long nentries = fChain->GetEntriesFast();
-	for(int i=0;i<nentries;i++){
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
+	for(long i=0;i<nentries;i++){
 		LoadTree(i);
 		GetEntry(i);
 
@@ -523,7 +523,7 @@ void Signal::EventDisplay(int evn_min, int evn_max){
 	}
 	long nentries = Min(fChain->GetEntriesFast(),static_cast<Long64_t>(evn_max));
 	if(evn_min>nentries) return;
-	for(int i=evn_min;i<nentries;i++){
+	for(long i=evn_min;i<nentries;i++){
 		LoadTree(i);
 		GetEntry(i);
 		for(int j=0;j<CM_N;j++){

@@ -37,17 +37,17 @@ using TMath::Ldexp;
 //const int DataReader::Nstrip_MG = 61;
 //const int DataReader::Nstrip_CM = 64;
 
-DataReader::DataReader(string baseFileName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_){
+DataReader::DataReader(string baseFileName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, long max_event_){
 	string signalName = baseFileName + "_signal.root";
 	string pedName = baseFileName + "_Ped.dat";
 	string RMSName = baseFileName + "_RMSPed.dat";
 	Init(signalName, pedName, RMSName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_);
 }
-DataReader::DataReader(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_){
+DataReader::DataReader(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, long max_event_){
 	Init(signalName, pedName, RMSName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_);
 }
 
-void DataReader::Init(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_){
+void DataReader::Init(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, long max_event_){
 	exists = exists_;
 	ped_done = ped_done_;
 	cns_done = cns_done_;
@@ -232,8 +232,8 @@ void DataReader::compute_ped(){
 			Pedestal_CM[i][j] = 0;
 		}
 	}
-	int nentries = outTree->GetEntries();
-	for(int n=0;n<nentries;n++){
+	long nentries = outTree->GetEntries();
+	for(long n=0;n<nentries;n++){
 		outTree->LoadTree(n);
 		outTree->GetEntry(n);
 		for(unsigned int i=0;i<MG_N;i++){
@@ -312,8 +312,8 @@ void DataReader::do_ped_sub(string ped_file){
 		sprintf(leefStripAmpl_CM,"StripAmpl_CM_ped[%d][%d][%d]/F",CM_N,Nstrip_CM,Nsample);
 		newBranch_CM = outTree->Branch("StripAmpl_CM_ped", StripAmpl_CM_ped,leefStripAmpl_CM);
 	}
-	int nentries = outTree->GetEntries();
-	for(int n=0;n<nentries;n++){
+	long nentries = outTree->GetEntries();
+	for(long n=0;n<nentries;n++){
 		outTree->LoadTree(n);
 		outTree->GetEntry(n);
 		for(unsigned int i=0;i<MG_N;i++){
@@ -361,8 +361,8 @@ void DataReader::do_common_noise_sub(){
 	}
 	int detector_div_MG = 2;
 	int detector_div_CM = 2;
-	int nentries = outTree->GetEntries();
-	for(int n=0;n<nentries;n++){
+	long nentries = outTree->GetEntries();
+	for(long n=0;n<nentries;n++){
 		outTree->LoadTree(n);
 		outTree->GetEntry(n);
 		for(unsigned int i=0;i<MG_N;i++){
@@ -415,7 +415,7 @@ void DataReader::compute_RMSPed(){
 	int sample_min = 1;
 	int sample_max = Min(Nsample,4);
 	Long64_t max_event = 5500 + 500*(sample_max-4);
-	int nentries = Min(outTree->GetEntries(),max_event);
+	long nentries = Min(outTree->GetEntries(),max_event);
 	if(CM_N>0){
 		outTree->SetBranchStatus("*",0);
 		outTree->SetBranchStatus("StripAmpl_CM_corr",1);
@@ -427,7 +427,7 @@ void DataReader::compute_RMSPed(){
 				name << "ampl_hist_" << j;
 				ampl_hist[j] = new TH1F(name.str().c_str(),name.str().c_str(),bin_n,Ymin,Ymax);
 			}
-			for(int n=0;n<nentries;n++){
+			for(long n=0;n<nentries;n++){
 				outTree->LoadTree(n);
 				outTree->GetEntry(n);
 				for(int j=0;j<Nstrip_CM;j++){
@@ -471,7 +471,7 @@ void DataReader::compute_RMSPed(){
 				name << "ampl_hist_" << j;
 				ampl_hist[j] = new TH1F(name.str().c_str(),name.str().c_str(),bin_n,Ymin,Ymax);
 			}
-			for(int n=0;n<nentries;n++){
+			for(long n=0;n<nentries;n++){
 				outTree->LoadTree(n);
 				outTree->GetEntry(n);
 				for(int j=0;j<Nstrip_MG;j++){
@@ -507,10 +507,10 @@ void DataReader::compute_RMSPed(){
 	outTree->SetBranchStatus("*",1);
 	RMSPedFile.close();
 }
-DreamDataReader::DreamDataReader(string baseFileName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_): DataReader(baseFileName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
+DreamDataReader::DreamDataReader(string baseFileName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, long max_event_): DataReader(baseFileName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
 	DAQType = Tomography::Dream;
 }
-DreamDataReader::DreamDataReader(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_): DataReader(signalName,pedName,RMSName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
+DreamDataReader::DreamDataReader(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, long max_event_): DataReader(signalName,pedName,RMSName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
 	DAQType = Tomography::Dream;
 }
 DreamDataReader::~DreamDataReader(){
@@ -528,19 +528,19 @@ void DreamDataReader::process(){
 		return;
 	}
 	for(vector<string>::iterator it=file_names.begin();it!=file_names.end();++it){
-		int current_offset = outTree->GetEntries();
+		long current_offset = outTree->GetEntries();
 		read_file(*it,current_offset);
 	}
 	Write();
 	exists = true;
 }
-void DreamDataReader::read_file(string file_name,int evn_offset){
+void DreamDataReader::read_file(string file_name,long evn_offset){
 	ifstream iFile(file_name.c_str(),ifstream::binary);
 	if(!iFile.is_open()){
 		cout << "file : " << file_name << " can't be opened" << endl;
 		return;
 	}
-	int evNinFile = 0;
+	long evNinFile = 0;
 	// Loop on event
 	int isample=-1; int isample_prev=-2;
 	int isample_nb=0;
@@ -682,7 +682,7 @@ void DreamDataReader::read_file(string file_name,int evn_offset){
 	cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << evNinFile + evn_offset - global_offset << ")" << endl;
 	iFile.close();
 }
-map<Tomography::det_type,vector<vector<vector<double> > > > DreamDataReader::read_event(ifstream * file,int event_nb, bool fill_tree){
+map<Tomography::det_type,vector<vector<vector<double> > > > DreamDataReader::read_event(ifstream * file,long event_nb, bool fill_tree){
 	int isample=-1; int isample_prev=-2;
 	int isample_nb=0;
 	int ichannel=0;
@@ -846,10 +846,10 @@ map<Tomography::det_type,vector<vector<vector<double> > > > DreamDataReader::rea
 	event_ampl[Tomography::CM] = CM_Ampl;
 	return event_ampl;
 }
-FeminosDataReader::FeminosDataReader(string baseFileName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_): DataReader(baseFileName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
+FeminosDataReader::FeminosDataReader(string baseFileName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, long max_event_): DataReader(baseFileName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
 	DAQType = Tomography::Feminos;
 }
-FeminosDataReader::FeminosDataReader(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, int max_event_): DataReader(signalName,pedName,RMSName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
+FeminosDataReader::FeminosDataReader(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, long max_event_): DataReader(signalName,pedName,RMSName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
 	DAQType = Tomography::Feminos;
 }
 FeminosDataReader::~FeminosDataReader(){
@@ -877,14 +877,14 @@ void FeminosDataReader::process(){
 	global_offset = get_first_event_nb(file_names.front());
 	Nevent = global_offset;
 	for(vector<string>::iterator it=file_names.begin();it!=file_names.end();++it){
-		//int current_offset = global_offset + outTree->GetEntries();
-		read_file(*it,Nevent);
+		long current_offset = global_offset + outTree->GetEntries();
+		read_file(*it,current_offset);
 		Nevent++;
 	}
 	Write();
 	exists = true;
 }
-void FeminosDataReader::read_file(string file_name,int evn_offset){
+void FeminosDataReader::read_file(string file_name,long evn_offset){
 	ifstream iFile(file_name.c_str(),ifstream::binary);
 	if(!iFile.is_open()){
 		cout << "file : " << file_name << " can't be opened" << endl;
@@ -892,7 +892,7 @@ void FeminosDataReader::read_file(string file_name,int evn_offset){
 	}
 	iFile.ignore(26); //You can read run UID here
 	iFile.ignore(2); //Beginning of frame (28 bytes from the beginning)
-	int evNinFile = 0;
+	long evNinFile = 0;
 	int card=0;
 	int chip=0;
 	int channel=0;
@@ -987,7 +987,7 @@ void FeminosDataReader::read_file(string file_name,int evn_offset){
 	iFile.close();
 }
 
-map<Tomography::det_type,vector<vector<vector<double> > > > FeminosDataReader::read_event(ifstream * file,int event_nb, bool fill_tree){
+map<Tomography::det_type,vector<vector<vector<double> > > > FeminosDataReader::read_event(ifstream * file,long event_nb, bool fill_tree){
 	int card=0;
 	int chip=0;
 	int channel=0;

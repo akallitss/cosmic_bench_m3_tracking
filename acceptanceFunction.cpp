@@ -155,8 +155,8 @@ void acceptanceFunction::plot_3D(){
 }
 
 TH2D acceptanceFunction::plot_XY(int nbin_x,double x1,double x2,int nbin_y,double y1,double y2, double z){
-	int step_x = 100*nbin_x;
-	int step_y = 100*nbin_y;
+	int step_x = 20*nbin_x;
+	int step_y = 20*nbin_y;
 	TH2D proba_XY("proba_XY","proba_XY",nbin_x,x1,x2,nbin_y,y1,y2);
 	proba_XY.SetStats(false);
 	for(int i=0;i<step_x;i++){

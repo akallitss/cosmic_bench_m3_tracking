@@ -58,11 +58,11 @@ liveDisplay::~liveDisplay(){
 
 }
 
-liveDisplay::liveDisplay(string config_file, int max_event_){
+liveDisplay::liveDisplay(string config_file){
 	ptree config_tree;
 	read_json(config_file, config_tree);
 	filenames.clear();
-	max_event = max_event_;
+	max_event = config_tree.get<long>("max_event");
 	inotify_descriptor = -1;
 	file_descriptor = -1;
 	inotify_started = false;
@@ -237,15 +237,15 @@ void liveDisplay::flux_map(double z){
 	map<Tomography::det_type,int> Nstrip;
 	Nstrip[Tomography::CM] = DataReader::Nstrip_CM;
 	Nstrip[Tomography::MG] = DataReader::Nstrip_MG;
-	int eventReconstructed = 0;
-	int eventSuitable = 0;
-	int processed = 0;
+	long eventReconstructed = 0;
+	long eventSuitable = 0;
+	long processed = 0;
 	time_t last_time = time(NULL);
 	TH2D * flux_map = new TH2D("flux_map","flux_map",bin_n,x_min-margin,x_max+margin,bin_n,y_min-margin,y_max+margin);
 	flux_map->SetStats(0);
 	TPaveText * stat_text = new TPaveText(0,0,1,1);
 	DataReader * current_data_reader = NULL;
-	int event_nb = 0;
+	long event_nb = 0;
 	if(electronic_type == Tomography::Feminos){
 		current_data_reader = new FeminosDataReader("live",det_type_by_asic,det_n_by_asic);
 		event_nb = dynamic_cast<FeminosDataReader*>(current_data_reader)->get_first_event_nb(filenames.front());
@@ -262,6 +262,7 @@ void liveDisplay::flux_map(double z){
 		bool is_open = true;
 		int current_pos = data_file.tellg();
 		while(is_open){
+			if(max_event>0 && processed>max_event) break;
 			current_pos = data_file.tellg();
 			data_file.seekg(0,data_file.end);
 			bool is_complete = !(data_file.tellg()<max_file_size);
@@ -453,6 +454,7 @@ void liveDisplay::flux_map(double z){
 			}
 		}
 		cout << endl;
+		if(max_event>0 && processed>max_event) break;
 	}
 	delete current_data_reader;
 }

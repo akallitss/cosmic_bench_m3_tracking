@@ -44,7 +44,7 @@ class Cluster{
 		Cluster();
 		Cluster(const Cluster& other);
 		Cluster& operator=(const Cluster& other);
-		Cluster(T * treeObject, int entry = -1);
+		Cluster(T * treeObject, long entry = -1);
 		Cluster(double pos_, double size_, double ampl_, double maxSample_, double maxStripAmpl_, double TOT_, double t_, int maxStrip_);
 		int evn;
 		double evttime;
@@ -73,10 +73,10 @@ class CM_Cluster: public Cluster{
 		CM_Cluster();
 		CM_Cluster(const CM_Cluster& other);
 		CM_Cluster& operator=(const CM_Cluster& other);
-		CM_Cluster(T * treeObject,int number_,CM_Detector * det, int entry = -1);
+		CM_Cluster(T * treeObject,int number_,CM_Detector * det, long entry = -1);
 		CM_Cluster(CM_Detector * det, int number_, double pos_, double size_, double ampl_, double maxSample_, double maxStripAmpl_, double TOT_, double t_, int maxStrip_);
 		~CM_Cluster();
-		static bool is_suitable(T * treeObject,int number_,CM_Detector * detector, int entry = -1);
+		static bool is_suitable(T * treeObject,int number_,CM_Detector * detector, long entry = -1);
 		bool is_suitable(CM_Detector * detector);
 		bool is_in_det(Detector * det) const;
 		Tomography::strip_type get_strip_type() const;
@@ -105,10 +105,10 @@ class MG_Cluster: public Cluster{
 		MG_Cluster();
 		MG_Cluster(const MG_Cluster& other);
 		MG_Cluster& operator=(const MG_Cluster& other);
-		MG_Cluster(T * treeObject,int number_,MG_Detector * det, int entry = -1);
+		MG_Cluster(T * treeObject,int number_,MG_Detector * det, long entry = -1);
 		MG_Cluster(MG_Detector * det, int number_, double pos_, double size_, double ampl_, double maxSample_, double maxStripAmpl_, double TOT_, double t_, int maxStrip_);
 		~MG_Cluster();
-		static bool is_suitable(T * treeObject,int number_,MG_Detector * detector, int entry = -1);
+		static bool is_suitable(T * treeObject,int number_,MG_Detector * detector, long entry = -1);
 		bool is_suitable(MG_Detector * detector);
 		bool is_in_det(Detector * det) const;
 		double get_pos_mm() const;

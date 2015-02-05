@@ -17,7 +17,7 @@ class liveDisplay: public CosmicBench{
 	public:
 		liveDisplay();
 		~liveDisplay();
-		liveDisplay(string config_file, int max_event_);
+		liveDisplay(string config_file);
 		int start_inotify(string filename);
 		int pause_inotify();
 		int resume_inotify();
@@ -29,7 +29,7 @@ class liveDisplay: public CosmicBench{
 	protected:
 		Tomography::elec_type electronic_type;
 		vector<string> filenames;
-		int max_event;
+		long max_event;
 		int inotify_descriptor;
 		int file_descriptor;
 		bool inotify_started;

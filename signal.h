@@ -19,7 +19,7 @@ class Signal: public Tsignal, public CosmicBench{
 		void MultiCluster();
 		void ElecToAnalyse();
 		void EventDisplay(int evn_min = 0, int evn_max = 20);
-		void HoughTracking(int event_nb);
+		void HoughTracking(long event_nb);
 		map<int,TProfile*> SignalOverNoise();
 		void SignalOverNoiseDisplay();
 	protected:
@@ -30,7 +30,7 @@ class Signal: public Tsignal, public CosmicBench{
 		string signalName;
 		string PedName;
 		string RMSName;
-		int max_event;
+		long max_event;
 		int data_file_first;
 		int data_file_last;
 		map<int,Tomography::det_type> det_type_by_asic;
