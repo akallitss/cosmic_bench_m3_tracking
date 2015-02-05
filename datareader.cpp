@@ -527,9 +527,10 @@ void DreamDataReader::process(){
 		cout << "tree already initiated" << endl;
 		return;
 	}
+	int current_offset = 1;
 	for(vector<string>::iterator it=file_names.begin();it!=file_names.end();++it){
-		int current_offset = outTree->GetEntries();
 		read_file(*it,current_offset);
+		current_offset = outTree->GetEntries();
 	}
 	Write();
 	exists = true;
@@ -657,9 +658,11 @@ void DreamDataReader::read_file(string file_name,int evn_offset){
 				}
 				if(FeuHeaderLine!=4 && FeuHeaderLine!=8){
 					cout << "problem in Feu Header" << endl;
+					break;
 				}
 				if(FeuHeaderLine>4 && current_event != (evNinFile+evn_offset)){
 					cout << "problem in event id : " << current_event << " != " << evNinFile+evn_offset << endl;
+					break;
 				}
 				isample_nb++;
 				FeuN=0;
