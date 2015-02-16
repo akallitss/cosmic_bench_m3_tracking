@@ -15,3 +15,5 @@ Linkdef
 *.dat
 *.csv
 *.jpg
+config
+root_files
