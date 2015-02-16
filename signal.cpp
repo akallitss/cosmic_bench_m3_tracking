@@ -91,7 +91,7 @@ Signal::~Signal(){
 }
 void Signal::MultiCluster(){
 	cout << "destination file : " << analyseTree << endl;
-	Tanalyse * analyseFile = new Tanalyse(analyseTree,CM_n,MG_n);
+	Tanalyse * analyseFile = new Tanalyse(analyseTree,CM_N,MG_N);
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	for(long i=0;i<nentries;i++){
 		LoadTree(i);
@@ -139,7 +139,7 @@ void Signal::ElecToAnalyse(){
 	}
 	pedFile.close();
 	cout << "destination file : " << analyseTree << endl;
-	Tanalyse * analyseFile = new Tanalyse(analyseTree,CM_n,MG_n);
+	Tanalyse * analyseFile = new Tanalyse(analyseTree,CM_N,MG_N);
 	Nevent = 0;
 	long event_nb = 0;
 	string extension = "";
@@ -220,7 +220,7 @@ void Signal::ElecToAnalyse(){
 }
 
 void Signal::HoughTracking(long event_nb){
-	if(CM_n!=0){
+	if(CM_N!=0){
 		cout << "not implemented with CM" << endl;
 		return;
 	}
@@ -327,7 +327,7 @@ void Signal::HoughTracking(long event_nb){
 }
 map<int,TProfile*> Signal::SignalOverNoise(){
 	map<int,TProfile*> global_signal_over_noise;
-	if(CM_n!=0){
+	if(CM_N!=0){
 		cout << "not implemented with CM" << endl;
 		return global_signal_over_noise;
 	}
@@ -377,7 +377,7 @@ map<int,TProfile*> Signal::SignalOverNoise(){
 
 void Signal::SignalOverNoiseDisplay(){
 	map<int,TProfile*> global_signal_over_noise;
-	if(CM_n!=0){
+	if(CM_N!=0){
 		cout << "not implemented with CM" << endl;
 		return;
 	}

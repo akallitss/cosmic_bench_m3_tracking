@@ -29,8 +29,6 @@ public :
    Int_t           Nevent;
    Double_t        evttime;
    Int_t           TsampleNum[Tomography::Nsample];
-   int CM_n;
-   int MG_n;
    Float_t         (*StripAmpl_MG)[61][Tomography::Nsample];
    Float_t         (*StripAmpl_MG_ped)[61][Tomography::Nsample];
    Float_t         (*StripAmpl_MG_corr)[61][Tomography::Nsample];

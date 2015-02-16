@@ -17,8 +17,6 @@ Tsignal::Tsignal(){
 
 Tsignal::Tsignal(TTree *tree, int CMN, int MGN) : fChain(0) 
 {
-	CM_n = CMN;
-	MG_n = MGN;
    Init(tree, CMN, MGN);
 }
 
@@ -56,7 +54,6 @@ void Tsignal::Init(TTree *tree, int CMN, int MGN)
    // code, but the routine can be extended by the user if needed.
    // Init() will be called many times when running on PROOF
    // (once per file to be processed).
-
    if(MGN>0){
       StripAmpl_MG = new Float_t[MGN][61][Tomography::Nsample];
       StripAmpl_MG_ped = new Float_t[MGN][61][Tomography::Nsample];
