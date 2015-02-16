@@ -277,7 +277,7 @@ void Analyse::Residus_ref(){
 	TH1D * ray_clus_n = new TH1D("clus_n","clus_n",MG_N + CM_N + 2,0,MG_N + CM_N + 2);
 
 	if (fChain == 0) return;
-	Long64_t nentries = fChain->GetEntriesFast();
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
 	for (Long64_t jentry=0; jentry<nentries;jentry++){
 		Long64_t ientry = LoadTree(jentry);
