@@ -1,80 +1,71 @@
-ObjSuf        = o
-SrcSuf        = cxx
-ExeSuf        =
-DllSuf        = so
-
-OutPutOpt     = -o
-
-MYINCLUDE     = ~/.
-MYLIB         = $(PPATH)/lib
+IDIR          = include
+SDIR          = src
+ODIR          = obj
 OUTPUTDIR     = ./
 ROOTCFLAGS    = $(shell root-config --cflags)
 ROOTLIBS      = $(shell root-config --libs)
 ROOTGLIBS     = $(shell root-config --glibs)
 
-
-
 # Linux with egcs
 CXX           = g++
-CXXFLAGS      = -O2 -Wall -Wno-deprecated -fexceptions -fPIC  $(ROOTCFLAGS) -I$(MYINCLUDE) 
-#CXXFLAGS      = -g -O -Wall -Wno-deprecated -fexceptions -fPIC  $(ROOTCFLAGS) -I$(MYINCLUDE)
+CXXFLAGS      = -O2 -Wall -Wno-deprecated -fexceptions -fPIC  $(ROOTCFLAGS) -I$(IDIR) 
+#CXXFLAGS      = -g -O -Wall -Wno-deprecated -fexceptions -fPIC  $(ROOTCFLAGS) -I$(IDIR)
 LD            = g++
 LIBS          = $(ROOTLIBS) -lNetx -lm -ldl -rdynamic 
-GLIBS         = $(ROOTGLIBS) -L/usr/X11R6/lib -L$(MYLIB) -lXpm -lX11 -lm -ldl -rdynamic -lpthread -lMinuit
+GLIBS         = $(ROOTGLIBS) -L/usr/X11R6/lib -lXpm -lX11 -lm -ldl -rdynamic -lpthread -lMinuit
 LDFLAGS       =  $(GLIBS)
-SOFLAGS       = -shared -fPIC
+
+DataReader_obj_tmp = NewDataReader.o datareader.o header.o dataline.o tomography.o
+DataReader_obj = $(patsubst %, $(ODIR)/%, $(DataReader_obj_tmp))
+
+absorptionMap_obj_tmp = absorptionMap.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o tomography.o acceptanceFunction.o
+absorptionMap_obj = $(patsubst %, $(ODIR)/%, $(absorptionMap_obj_tmp))
+
+tracking_obj_tmp = tracking.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o tomography.o acceptanceFunction.o
+tracking_obj = $(patsubst %, $(ODIR)/%, $(tracking_obj_tmp))
+
+MultiCluster_obj_tmp = MultiCluster.o signal.o detector.o event.o cluster.o Tanalyse.o ray.o point.o Tsignal.o datareader.o dataline.o tomography.o
+MultiCluster_obj = $(patsubst %, $(ODIR)/%, $(MultiCluster_obj_tmp))
+
+testCapa_obj_tmp = testCapa.o signal.o detector.o event.o cluster.o Tanalyse.o ray.o point.o Tsignal.o datareader.o dataline.o tomography.o
+testCapa_obj = $(patsubst %, $(ODIR)/%, $(testCapa_obj_tmp))
+
+live_obj_tmp = live.o liveDisplay.o datareader.o header.o dataline.o detector.o event.o cluster.o ray.o point.o tomography.o
+live_obj = $(patsubst %, $(ODIR)/%, $(live_obj_tmp))
 
 #------------------------------------------------------------------------------
 
-all: exec
+all: dir exec
+
+dir: $(ODIR)
+
+$(ODIR):
+	mkdir -p $(ODIR)
 
 exec: tracking absorptionMap MultiCluster testCapa DataReader live
 
-execDict: trackingDict absorptionMapDict MultiClusterDict testCapaDict liveDict
+$(ODIR)/%.o: $(SDIR)/%.cpp
+	$(CXX) -o $@ $(CXXFLAGS) -c $<
 
-lib: libAnalyse.so
-
-.cpp.o:
-	$(CXX) $(CXXFLAGS) -c $<
-
-DataReader: NewDataReader.o datareader.o header.o dataline.o tomography.o
+DataReader: $(DataReader_obj)
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-absorptionMap: absorptionMap.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o tomography.o acceptanceFunction.o
+absorptionMap: $(absorptionMap_obj)
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-tracking: tracking.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o tomography.o acceptanceFunction.o
+tracking: $(tracking_obj)
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-MultiCluster: MultiCluster.o signal.o detector.o event.o cluster.o Tanalyse.o ray.o point.o Tsignal.o datareader.o dataline.o tomography.o
+MultiCluster: $(MultiCluster_obj)
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-testCapa: testCapa.o signal.o detector.o event.o cluster.o Tanalyse.o ray.o point.o Tsignal.o datareader.o dataline.o tomography.o
+testCapa: $(testCapa_obj)
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-live: live.o liveDisplay.o datareader.o header.o dataline.o detector.o event.o cluster.o ray.o point.o tomography.o
+live: $(live_obj)
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-absorptionMapDict: absorptionMap.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o tomography.o acceptanceFunction.o MyDict.o
-	$(LD) $^ -o $@ $(LDFLAGS)
-
-trackingDict: tracking.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o tomography.o acceptanceFunction.o MyDict.o
-	$(LD) $^ -o $@ $(LDFLAGS)
-
-MultiClusterDict: MultiCluster.o signal.o detector.o event.o cluster.o Tanalyse.o Tsignal.o ray.o point.o datareader.o dataline.o tomography.o MyDict.o
-	$(LD) $^ -o $@ $(LDFLAGS)
-
-testCapaDict: testCapa.o signal.o detector.o event.o cluster.o Tanalyse.o ray.o point.o Tsignal.o datareader.o dataline.o tomography.o MyDict.o
-	$(LD) $^ -o $@ $(LDFLAGS)
-
-liveDict: live.o liveDisplay.o datareader.o header.o dataline.o detector.o event.o cluster.o ray.o point.o tomography.o MyDict.o
-	$(LD) $^ -o $@ $(LDFLAGS)
-
-libAnalyse.so: analyse.o T.o event.o ray.o cluster.o detector.o point.o Tanalyse.o Tsignal.o signal.o tomography.o MyDict.o
-	$(CXX) $(SOFLAGS) $(LDFLAGS) -o $@ $^ 
-
-MyDict.cpp: analyse.h T.h event.h ray.h cluster.h detector.h point.h Tanalyse.h Tsignal.h signal.h acceptanceFunction.h tomography.h Linkdef.h
-	rootcint -f $@ -c $(CXXFLAGS) -p $^
+.PHONY: clean
 
 clean:
-	rm -f *.o *.so *Dict* *dict* Linkdef absorptionMap tracking MultiCluster DataReader live
+	rm -f $(ODIR)/*.o
