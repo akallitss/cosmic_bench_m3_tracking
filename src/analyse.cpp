@@ -218,6 +218,7 @@ void Analyse::Residus_ref(){
 	//map<string, bool> nref_is_X;
 	//unsigned int det_x_n = 0;
 	unsigned int nref_x_n = 0;
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
 		if(!((*it)->get_is_ref())){
 			ostringstream name;
@@ -251,14 +252,15 @@ void Analyse::Residus_ref(){
 			absResVSsize[name.str()] = new TProfile((name.str()+"_absResVSsize").c_str(),(name.str()+"_absResVSsize").c_str(),50,0,50,0,5);
 			point_nb[name.str()] = 0;
 			efficacity[name.str()] = 0;
-			offset_fit[name.str()] = new TF1("offset_fit","exp(-(x-[0])*(x-[0])/(2*[1]*[1])) + exp(-(x-[0])*(x-[0])/(2*[2]*[2]))",-5,5);
-			offset_fit[name.str()]->SetParameters(0,0.5,2);
+			offset_fit[name.str()] = new TF1("offset_fit","[3]*(exp(-(x-[0])*(x-[0])/(2*[1]*[1])) + exp(-(x-[0])*(x-[0])/(2*[2]*[2])))",-5,5);
+			offset_fit[name.str()]->SetParameters(0,0.5,2,nentries/10);
 			offset_fit[name.str()]->SetParLimits(0,-10,10);
 			offset_fit[name.str()]->SetParLimits(1,0,1);
 			offset_fit[name.str()]->SetParLimits(2,0,10);
+			offset_fit[name.str()]->SetParLimits(3,1,nentries);
 			angle_z_fit[name.str()] = new TF1("angle_z_fit","pol1(0)",-150,150);
 			angle_z_fit[name.str()]->SetParameters(0,0);
-			angle_z_fit[name.str()]->SetParLimits(0,5,5);
+			angle_z_fit[name.str()]->SetParLimits(0,-5,5);
 			angle_z_fit[name.str()]->SetParLimits(1,-1,1);
 			//nref_is_X[name.str()] = (*it)->get_is_X();
 			if((*it)->get_is_X()) nref_x_n++;
@@ -289,7 +291,6 @@ void Analyse::Residus_ref(){
 	TH1D * ray_clus_n = new TH1D("clus_n","clus_n",MG_N + CM_N + 2,0,MG_N + CM_N + 2);
 
 	if (fChain == 0) return;
-	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
 	for (Long64_t jentry=0; jentry<nentries;jentry++){
 		Long64_t ientry = LoadTree(jentry);
