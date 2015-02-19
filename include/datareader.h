@@ -29,7 +29,8 @@ class DataReader{
 		static const int Nsample = Tomography::Nsample;
 		static const int Nstrip_MG = MG_Detector::Nstrip;
 		static const int Nstrip_CM = CM_Detector::Nstrip;
-		virtual map<Tomography::det_type,vector<vector<vector<double> > > > read_event(ifstream * file,long event_nb, bool fill_tree = true) = 0;
+		virtual map<Tomography::det_type,vector<vector<vector<double> > > > read_event(ifstream * file,long& event_nb, bool fill_tree = true) = 0;
+		map<Tomography::det_type,vector<vector<vector<double> > > > read_event(ifstream * file,int& event_nb, bool fill_tree = true);
 	protected:
 		void read_ped(string ped_file = "");
 		void Fill();
@@ -76,7 +77,7 @@ class DreamDataReader: public DataReader{
 		DreamDataReader(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, long max_event_ = -1);
 		~DreamDataReader();
 		void process();
-		map<Tomography::det_type,vector<vector<vector<double> > > > read_event(ifstream * file,long event_nb, bool fill_tree = true);
+		map<Tomography::det_type,vector<vector<vector<double> > > > read_event(ifstream * file,long& event_nb, bool fill_tree = true);
 		int get_first_event_nb(string file_name);
 	protected:
 		void read_file(string file_name,long evn_offset);
@@ -89,7 +90,7 @@ class FeminosDataReader: public DataReader{
 		FeminosDataReader(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_=false,bool ped_done_=false,bool cns_done_=false, long max_event_ = -1);
 		~FeminosDataReader();
 		void process();
-		map<Tomography::det_type,vector<vector<vector<double> > > > read_event(ifstream * file,long event_nb, bool fill_tree = true);
+		map<Tomography::det_type,vector<vector<vector<double> > > > read_event(ifstream * file,long& event_nb, bool fill_tree = true);
 		int get_first_event_nb(string file_name);
 	protected:
 		void read_file(string file_name,long evn_offset);

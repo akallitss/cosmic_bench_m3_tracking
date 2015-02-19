@@ -168,7 +168,7 @@ void Signal::ElecToAnalyse(){
 		name << data_file_basename << setfill('0') << setw(3) << i << extension;
 		ifstream data_file(name.str().c_str(),ifstream::binary);
 		while(data_file.good()){
-			map<Tomography::det_type,vector<vector<vector<double> > > > event_ampl = current_data_reader->read_event(&data_file,Nevent+1,false);
+			map<Tomography::det_type,vector<vector<vector<double> > > > event_ampl = current_data_reader->read_event(&data_file,Nevent,false);
 			if(event_ampl.size()==0) break;
 			map<Tomography::det_type,vector<vector<float> > >::iterator ped_it = Pedestal.begin();
 			for(map<Tomography::det_type,vector<vector<vector<double> > > >::iterator it = event_ampl.begin();it!=event_ampl.end();++it){

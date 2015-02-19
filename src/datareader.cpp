@@ -507,6 +507,13 @@ void DataReader::compute_RMSPed(){
 	outTree->SetBranchStatus("*",1);
 	RMSPedFile.close();
 }
+map<Tomography::det_type,vector<vector<vector<double> > > > DataReader::read_event(ifstream * file,int& event_nb, bool fill_tree){
+	long event_nb_ = event_nb;
+	map<Tomography::det_type,vector<vector<vector<double> > > > return_map = read_event(file,event_nb_,fill_tree);
+	event_nb = event_nb_;
+	return return_map;
+}
+
 DreamDataReader::DreamDataReader(string baseFileName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, long max_event_): DataReader(baseFileName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
 	DAQType = Tomography::Dream;
 }
@@ -659,8 +666,8 @@ void DreamDataReader::read_file(string file_name,long evn_offset){
 					cout << "problem in Feu Header" << endl;
 					break;
 				}
-				if(FeuHeaderLine>4 && current_event != (evNinFile+evn_offset)){
-					cout << "problem in event id : " << current_event << " != " << evNinFile+evn_offset << endl;
+				if(FeuHeaderLine>4 && current_event != (Nevent+1)){
+					cout << "Warning ! Event ID gap : " << Nevent << " -> " << current_event << endl;
 				}
 				isample_nb++;
 				FeuN=0;
@@ -683,7 +690,7 @@ void DreamDataReader::read_file(string file_name,long evn_offset){
 	cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << evNinFile + evn_offset - global_offset << ")" << endl;
 	iFile.close();
 }
-map<Tomography::det_type,vector<vector<vector<double> > > > DreamDataReader::read_event(ifstream * file,long event_nb, bool fill_tree){
+map<Tomography::det_type,vector<vector<vector<double> > > > DreamDataReader::read_event(ifstream * file,long& event_nb, bool fill_tree){
 	int isample=-1; int isample_prev=-2;
 	int isample_nb=0;
 	int ichannel=0;
@@ -806,9 +813,11 @@ map<Tomography::det_type,vector<vector<vector<double> > > > DreamDataReader::rea
 					cout << "problem in Feu Header" << endl;
 					break;
 				}
-				if(FeuHeaderLine>4 && current_event != event_nb){
-					cout << "problem in event id : " << current_event << " != " << event_nb << endl;
+				if(FeuHeaderLine>4 && current_event != (event_nb+1)){
+					cout << "Warning ! Event ID gap : " << event_nb << " -> " << current_event << endl;
+					event_nb = current_event;
 				}
+				else event_nb++;
 				isample_nb++;
 				FeuN=0;
 				FeuHeaderLine=0;
@@ -1018,7 +1027,7 @@ void FeminosDataReader::read_file(string file_name,long evn_offset){
 	iFile.close();
 }
 
-map<Tomography::det_type,vector<vector<vector<double> > > > FeminosDataReader::read_event(ifstream * file,long event_nb, bool fill_tree){
+map<Tomography::det_type,vector<vector<vector<double> > > > FeminosDataReader::read_event(ifstream * file,long& event_nb, bool fill_tree){
 	int card=0;
 	int chip=0;
 	int channel=0;
@@ -1109,6 +1118,7 @@ map<Tomography::det_type,vector<vector<vector<double> > > > FeminosDataReader::r
 		file->read((char*)&current_data,sizeof(current_data));
 	}
 	if(!event_complete) return event_ampl;
+	event_nb++;
 	Nevent = event_nb;
 	if(fill_tree && !exists) Fill();
 	vector<vector<vector<double> > > MG_Ampl(MG_N,vector<vector<double> >(Nstrip_MG,vector<double>(Nsample,0)));

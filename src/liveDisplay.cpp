@@ -229,11 +229,15 @@ void liveDisplay::flux_map(double z){
 			cout << "can't open file ! Switch to next one" << endl;
 			continue;
 		}
+		long old_event_nb = event_nb;
 		if(electronic_type == Tomography::Feminos){
 			event_nb = dynamic_cast<FeminosDataReader*>(current_data_reader)->get_first_event_nb(*filename_it);
 		}
 		else if(electronic_type == Tomography::Dream){
 			event_nb = dynamic_cast<DreamDataReader*>(current_data_reader)->get_first_event_nb(*filename_it);
+		}
+		if(old_event_nb!=(event_nb-1)){
+			cout << "Warning ! Event ID gap : " << old_event_nb << " -> " << event_nb << endl;
 		}
 		start_inotify(*filename_it);
 		int current_pos = data_file.tellg();
@@ -256,7 +260,6 @@ void liveDisplay::flux_map(double z){
 					data_file.seekg(current_pos, data_file.beg);
 					break;
 				}
-				event_nb++;
 				/*
 				//pedestal sub
 				for(unsigned int i=0;i<MG_N;i++){
