@@ -562,6 +562,7 @@ void DreamDataReader::read_file(string file_name,long evn_offset){
 	bool zs_mode = false;
 	bool got_channel_id=false;
 	int current_event = -1;
+	int current_event_old = -1;
 	reset_tree_leaf();
 	DataLineDream current_data;
 	iFile.read((char*)&current_data,sizeof(current_data));
@@ -666,15 +667,20 @@ void DreamDataReader::read_file(string file_name,long evn_offset){
 					cout << "problem in Feu Header" << endl;
 					break;
 				}
-				if(FeuHeaderLine>4 && current_event != (Nevent+1)){
-					cout << "Warning ! Event ID gap : " << Nevent << " -> " << current_event << endl;
+				if(isample==0) current_event_old = current_event;
+				else if(current_event_old != current_event){
+					cout << "problem in event ID" << endl;
 				}
 				isample_nb++;
 				FeuN=0;
 				FeuHeaderLine=0;
 				zs_mode = false;
 				if(isample == (Nsample-1)){
-					Nevent = evNinFile+evn_offset;
+					if(FeuHeaderLine>4 && current_event != (Nevent+1)){
+						cout << "Warning ! Event ID gap : " << Nevent << " -> " << current_event << endl;
+						Nevent = current_event;
+					}
+					else Nevent++;
 					if((evNinFile%100) == 0) cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << evNinFile + evn_offset - global_offset << ")" << flush;
 					evNinFile++;
 					Fill();
@@ -705,6 +711,7 @@ map<Tomography::det_type,vector<vector<vector<double> > > > DreamDataReader::rea
 	bool got_channel_id=false;
 	bool event_complete = false;
 	int current_event = -1;
+	int current_event_old = -1;
 	reset_tree_leaf();
 	DataLineDream current_data;
 	file->read((char*)&current_data,sizeof(current_data));
@@ -813,17 +820,21 @@ map<Tomography::det_type,vector<vector<vector<double> > > > DreamDataReader::rea
 					cout << "problem in Feu Header" << endl;
 					break;
 				}
-				if(FeuHeaderLine>4 && current_event != (event_nb+1)){
-					cout << "Warning ! Event ID gap : " << event_nb << " -> " << current_event << endl;
-					event_nb = current_event;
+				if(isample==0) current_event_old = current_event;
+				else if(current_event_old != current_event){
+					cout << "problem in event ID" << endl;
 				}
-				else event_nb++;
 				isample_nb++;
 				FeuN=0;
 				FeuHeaderLine=0;
 				zs_mode = false;
 				file->ignore(sizeof(current_data));
 				if(isample == (Nsample-1)){
+					if(FeuHeaderLine>4 && current_event != (event_nb+1)){
+						cout << "Warning ! Event ID gap : " << event_nb << " -> " << current_event << endl;
+						event_nb = current_event;
+					}
+					else event_nb++;
 					isample=-1; isample_prev=-2;
 					event_complete = true;
 					break;
