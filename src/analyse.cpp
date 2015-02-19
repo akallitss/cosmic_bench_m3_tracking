@@ -263,6 +263,11 @@ void Analyse::Residus_ref(){
 			angle_z_fit[name.str()]->SetParameters(0,0);
 			angle_z_fit[name.str()]->SetParLimits(0,-5,5);
 			angle_z_fit[name.str()]->SetParLimits(1,-1,1);
+			angle_xy_fit[name.str()] = new TF1("angle_xy_fit","pol2(0)",-0.3,0.3);
+			angle_xy_fit[name.str()]->SetParameters(0,0,0);
+			angle_xy_fit[name.str()]->SetParLimits(0,-5,5);
+			angle_xy_fit[name.str()]->SetParLimits(1,-5,5);
+			angle_xy_fit[name.str()]->SetParLimits(2,-20,20);
 			//nref_is_X[name.str()] = (*it)->get_is_X();
 			if((*it)->get_is_X()) nref_x_n++;
 		}
@@ -518,6 +523,8 @@ void Analyse::Residus_ref(){
 		it->second->cd(5);
 		resVSpos[it->first]->Draw();
 		it->second->cd(6);
+		cout << "angle XY : " << endl;
+		resVSangle[it->first]->Fit(angle_xy_fit[it->first],"R");
 		resVSangle[it->first]->Draw();
 		it->second->cd(7);
 		resVSanglePerp[it->first]->Draw();
