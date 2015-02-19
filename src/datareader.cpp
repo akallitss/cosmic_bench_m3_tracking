@@ -858,18 +858,23 @@ int DreamDataReader::get_first_event_nb(string file_name){
 	int FeuHeaderLine = 0;
 	iFile.read((char*)&current_data,sizeof(current_data));
 	current_data.ntohs_();
+	long event_nb = -1;
 	while(iFile.good() /*&& evNinFile<6000*/){
-		if(current_data.is_Feu_header()){
+		if(current_data.is_Feu_header() && FeuHeaderLine<8){
 			if(FeuHeaderLine==1){
-				return current_data.get_data();
+				event_nb = current_data.get_data();
+			}
+			else if(FeuHeaderLine==4){
+				event_nb += static_cast<int>(current_data.get_data()) << 12;
 			}
 			FeuHeaderLine++;
 		}
+		else break;
 		iFile.read((char*)&current_data,sizeof(current_data));
 		current_data.ntohs_();
 	}
 	iFile.close();
-	return -1;
+	return event_nb;
 }
 
 FeminosDataReader::FeminosDataReader(string baseFileName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, long max_event_): DataReader(baseFileName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
