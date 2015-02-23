@@ -86,7 +86,7 @@ double Minimizer::operator()(const double * x){
 				tree_it->second.put<double>("z",tree_it->second.get<double>("z") + x[(6*i)+2]);
 				tree_it->second.put<double>("angle_x",x[(6*i)+3]);
 				tree_it->second.put<double>("angle_y",x[(6*i)+4]);
-				tree_it->second.put<double>("angle_z",x[(6*i)+4]);
+				tree_it->second.put<double>("angle_z",x[(6*i)+5]);
 				if(tree_it->second.get<bool>("is_X")){
 					tree_it->second.put<double>("offset",x[(6*i)]);
 				}
