@@ -184,7 +184,7 @@ int main(int argc, char ** argv){
 		name[(6*i)+4] = ("d_theta_y" + common_name.str()).c_str();
 		step[(6*i)+4] = 0.001;
 		variable[(6*i)+4] = 0;
-		name[(6*i)+5] = ("d_theta_y" + common_name.str()).c_str();
+		name[(6*i)+5] = ("d_theta_z" + common_name.str()).c_str();
 		step[(6*i)+5] = 0.001;
 		variable[(6*i)+5] = 0;
 	}
