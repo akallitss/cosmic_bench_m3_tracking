@@ -739,12 +739,13 @@ double Analyse::Residus_ref_cost(){
 	cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << static_cast<long>(eventSuitable) << "|" << setw(20) << nentries << endl;
 	double cost = 0;
 	for(map<string,TH1D*>::iterator it = MM_residus.begin();it!=MM_residus.end();++it){
-		MM_residus[it->first]->Fit(offset_fit[it->first],"RN");
-		cost += (offset_fit[it->first]->GetParameter(0))*(offset_fit[it->first]->GetParameter(0));
-		angle_alignment[it->first]->Fit(angle_z_fit[it->first],"RN");
+		//MM_residus[it->first]->Fit(offset_fit[it->first],"RNQ");
+		angle_alignment[it->first]->Fit(angle_z_fit[it->first],"RNQ");
+		resVSangle[it->first]->Fit(angle_xy_fit[it->first],"RNQ");
+		//cost += (offset_fit[it->first]->GetParameter(0))*(offset_fit[it->first]->GetParameter(0));
+		cost += (MM_residus[it->first]->GetMean())*(MM_residus[it->first]->GetMean());
 		cost += (angle_z_fit[it->first]->GetParameter(1))*(angle_z_fit[it->first]->GetParameter(1));
 		cost += (angle_z_fit[it->first]->GetParameter(2))*(angle_z_fit[it->first]->GetParameter(2));
-		resVSangle[it->first]->Fit(angle_xy_fit[it->first],"RN");
 		cost += (angle_xy_fit[it->first]->GetParameter(1))*(angle_xy_fit[it->first]->GetParameter(1));
 	}
 	return cost;
