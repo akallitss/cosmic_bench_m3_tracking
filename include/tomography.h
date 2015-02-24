@@ -9,8 +9,8 @@ using std::ostream;
 using std::map;
 using std::string;
 
-ostream& operator<<(ostream& os, const map<double,int>& map_);
-ostream& operator<<(ostream& os, const map<int,int>& map_);
+template<typename T,typename R>
+ostream& operator<<(ostream& os, const map<T,R>& map_);
 
 namespace Tomography{
 
