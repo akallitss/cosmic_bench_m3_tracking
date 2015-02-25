@@ -747,6 +747,12 @@ double Analyse::Residus_ref_cost(){
 		cost += (angle_z_fit[it->first]->GetParameter(1))*(angle_z_fit[it->first]->GetParameter(1));
 		cost += (angle_z_fit[it->first]->GetParameter(2))*(angle_z_fit[it->first]->GetParameter(2));
 		cost += (angle_xy_fit[it->first]->GetParameter(1))*(angle_xy_fit[it->first]->GetParameter(1));
+		delete MM_residus[it->first];
+		delete angle_alignment[it->first];
+		delete resVSangle[it->first];
+		delete offset_fit[it->first];
+		delete angle_z_fit[it->first];
+		delete angle_xy_fit[it->first];
 	}
 	return cost;
 }
