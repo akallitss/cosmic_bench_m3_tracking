@@ -15,13 +15,23 @@ Tsignal::Tsignal(){
    
 }
 
-Tsignal::Tsignal(TTree *tree, int CMN, int MGN) : fChain(0) 
+Tsignal::Tsignal(TTree *tree, int CMN_, int MGN_) : fChain(0) 
 {
-   Init(tree, CMN, MGN);
+   Init(tree, CMN_, MGN_);
 }
 
 Tsignal::~Tsignal()
 {
+   if(MGN>0){
+      delete StripAmpl_MG;
+      delete StripAmpl_MG_ped;
+      delete StripAmpl_MG_corr;
+   }
+   if(CMN>0){
+      delete StripAmpl_CM;
+      delete StripAmpl_CM_ped;
+      delete StripAmpl_CM_corr;
+   }
    if (!fChain) return;
    delete fChain->GetCurrentFile();
 }
@@ -45,7 +55,7 @@ Long64_t Tsignal::LoadTree(Long64_t entry)
    return centry;
 }
 
-void Tsignal::Init(TTree *tree, int CMN, int MGN)
+void Tsignal::Init(TTree *tree, int CMN_, int MGN_)
 {
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
@@ -54,6 +64,8 @@ void Tsignal::Init(TTree *tree, int CMN, int MGN)
    // code, but the routine can be extended by the user if needed.
    // Init() will be called many times when running on PROOF
    // (once per file to be processed).
+   MGN = MGN_;
+   CMN = CMN_;
    if(MGN>0){
       StripAmpl_MG = new Float_t[MGN][61][Tomography::Nsample];
       StripAmpl_MG_ped = new Float_t[MGN][61][Tomography::Nsample];

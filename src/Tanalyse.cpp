@@ -21,6 +21,32 @@ Tanalyse::Tanalyse(string saveFileName, int CM_n, int MG_n)
 
 Tanalyse::~Tanalyse()
 {
+   if(CMN>0){
+      delete CM_NClus;
+      delete CM_Spark;
+      delete CM_ClusAmpl;
+      delete CM_ClusSize;
+      delete CM_ClusPos;
+      delete CM_ClusTOT;
+      delete CM_ClusT;
+      delete CM_ClusMaxStrip;
+      delete CM_ClusMaxSample;
+      delete CM_ClusMaxStripAmpl;
+      delete CM_StripMaxAmpl;
+   }
+   if(MGN>0){
+      delete MG_NClus;
+      delete MG_Spark;
+      delete MG_ClusAmpl;
+      delete MG_ClusSize;
+      delete MG_ClusPos;
+      delete MG_ClusTOT;
+      delete MG_ClusT;
+      delete MG_ClusMaxStrip;
+      delete MG_ClusMaxSample;
+      delete MG_ClusMaxStripAmpl;
+      delete MG_StripMaxAmpl;
+   }
    //delete T;
    delete saveFile;
 }

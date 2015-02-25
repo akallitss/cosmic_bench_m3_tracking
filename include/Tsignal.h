@@ -26,6 +26,8 @@ public :
    Int_t           fCurrent; //!current Tree number in a TChain
 
    // Declaration of leaf types
+   int CMN;
+   int MGN;
    Int_t           Nevent;
    Double_t        evttime;
    Int_t           TsampleNum[Tomography::Nsample];
@@ -47,13 +49,13 @@ public :
    TBranch        *b_StripAmpl_CM_ped;   //!
    TBranch        *b_StripAmpl_CM_corr;   //!
 
-   Tsignal(TTree *tree, int CMN, int MGN);
+   Tsignal(TTree *tree, int CMN_, int MGN_);
    Tsignal();
    virtual ~Tsignal();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
-   virtual void     Init(TTree *tree, int CMN, int MGN);
+   virtual void     Init(TTree *tree, int CMN_, int MGN_);
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
    vector<vector<double> > get_mg_ampl(int mg_n);

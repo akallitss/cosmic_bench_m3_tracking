@@ -62,7 +62,7 @@ Signal::Signal(string configFilePath){
 	cout << signalName << endl;
 	cout << RMSName << endl;
 	ifstream fIn_test(signalName.c_str());
-	bool exists = fIn_test.good();
+	exists = fIn_test.good();
 	fIn_test.close();
 	CosmicBench::Init(config_tree);
 	BOOST_FOREACH(const ptree::value_type& child, config_tree.get_child("CosmicBench.CosMultis")){
@@ -75,7 +75,7 @@ Signal::Signal(string configFilePath){
 	}
 	if(CM_N!=0) cout << "warning, CosMultis are not fully supported !" << endl;
 	if(exists){
-		TFile *fIn = new TFile(signalName.c_str(),"READ");
+		fIn = new TFile(signalName.c_str(),"READ");
 		TTree * treeIn = (TTree*)(fIn->Get("T"));
 		Tsignal::Init(treeIn,CM_N,MG_N);
 	}
@@ -87,7 +87,9 @@ Signal::Signal(string configFilePath){
 	use_srf = config_tree.get<bool>("use_SRF");
 }
 Signal::~Signal(){
-
+	if(exists){
+		delete fIn;
+	}
 }
 void Signal::MultiCluster(){
 	cout << "destination file : " << analyseTree << endl;

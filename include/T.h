@@ -18,6 +18,8 @@ public :
    Int_t           fCurrent; //!current Tree number in a TChain
 
    // Declaration of leaf types
+   int CM_n;
+   int MG_n;
    Int_t           evn;
    Double_t        evttime;
    Int_t           *CM_NClus;
@@ -70,11 +72,11 @@ public :
    TBranch        *b_MG_StripMaxAmpl;   //!
 
    T();
-   T(TTree *tree, int CM_n, int MG_n);
+   T(TTree *tree, int CM_n_, int MG_n_);
    virtual ~T();
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
-   virtual void     Init(TTree *tree, int CM_n, int MG_n);
+   virtual void     Init(TTree *tree, int CM_n_, int MG_n_);
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
 };

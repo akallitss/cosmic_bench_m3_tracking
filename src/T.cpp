@@ -9,7 +9,7 @@ T::T(){
    
 }
 
-T::T(TTree *tree, int CM_n, int MG_n)
+T::T(TTree *tree, int CM_n_, int MG_n_)
 {
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
@@ -21,11 +21,37 @@ T::T(TTree *tree, int CM_n, int MG_n)
       tree = (TTree*)gDirectory->Get("T");
 
    }*/
-   Init(tree, CM_n, MG_n);
+   Init(tree, CM_n_, MG_n_);
 }
 
 T::~T()
 {
+   if(CM_n>0){
+      delete CM_NClus;
+      delete CM_Spark;
+      delete CM_ClusAmpl;
+      delete CM_ClusSize;
+      delete CM_ClusPos;
+      delete CM_ClusTOT;
+      delete CM_ClusT;
+      delete CM_ClusMaxStrip;
+      delete CM_ClusMaxSample;
+      delete CM_ClusMaxStripAmpl;
+      delete CM_StripMaxAmpl;
+   }
+   if(MG_n>0){
+      delete MG_NClus;
+      delete MG_Spark;
+      delete MG_ClusAmpl;
+      delete MG_ClusSize;
+      delete MG_ClusPos;
+      delete MG_ClusTOT;
+      delete MG_ClusT;
+      delete MG_ClusMaxStrip;
+      delete MG_ClusMaxSample;
+      delete MG_ClusMaxStripAmpl;
+      delete MG_StripMaxAmpl;
+   }
    if (!fChain) return;
    delete fChain->GetCurrentFile();
 }
@@ -51,7 +77,7 @@ Long64_t T::LoadTree(Long64_t entry)
    return centry;
 }
 
-void T::Init(TTree *tree, int CM_n, int MG_n)
+void T::Init(TTree *tree, int CM_n_, int MG_n_)
 {
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
@@ -62,6 +88,8 @@ void T::Init(TTree *tree, int CM_n, int MG_n)
    // (once per file to be processed).
 
    // Set branch addresses and branch pointers
+   CM_n = CM_n_;
+   MG_n = MG_n_;
    if (!tree) return;
    fChain = tree;
    fCurrent = -1;

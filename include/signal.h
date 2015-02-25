@@ -5,6 +5,7 @@
 #include "tomography.h"
 
 #include <TProfile.h>
+#include <TFile.h>
 
 #include <string>
 #include <map>
@@ -35,5 +36,7 @@ class Signal: public Tsignal, public CosmicBench{
 		int data_file_last;
 		map<int,Tomography::det_type> det_type_by_asic;
 		map<int,int> det_n_by_asic;
+		TFile * fIn;
+		bool exists;
 };
 #endif
