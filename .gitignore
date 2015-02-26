@@ -6,6 +6,7 @@ MultiCluster
 DataReader
 live
 AutoAlign
+HV_Monitor
 Linkdef
 *.[oa]
 *.C

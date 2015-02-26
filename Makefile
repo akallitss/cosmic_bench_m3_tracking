@@ -8,11 +8,11 @@ ROOTGLIBS     = $(shell root-config --glibs)
 
 # Linux with egcs
 CXX           = g++
-CXXFLAGS      = -O2 -Wall -Wno-deprecated -fexceptions -fPIC  $(ROOTCFLAGS) -I$(IDIR) 
+CXXFLAGS      = -O2 -Wall -Wno-deprecated -fexceptions -fPIC  $(ROOTCFLAGS) -I$(IDIR) -DUNIX -DLINUX
 #CXXFLAGS      = -g -O -Wall -Wno-deprecated -fexceptions -fPIC  $(ROOTCFLAGS) -I$(IDIR)
 LD            = g++
 LIBS          = $(ROOTLIBS) -lNetx -lm -ldl -rdynamic 
-GLIBS         = $(ROOTGLIBS) -L/usr/X11R6/lib -lXpm -lX11 -lm -ldl -rdynamic -lpthread -lMinuit2
+GLIBS         = $(ROOTGLIBS) -L/usr/X11R6/lib -lXpm -lX11 -lm -ldl -rdynamic -lpthread -lMinuit2 -lcaenhvwrapper
 LDFLAGS       =  $(GLIBS)
 
 DataReader_obj_tmp = NewDataReader.o datareader.o header.o dataline.o tomography.o
@@ -36,6 +36,9 @@ live_obj = $(patsubst %, $(ODIR)/%, $(live_obj_tmp))
 AutoAlign_obj_tmp = AutoAlign.o analyse.o T.o event.o ray.o cluster.o detector.o point.o Tsignal.o tomography.o acceptanceFunction.o
 AutoAlign_obj = $(patsubst %, $(ODIR)/%, $(AutoAlign_obj_tmp))
 
+HV_Monitor_obj_tmp = HV_Monitor.o CAEN_comm.o
+HV_Monitor_obj = $(patsubst %, $(ODIR)/%, $(HV_Monitor_obj_tmp))
+
 #------------------------------------------------------------------------------
 
 all: dir exec
@@ -45,7 +48,7 @@ dir: $(ODIR)
 $(ODIR):
 	mkdir -p $(ODIR)
 
-exec: tracking absorptionMap MultiCluster testCapa DataReader live AutoAlign
+exec: tracking absorptionMap MultiCluster testCapa DataReader live AutoAlign HV_Monitor
 
 $(ODIR)/%.o: $(SDIR)/%.cpp
 	$(CXX) -o $@ $(CXXFLAGS) -c $<
@@ -69,6 +72,9 @@ live: $(live_obj)
 	$(LD) $^ -o $@ $(LDFLAGS)
 
 AutoAlign: $(AutoAlign_obj)
+	$(LD) $^ -o $@ $(LDFLAGS)
+
+HV_Monitor: $(HV_Monitor_obj)
 	$(LD) $^ -o $@ $(LDFLAGS)
 
 .PHONY: clean
