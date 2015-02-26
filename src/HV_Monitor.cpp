@@ -7,6 +7,8 @@
 #include <ctime>
 #include <sys/timex.h>
 #include <sstream>
+#include <fstream>
+#include <cstdio>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -19,15 +21,18 @@
 
 using std::cout;
 using std::endl;
+using std::flush;
 using std::string;
 using std::map;
 using std::vector;
 using std::setw;
+using std::setprecision;
 using std::left;
 using std::showpos;
 using std::noshowpos;
 using std::find;
 using std::ostringstream;
+using std::ofstream;
 
 using boost::property_tree::ptree;
 
@@ -43,7 +48,7 @@ int main(int argc, char ** argv){
 	BOOST_FOREACH(const ptree::value_type& child, config_tree.get_child("Channels")){
 		channel_names.push_back(child.second.data());
 	}
-	CAEN_Comm * blah = new CAEN_Comm("132.166.15.231","admin","mcube");
+	CAEN_Comm * blah = new CAEN_Comm(config_tree.get<string>("IP").c_str(),config_tree.get<string>("username").c_str(),config_tree.get<string>("password").c_str());
 	map<int,map<int,string> > chombier = blah->get_Ch_name();
 	map<int,vector<int> > used_channel;
 	int total_channel = 0;
@@ -67,8 +72,10 @@ int main(int argc, char ** argv){
 	map<CAEN_Ch::Param,map<int,map<int,CAEN_Ch::param_value> > > channel_values;
 	struct timespec wait_time;
 	struct timespec remaining_time;
-	wait_time.tv_sec = 0;
+	wait_time.tv_sec = (config_tree.get<int>("tick_length")>0 ) ? (config_tree.get<int>("tick_length") - 1) : 0;
 	struct ntptimeval current_time;
+	ntp_gettime(&current_time);
+	cout << "\rt = " << current_time.time.tv_sec << " | " << setw(4) << 0 << "%" << flush;
 
 	TFile * fOut = new TFile(config_tree.get<string>("filename").c_str(),"RECREATE");
 	TTree * outTree = new TTree("T","HV");
@@ -78,6 +85,7 @@ int main(int argc, char ** argv){
 	outTree->Branch("name",chan_names,branch_name.str().c_str());
 
 	map<CAEN_Ch::Param,CAEN_Ch::param_value*> channel_params;
+	bool has_IMon = false;
 	BOOST_FOREACH(const ptree::value_type& child, config_tree.get_child("Params")){
 		CAEN_Ch::Param current_param = CAEN_Ch::get_Param(child.second.data());
 		if(channel_params.count(current_param)>0) continue;
@@ -93,9 +101,22 @@ int main(int argc, char ** argv){
 			current_branch_name_root << "I";
 		}
 		outTree->Branch(current_branch_name.str().c_str(),channel_params[current_param],current_branch_name_root.str().c_str());
+		if(current_param == CAEN_Ch::IMon) has_IMon = true;
 	}
 
-	for(int i=0;i<config_tree.get<int>("duration");i++){
+	ofstream IMon_csv;
+	if(has_IMon){
+		remove("tmp_IMon.csv");
+		IMon_csv.open("tmp_IMon.csv");
+		IMon_csv << "time;";
+		for(int i=0;i<total_channel;i++){
+			IMon_csv << chan_names[i] << ";";
+		}
+		IMon_csv << endl;
+	}
+
+	unsigned int duration = config_tree.get<int>("duration");
+	for(unsigned int i=0;i<duration;i++){
 		ntp_gettime(&current_time);
 		wait_time.tv_nsec = 1000*(1000000-current_time.time.tv_usec);
 		nanosleep(&wait_time,&remaining_time);
@@ -103,19 +124,29 @@ int main(int argc, char ** argv){
 			channel_values[params_it->first] = blah->get_Ch_param(used_channel,params_it->first);
 
 		}
+		if(has_IMon) IMon_csv << current_time.time.tv_sec << ";";
 		for(map<CAEN_Ch::Param,map<int,map<int,CAEN_Ch::param_value> > >::iterator values_it = channel_values.begin();values_it!=channel_values.end();++values_it){
 			current_channel = 0;
 			for(map<int,vector<int> >::iterator map_it = used_channel.begin();map_it!=used_channel.end();++map_it){
 				for(vector<int>::iterator vec_it = (map_it->second).begin();vec_it!=(map_it->second).end();++vec_it){
-					channel_params[values_it->first][current_channel] = (values_it->second)[map_it->first][*vec_it];
+					CAEN_Ch::param_value current_value = (values_it->second)[map_it->first][*vec_it];
+					channel_params[values_it->first][current_channel] = current_value;
 					current_channel++;
+					if(values_it->first == CAEN_Ch::IMon) IMon_csv << current_value.real << ";";
 				}
 			}
 		}
+		if(has_IMon) IMon_csv << endl;
 		outTree->Fill();
+		cout << "\rt = " << current_time.time.tv_sec << " | " << setw(6) << setprecision(4) << 100.*(i+1)/duration << "%" << flush;
 	}
+	cout << endl;
 	outTree->Write();
 	fOut->Close();
 	delete blah;
+	if(has_IMon){
+		IMon_csv.close();
+		remove("tmp_IMon.csv");
+	}
 	return 0;
 }
