@@ -61,11 +61,11 @@ int main(int argc, char ** argv){
 			}
 		}
 	}
-	char ** chan_names = new char*[total_channel];
+	vector<string> chan_names(total_channel,"");
 	int current_channel = 0;
 	for(map<int,vector<int> >::iterator map_it=used_channel.begin();map_it!=used_channel.end();++map_it){
 		for(vector<int>::iterator vec_it=(map_it->second).begin();vec_it!=(map_it->second).end();++vec_it){
-			chan_names[current_channel] = const_cast<char*>(chombier[map_it->first][*vec_it].c_str());
+			chan_names[current_channel] = chombier[map_it->first][*vec_it];
 			current_channel++;
 		}
 	}
@@ -83,8 +83,8 @@ int main(int argc, char ** argv){
 	TTree * outTree = new TTree("T","HV");
 	outTree->Branch("time",&current_time.time.tv_sec,"time/L");
 	ostringstream branch_name;
-	branch_name << "name[" << total_channel << "]/C";
-	outTree->Branch("name",chan_names,branch_name.str().c_str());
+	branch_name << "string[" << total_channel << "]";
+	outTree->Branch("name","vector<string>",&chan_names);
 
 	map<CAEN_Ch::Param,CAEN_Ch::param_value*> channel_params;
 	bool has_IMon = false;
