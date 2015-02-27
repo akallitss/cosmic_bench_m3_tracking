@@ -86,7 +86,7 @@ Analyse::Analyse(ptree config_tree){
 	signal_file_name = config_tree.get<string>("signal_file");
 }
 Analyse::~Analyse(){
-	delete f;
+	//delete f;
 }
 void Analyse::Residus(){
 	TCanvas * c_CM[CM_N];

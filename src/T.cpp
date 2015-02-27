@@ -27,30 +27,30 @@ T::T(TTree *tree, int CM_n_, int MG_n_)
 T::~T()
 {
    if(CM_n>0){
-      delete CM_NClus;
-      delete CM_Spark;
-      delete CM_ClusAmpl;
-      delete CM_ClusSize;
-      delete CM_ClusPos;
-      delete CM_ClusTOT;
-      delete CM_ClusT;
-      delete CM_ClusMaxStrip;
-      delete CM_ClusMaxSample;
-      delete CM_ClusMaxStripAmpl;
-      delete CM_StripMaxAmpl;
+      delete[] CM_NClus;
+      delete[] CM_Spark;
+      delete[] CM_ClusAmpl;
+      delete[] CM_ClusSize;
+      delete[] CM_ClusPos;
+      delete[] CM_ClusTOT;
+      delete[] CM_ClusT;
+      delete[] CM_ClusMaxStrip;
+      delete[] CM_ClusMaxSample;
+      delete[] CM_ClusMaxStripAmpl;
+      delete[] CM_StripMaxAmpl;
    }
    if(MG_n>0){
-      delete MG_NClus;
-      delete MG_Spark;
-      delete MG_ClusAmpl;
-      delete MG_ClusSize;
-      delete MG_ClusPos;
-      delete MG_ClusTOT;
-      delete MG_ClusT;
-      delete MG_ClusMaxStrip;
-      delete MG_ClusMaxSample;
-      delete MG_ClusMaxStripAmpl;
-      delete MG_StripMaxAmpl;
+      delete[] MG_NClus;
+      delete[] MG_Spark;
+      delete[] MG_ClusAmpl;
+      delete[] MG_ClusSize;
+      delete[] MG_ClusPos;
+      delete[] MG_ClusTOT;
+      delete[] MG_ClusT;
+      delete[] MG_ClusMaxStrip;
+      delete[] MG_ClusMaxSample;
+      delete[] MG_ClusMaxStripAmpl;
+      delete[] MG_StripMaxAmpl;
    }
    if (!fChain) return;
    delete fChain->GetCurrentFile();
