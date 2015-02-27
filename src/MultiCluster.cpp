@@ -29,10 +29,11 @@ int main(int argc, char ** argv){
 	string SoB = "SoB";
 	string EtA = "EtA";
 	string display = "display";
+	string dispersion = "dispersion";
 	if(argv[2] == multicluster){
 		blah->MultiCluster();
 	}
-	if(argv[2] == EtA){
+	else if(argv[2] == EtA){
 		blah->ElecToAnalyse();
 	}
 	else if(argv[2] == SoB){
@@ -55,6 +56,10 @@ int main(int argc, char ** argv){
 		}
 		int event_nb = atoi(argv[3]);
 		blah->EventDisplay(0,event_nb);
+		theApp->Run(true);
+	}
+	else if(argv[2] == dispersion){
+		blah->SignalDispersion();
 		theApp->Run(true);
 	}
 	//delete blah; delete theApp;

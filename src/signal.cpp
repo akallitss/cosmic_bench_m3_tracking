@@ -44,6 +44,7 @@ using std::setfill;
 
 using TMath::CeilNint;
 using TMath::Min;
+using TMath::Sqrt;
 
 //boost
 using boost::property_tree::ptree;
@@ -391,8 +392,8 @@ void Signal::SignalOverNoiseDisplay(){
 			MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
 			ostringstream name;
 			name << "Multigen_" << current_det->get_mg_n_in_tree();
-			//cDisplay[current_det->get_mg_n_in_tree()] = new TCanvas(name.str().c_str());
-			//cDisplay[current_det->get_mg_n_in_tree()]->Divide(3);
+			cDisplay[current_det->get_mg_n_in_tree()] = new TCanvas(name.str().c_str());
+			cDisplay[current_det->get_mg_n_in_tree()]->Divide(3);
 			name << "_";
 			global_signal[current_det->get_mg_n_in_tree()] = new TH1D((name.str() + "signal").c_str(),(name.str() + "signal").c_str(),500,0,4000);
 			global_noise[current_det->get_mg_n_in_tree()] = new TH1D((name.str() + "noise").c_str(),(name.str() + "noise").c_str(),100,0,100);
@@ -514,4 +515,128 @@ void Signal::EventDisplay(int evn_min, int evn_max){
 		cDisplay->Update();
 		gSystem->Sleep(1000);
 	}
+}
+
+void Signal::SignalDispersion(){
+	gStyle->SetPalette(55,0);
+	gStyle->SetNumberContours(512);
+	TCanvas * cDisplay = new TCanvas("cDisplay");
+	cDisplay->Divide(2);
+	TCanvas * cControl = new TCanvas("cControl");
+	cControl->Divide(3);
+	TH2D * signalShape_X = new TH2D("signalShape_X","signalShape_X",60,-15,15,32,0,32);
+	TH2D * signalShape_Y = new TH2D("signalShape_Y","signalShape_Y",60,-15,15,32,0,32);
+
+	TH1D * clus_pos = new TH1D("clus_pos","clus_pos",1024,0,1023);
+	TH1D * clus_size = new TH1D("clus_size","clus_size",50,-1,47);
+	TH1D * ray_slope = new TH1D("slope","slope",100,0,0.4);
+	double min_angle = 0;
+	double max_angle = 1;
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
+	if(CM_N>0){
+		cout << "does not support CM detectors" << endl;
+		return;
+	}
+	for(long ientry=0;ientry<nentries;ientry++){
+		LoadTree(ientry);
+		GetEntry(ientry);
+		/*
+		for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
+			if((*it)->get_type() == Tomography::MG){
+				MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
+				MG_Event current_event(*current_det,get_mg_ampl(current_det->get_mg_n_in_tree()),use_srf,Nevent);
+				current_event.MultiCluster();
+				current_event.do_cuts();
+				int current_n = current_event.get_n_in_tree();
+				bool current_X = current_event.get_is_X();
+				vector<MG_Cluster> current_clusters = current_event.get_clusters();
+				for(vector<MG_Cluster>::iterator clus_it = current_clusters.begin();clus_it!=current_clusters.end();++clus_it){
+					clus_pos->Fill(clus_it->get_pos());
+					clus_size->Fill(clus_it->get_size());
+					int left = ((clus_it->get_pos() - clus_it->get_size()) > 0) ? (clus_it->get_pos() - clus_it->get_size()) : 0;
+					int right = ((clus_it->get_pos() + clus_it->get_size()) < 1023) ? (clus_it->get_pos() + clus_it->get_size()) : 1023;
+					for(int i=left;i<=right;i++){
+						for(int j=0;j<Tomography::Nsample;j++){
+							if(current_X){
+								signalShape_X->Fill(i - clus_it->get_pos(),j,StripAmpl_MG_corr[current_n][MG_Detector::StripToChannel[i]][j]);
+							}
+							else{
+								signalShape_Y->Fill(i - clus_it->get_pos(),j,StripAmpl_MG_corr[current_n][MG_Detector::StripToChannel[i]][j]);
+							}
+						}
+					}
+				}
+			}
+		}
+		*/
+
+		vector<Event*> events;
+		for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
+			if((*it)->get_type() == Tomography::MG){
+				MG_Detector * current_det = dynamic_cast<MG_Detector*>(*it);
+				events.push_back(new MG_Event(*current_det,get_mg_ampl(current_det->get_mg_n_in_tree()),use_srf,Nevent));
+				events.back()->MultiCluster();
+				events.back()->do_cuts();
+			}
+		}
+		CosmicBenchEvent * CBEvent = new CosmicBenchEvent(this,events);
+		vector<Ray> current_rays = CBEvent->get_absorption_rays();
+		for(vector<Ray>::iterator ray_it = current_rays.begin();ray_it!=current_rays.end();++ray_it){
+			double slope = Sqrt((ray_it->get_slope_Y()*ray_it->get_slope_Y()) + (ray_it->get_slope_X()*ray_it->get_slope_X()));
+			if(slope<min_angle || slope>max_angle) continue;
+			ray_slope->Fill(slope);
+			vector<Cluster*> current_clusters = ray_it->get_clus();
+			for(vector<Cluster*>::iterator clus_it = current_clusters.begin();clus_it!=current_clusters.end();++clus_it){
+				clus_pos->Fill((*clus_it)->get_pos());
+				clus_size->Fill((*clus_it)->get_size());
+				int left = (((*clus_it)->get_pos() - (*clus_it)->get_size()) > 0) ? ((*clus_it)->get_pos() - (*clus_it)->get_size()) : 0;
+				int right = (((*clus_it)->get_pos() + (*clus_it)->get_size()) < 1023) ? ((*clus_it)->get_pos() + (*clus_it)->get_size()) : 1023;
+				int current_n = (*clus_it)->get_n_in_tree();
+				int current_X = (*clus_it)->get_is_X();
+				for(int i=left;i<=right;i++){
+					for(int j=0;j<Tomography::Nsample;j++){
+						if(current_X){
+							signalShape_X->Fill(i - (*clus_it)->get_pos(),j,StripAmpl_MG_corr[current_n][MG_Detector::StripToChannel[i]][j]);
+						}
+						else{
+							signalShape_Y->Fill(i - (*clus_it)->get_pos(),j,StripAmpl_MG_corr[current_n][MG_Detector::StripToChannel[i]][j]);
+						}
+					}
+				}
+			}
+		}
+
+		if(ientry%100 == 0) cout << "\r" << ientry << "/" << nentries << flush;
+		if((ientry%5000 == 0) && Tomography::live_graphic_display){
+			cDisplay->cd(1);
+			signalShape_X->Draw("COLZ");
+			cDisplay->cd(2);
+			signalShape_Y->Draw("COLZ");
+			cDisplay->Modified();
+			cDisplay->Update();
+			cControl->cd(1);
+			clus_pos->Draw();
+			cControl->cd(2);
+			clus_size->Draw();
+			cControl->cd(3);
+			ray_slope->Draw();
+			cControl->Modified();
+			cControl->Update();
+		}
+	}
+	cDisplay->cd(1);
+	signalShape_X->Draw("COLZ");
+	cDisplay->cd(2);
+	signalShape_Y->Draw("COLZ");
+	cDisplay->Modified();
+	cDisplay->Update();
+	cControl->cd(1);
+	clus_pos->Draw();
+	cControl->cd(2);
+	clus_size->Draw();
+	cControl->cd(3);
+	ray_slope->Draw();
+	cControl->Modified();
+	cControl->Update();
+	cout << endl;
 }

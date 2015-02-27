@@ -23,6 +23,7 @@ class Signal: public Tsignal, public CosmicBench{
 		void HoughTracking(long event_nb);
 		map<int,TProfile*> SignalOverNoise();
 		void SignalOverNoiseDisplay();
+		void SignalDispersion();
 	protected:
 		string analyseTree;
 		bool use_srf;
