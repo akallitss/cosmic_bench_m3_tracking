@@ -8,8 +8,8 @@ live
 AutoAlign
 HV_Monitor
 Linkdef
-*.[oa]
-*.C
+*.[oad]
+*.so
 *.cxx
 *.txt
 *.png
