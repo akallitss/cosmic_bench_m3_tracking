@@ -208,8 +208,8 @@ void liveDisplay::flux_map(double z){
 	long eventSuitable = 0;
 	long processed = 0;
 	time_t last_time = time(NULL);
-	TH2D * flux_map = new TH2D("flux_map","flux_map",bin_n,x_min,x_max,bin_n,x_min,x_max);
-	flux_map->SetStats(0);
+	TH2D * flux_map_h = new TH2D("flux_map","flux_map",bin_n,x_min,x_max,bin_n,x_min,x_max);
+	flux_map_h->SetStats(0);
 	TPaveText * stat_text = new TPaveText(0,0,1,1);
 	DataReader * current_data_reader = NULL;
 	long event_nb = 0;
@@ -389,13 +389,13 @@ void liveDisplay::flux_map(double z){
 				eventSuitable+=current_full_event->get_clus_N()/(CM_N+MG_N);
 				processed++;
 				for(vector<Ray>::iterator it=currentRays.begin();it!=currentRays.end();++it){
-					flux_map->Fill(it->eval_X(z),it->eval_Y(z));
+					flux_map_h->Fill(it->eval_X(z),it->eval_Y(z));
 				}
 				if((time(NULL)-last_time) > 5){
 					current_full_event->EventDisplay(cDisplay);
 					cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << eventSuitable << "|" << setw(20) << processed << flush;
 					cMap->cd();
-					flux_map->Draw("colz");
+					flux_map_h->Draw("colz");
 					cMap->Modified();
 					cMap->Update();
 					stat_text->Clear();

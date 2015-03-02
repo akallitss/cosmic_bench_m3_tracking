@@ -414,8 +414,8 @@ void DataReader::compute_RMSPed(){
 	ofstream RMSPedFile(RMSPedFileName.c_str());
 	int sample_min = 1;
 	int sample_max = Min(Nsample,4);
-	Long64_t max_event = 5500 + 500*(sample_max-4);
-	long nentries = Min(outTree->GetEntries(),max_event);
+	Long64_t tot_event = 5500 + 500*(4-sample_max);
+	long nentries = Min(outTree->GetEntries(),tot_event);
 	if(CM_N>0){
 		outTree->SetBranchStatus("*",0);
 		outTree->SetBranchStatus("StripAmpl_CM_corr",1);

@@ -363,7 +363,7 @@ void MG_Event::MultiCluster(){
 				current_strip.MaxAmpl = strip_ampl[i][j];
 				current_strip.MaxSample = j;
 				// time calculation with maximum
-				/*
+				
 				if(j>0 && j<31){
 					double a = (0.5*strip_ampl[i][j+1]) - strip_ampl[i][j] + (0.5*strip_ampl[i][j-1]);
 					//double b = strip_ampl[i][j] - strip_ampl[i][j-1] - a*((2*j)-1);
@@ -371,7 +371,7 @@ void MG_Event::MultiCluster(){
 					current_strip.Time = -0.5*b/a;
 				}
 				else current_strip.Time = 0;
-				*/
+				
 				// --
 			}
 			if(strip_ampl[i][j]>(sigma*(detector.get_RMS(i)))){
@@ -381,6 +381,7 @@ void MG_Event::MultiCluster(){
 			else current_strip.signal_sample[j] = false;
 		}
 		// time calculation with rising edge
+		/*
 		if(current_strip.TOT>2){
 			int k=current_strip.MaxSample;
 			TGraph * rising_edge = new TGraph();
@@ -397,6 +398,7 @@ void MG_Event::MultiCluster(){
 			delete rising_edge; delete rising_fit;
 		}
 		else current_strip.Time = 0;
+		*/
 		// --
 		if(current_strip.TOT>TOTCut) channelOverThreshold.insert(pair<int,bool>(i,true));
 		allChannels.insert(pair<int,StripInfo>(i,current_strip));
@@ -1103,7 +1105,7 @@ vector<Ray> CosmicBenchEvent::get_absorption_rays(double chiSquare_threshold){
 				if(b){
 					suitableRays[it->first].push_back(Ray_2D(bestRay));
 					for(map<double,int>::iterator kt = best_comb.begin();kt!=best_comb.end();++kt){
-						delete (it->second)[kt->first][kt->second];
+						delete ((it->second)[kt->first][kt->second]);
 						(it->second)[kt->first].erase((it->second)[kt->first].begin()+kt->second);
 						sizes[it->first][kt->first]--;
 						if(sizes[it->first][kt->first]<1){
@@ -1127,7 +1129,7 @@ vector<Ray> CosmicBenchEvent::get_absorption_rays(double chiSquare_threshold){
 	for(map<bool, map<double,vector<Cluster*> > >::iterator jt = currentClusters.begin();jt!=currentClusters.end();++jt){
 		for(map<double,vector<Cluster*> >::iterator kt = (jt->second).begin();kt!=(jt->second).end();++kt){
 			for(unsigned int i=0;i<(kt->second).size();i++){
-				delete kt->second[i];
+				delete ((kt->second)[i]);
 			}
 		}
 	}

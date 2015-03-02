@@ -48,14 +48,14 @@ int main(int argc, char ** argv){
 	cDisplay->Update();
 	for(int i=2;i<5;i++){
 		blah = new Signal(config_name[i]);
-		map<int,TProfile*> current_SoN = blah->SignalOverNoise();
+		current_SoN = blah->SignalOverNoise();
 		for(int j=0;j<4;j++){
 			SoN[j]->Add(current_SoN[(9-i+j)%4]);
 		}
 		delete blah;
-		for(int i=0;i<4;i++){
-			cDisplay->cd(i+1);
-			SoN[i]->Draw();
+		for(int j=0;j<4;i++){
+			cDisplay->cd(j+1);
+			SoN[j]->Draw();
 		}
 		cDisplay->Modified();
 		cDisplay->Update();

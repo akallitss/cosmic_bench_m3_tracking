@@ -113,7 +113,7 @@ class MG_Detector: public Detector{
 		int get_mg_n_in_tree() const;
 		Tomography::det_type get_type() const;
 		void set_RMS(vector<double> RMS_);
-		void set_SRF(double offset, double gauss, double lorentz, double ratio);
+		void set_SRF(double offset_, double gauss, double lorentz, double ratio);
 		double SRF_fit(double * x, double * p);
 	protected:
 		int mg_n_in_tree;

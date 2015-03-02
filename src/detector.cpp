@@ -309,8 +309,8 @@ void MG_Detector::set_RMS(vector<double> RMS_){
 	if(RMS_.size()!=61) return;
 	RMS = RMS_;
 }
-void MG_Detector::set_SRF(double offset, double gauss, double lorentz, double ratio){
-	srf_offset = offset;
+void MG_Detector::set_SRF(double offset_, double gauss, double lorentz, double ratio){
+	srf_offset = offset_;
 	srf_gauss_width = gauss;
 	srf_lorentz_width = lorentz;
 	srf_ratio = ratio;	
