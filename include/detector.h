@@ -79,7 +79,7 @@ class CM_Detector: public Detector{
 		void set_ClusMaxStripAmplCut_Min_Wide(double cut);
 		void set_ClusSizeCut_Max_Wide(double cut);
 		bool test_ClusMaxStripAmpl_Wide(double maxStripAmpl) const;
-		bool test_ClusSize_Wide(double size) const;
+		bool test_ClusSize_Wide(double size_) const;
 		int get_cm_n_in_tree() const;
 		bool get_use_thin_strip() const;
 		Tomography::det_type get_type() const;
@@ -109,7 +109,7 @@ class MG_Detector: public Detector{
 		double get_size() const;
 		//Cut setters
 		void set_ClusSizeCut_Min(double cut);
-		bool test_ClusSize(double size);
+		bool test_ClusSize(double size_);
 		int get_mg_n_in_tree() const;
 		Tomography::det_type get_type() const;
 		void set_RMS(vector<double> RMS_);

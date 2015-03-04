@@ -204,8 +204,8 @@ bool CM_Detector::test_ClusMaxStripAmpl_Wide(double maxStripAmpl) const{
 	if(maxStripAmpl<ClusMaxStripAmplCut_Min_Wide) return false;
 	return true;
 }
-bool CM_Detector::test_ClusSize_Wide(double size) const{
-	if(size>ClusSizeCut_Max_Wide) return false;
+bool CM_Detector::test_ClusSize_Wide(double size_) const{
+	if(size_>ClusSizeCut_Max_Wide) return false;
 	return true;
 }
 int CM_Detector::get_cm_n_in_tree() const{
@@ -295,8 +295,8 @@ vector<unsigned int> MG_Detector::ChannelToStrip(unsigned int channel_nb){
 void MG_Detector::set_ClusSizeCut_Min(double cut){
 	ClusSizeCut_Min = cut;
 }
-bool MG_Detector::test_ClusSize(double size){
-	if(size<ClusSizeCut_Min) return false;
+bool MG_Detector::test_ClusSize(double size_){
+	if(size_<ClusSizeCut_Min) return false;
 	return true;
 }
 int MG_Detector::get_mg_n_in_tree() const{
