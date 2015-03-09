@@ -697,10 +697,10 @@ void MG_Event::set_strip_ampl(vector<vector<double> > strip_ampl_){
 	}
 	strip_ampl = strip_ampl_;
 }
-TH1D MG_Event::get_ampl_hist() const{
+TH1D * MG_Event::get_ampl_hist() const{
 	ostringstream name;
 	name << "ampl_MG_det_" << n_in_tree << "_evn_" << evn;
-	TH1D histo(name.str().c_str(),name.str().c_str(),1024,-MG_Detector::size/2.,MG_Detector::size/2.);
+	TH1D * histo = new TH1D(name.str().c_str(),name.str().c_str(),1024,-MG_Detector::size/2.,MG_Detector::size/2.);
 	vector<pair<int,int> > cluster_edges;
 	for(vector<MG_Cluster>::const_iterator it=clusters.begin();it!=clusters.end();++it){
 		cluster_edges.push_back(pair<int,int>(FloorNint(it->get_pos()-it->get_size()),CeilNint(it->get_pos()+it->get_size())));
@@ -714,7 +714,7 @@ TH1D MG_Event::get_ampl_hist() const{
 		for(int strip=it->first;strip<=it->second;strip++){
 			if(is_used[strip]) continue;
 			int channel = MG_Detector::StripToChannel[strip];
-			histo.Fill(strip*MG_Detector::StripPitch - MG_Detector::size/2.,*max_element(strip_ampl[channel].begin(),strip_ampl[channel].end()));
+			histo->Fill(strip*MG_Detector::StripPitch - MG_Detector::size/2.,*max_element(strip_ampl[channel].begin(),strip_ampl[channel].end()));
 			is_used[strip] = true;
 		}
 	}
@@ -1187,10 +1187,16 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 			++rays_it;
 		}
 	}
+	bool is_null = (c1==0);
+	if(is_null) c1 = new TCanvas();
+	TCanvas * cDisplay = c1;
+	cDisplay->Clear();
+	cDisplay->Divide(2);
 	map<double,TH1D*> ampl_hists_X;
 	map<double,TH1D*> ampl_hists_Y;
 	map<double,vector<double> > clus_pos_X;
 	map<double,vector<double> > clus_pos_Y;
+	//map<double,TCanvas*> cHist;
 	double min_dist = 10000;
 	for(vector<Event*>::iterator event_it = events.begin();event_it!=events.end();++event_it){
 		if((*event_it)->get_type() != Tomography::MG){
@@ -1201,26 +1207,26 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 			for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
 				if(Abs(map_it->first - (*event_it)->get_z())<min_dist) min_dist = Abs(map_it->first - (*event_it)->get_z());
 			}
-			if(!ampl_hists_X.insert(pair<double,TH1D*>((*event_it)->get_z(),new TH1D(dynamic_cast<MG_Event*>(*event_it)->get_ampl_hist()))).second){
+			if(!ampl_hists_X.insert(pair<double,TH1D*>((*event_it)->get_z(),dynamic_cast<MG_Event*>(*event_it)->get_ampl_hist())).second){
 				cout << "problem in events" << endl;
 				return;
 			}
 			vector<MG_Cluster> current_clusters = dynamic_cast<MG_Event*>(*event_it)->get_clusters();
 			for(vector<MG_Cluster>::iterator clus_it = current_clusters.begin();clus_it!=current_clusters.end();++clus_it){
-				clus_pos_X[(*event_it)->get_z()].push_back(clus_it->get_pos());
+				clus_pos_X[(*event_it)->get_z()].push_back(clus_it->get_pos()*MG_Detector::StripPitch - Tomography::XY_size/2.);
 			}
 		}
 		else{
 			for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
 				if(Abs(map_it->first - (*event_it)->get_z())<min_dist) min_dist = Abs(map_it->first - (*event_it)->get_z());
 			}
-			if(!ampl_hists_Y.insert(pair<double,TH1D*>((*event_it)->get_z(),new TH1D(dynamic_cast<MG_Event*>(*event_it)->get_ampl_hist()))).second){
+			if(!ampl_hists_Y.insert(pair<double,TH1D*>((*event_it)->get_z(),dynamic_cast<MG_Event*>(*event_it)->get_ampl_hist())).second){
 				cout << "problem in events" << endl;
 				return;
 			}
 			vector<MG_Cluster> current_clusters = dynamic_cast<MG_Event*>(*event_it)->get_clusters();
 			for(vector<MG_Cluster>::iterator clus_it = current_clusters.begin();clus_it!=current_clusters.end();++clus_it){
-				clus_pos_Y[(*event_it)->get_z()].push_back(clus_it->get_pos());
+				clus_pos_Y[(*event_it)->get_z()].push_back(clus_it->get_pos()*MG_Detector::StripPitch - Tomography::XY_size/2.);
 			}
 		}
 	}
@@ -1228,6 +1234,8 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 	for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
 		//cout << map_it->first << " : " << map_it->second->GetMaximum() << endl;
 		if(map_it->second->GetMaximum()>scale_factor) scale_factor = map_it->second->GetMaximum();
+		//cHist[map_it->first] = new TCanvas();
+		//cHist[map_it->first]->Divide(2);
 	}
 	for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
 		//cout << map_it->first << " : " << map_it->second->GetMaximum() << endl;
@@ -1243,6 +1251,8 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 		offset->SetParameter(0,map_it->first);
 		map_it->second->Add(offset);
 		delete offset;
+		//cHist[map_it->first]->cd(1);
+		//map_it->second->Draw();
 	}
 	for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
 		//map_it->second->Scale(scale_factor);
@@ -1251,18 +1261,22 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 		offset->SetParameter(0,map_it->first);
 		map_it->second->Add(offset);
 		delete offset;
+		//cHist[map_it->first]->cd(2);
+		//map_it->second->Draw();
+		//cHist[map_it->first]->Modified();
+		//cHist[map_it->first]->Update();
 	}
 	vector<TLine*> clus_X;
 	vector<TLine*> clus_Y;
 	for(map<double,vector<double> >::iterator it = clus_pos_X.begin();it!=clus_pos_X.end();++it){
-		for(vector<double>::iterator jt = (it->second).begin();jt!=(it->second).begin();++jt){
+		for(vector<double>::iterator jt = (it->second).begin();jt!=(it->second).end();++jt){
 			clus_X.push_back(new TLine(*jt,it->first,*jt,it->first + (min_dist/scale)));
 			(clus_X.back())->SetLineColor(pos_color);
 			(clus_X.back())->SetLineStyle(2);
 		}
 	}
 	for(map<double,vector<double> >::iterator it = clus_pos_Y.begin();it!=clus_pos_Y.end();++it){
-		for(vector<double>::iterator jt = (it->second).begin();jt!=(it->second).begin();++jt){
+		for(vector<double>::iterator jt = (it->second).begin();jt!=(it->second).end();++jt){
 			clus_Y.push_back(new TLine(*jt,it->first,*jt,it->first + (min_dist/scale)));
 			(clus_Y.back())->SetLineColor(pos_color);
 			(clus_Y.back())->SetLineStyle(2);
@@ -1298,16 +1312,10 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 	bg_Y->Fill(-Tomography::XY_size/2.,min_z);
 	bg_Y->Fill(Tomography::XY_size/2.,max_z);
 	bg_Y->SetAxisRange(min_z,max_z,"Y");
-	TCanvas * cDisplay = NULL;
-	bool is_null = (c1==0);
-	if(is_null) cDisplay = new TCanvas();
-	else cDisplay = c1;
-	cDisplay->Clear();
-	cDisplay->Divide(2);
 	cDisplay->cd(1);
 	bg_X->Draw("AXIS");
 	for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
-		map_it->second->Draw("SAME ][");
+		map_it->second->DrawCopy("SAME ][");
 	}
 	for(vector<TLine*>::iterator line_it = clus_X.begin();line_it!=clus_X.end();++line_it){
 		(*line_it)->Draw();
@@ -1321,7 +1329,7 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 	cDisplay->cd(2);
 	bg_Y->Draw("AXIS");
 	for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
-		map_it->second->Draw("SAME ][");
+		map_it->second->DrawCopy("SAME ][");
 	}
 	for(vector<TLine*>::iterator line_it = clus_Y.begin();line_it!=clus_Y.end();++line_it){
 		(*line_it)->Draw();
@@ -1334,11 +1342,14 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 	}
 	cDisplay->Modified();
 	cDisplay->Update();
+	for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
+		delete map_it->second;
+	}
+	for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
+		delete map_it->second;
+	}
 	if(!is_null){
 		delete bg_X; delete bg_Y;
-		for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
-			delete map_it->second;
-		}
 		for(vector<TLine*>::iterator line_it = clus_X.begin();line_it!=clus_X.end();++line_it){
 			delete (*line_it);
 		}
@@ -1347,9 +1358,6 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 		}
 		for(vector<TLine*>::iterator line_it = det_X.begin();line_it!=det_X.end();++line_it){
 			delete (*line_it);
-		}
-		for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
-			delete map_it->second;
 		}
 		for(vector<TLine*>::iterator line_it = clus_Y.begin();line_it!=clus_Y.end();++line_it){
 			delete (*line_it);

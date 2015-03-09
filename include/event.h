@@ -114,7 +114,7 @@ class MG_Event: public Event{
 		void HoughCluster();
 		void do_cuts();
 		vector<MG_Cluster> get_clusters() const;
-		TH1D get_ampl_hist() const;
+		TH1D * get_ampl_hist() const;
 	protected:
 		MG_Detector detector;
 		vector<MG_Cluster> clusters;
