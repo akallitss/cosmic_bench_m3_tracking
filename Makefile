@@ -9,7 +9,7 @@ ROOTGLIBS     = $(shell root-config --glibs)
 # Linux with egcs
 WARNINGS      = -Wall -Wextra -Wchar-subscripts -Wundef -Wshadow -Wwrite-strings -Wsign-compare -Wunused -Wno-unused-parameter -Wuninitialized -Winit-self -Wpointer-arith -Wredundant-decls -Wformat-nonliteral -Wno-format-zero-length -Wno-format-y2k -Wmissing-format-attribute -Wsequence-point -Wparentheses -Wmissing-declarations
 CXX           = g++
-CXXFLAGS      = -O2 $(WARNINGS) -fexceptions -fPIC  $(ROOTCFLAGS) -I$(IDIR) -DUNIX -DLINUX
+CXXFLAGS      = -O2 $(WARNINGS) -fexceptions -fPIC  $(ROOTCFLAGS) -fopenmp -I$(IDIR) -DUNIX -DLINUX
 #CXXFLAGS      = -g -O $(WARNINGS) -fexceptions -fPIC  $(ROOTCFLAGS) -I$(IDIR) -DUNIX -DLINUX
 LD            = g++
 LIBS          = $(ROOTLIBS) -lNetx -lm -ldl -rdynamic 

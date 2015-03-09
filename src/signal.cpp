@@ -4,6 +4,7 @@
 #include "Tanalyse.h"
 #include "ray.h"
 #include "datareader.h"
+#include "point.h"
 
 #include <fstream>
 #include <string>
@@ -12,6 +13,7 @@
 #include <map>
 #include <utility>
 #include <sstream>
+#include <limits>
 
 #include <TH2D.h>
 #include <TCanvas.h>
@@ -42,6 +44,7 @@ using std::pair;
 using std::ostringstream;
 using std::setw;
 using std::setfill;
+using std::numeric_limits;
 
 using TMath::CeilNint;
 using TMath::Min;
@@ -236,7 +239,7 @@ void Signal::HoughTracking(long event_nb){
 	}
 	LoadTree(event_nb);
 	GetEntry(event_nb);
-	vector<MG_Cluster> all_cluster;
+	map<bool,map<double,vector<MG_Cluster> > > all_cluster;
 	vector<Event*> events;
 	double max_z = -10000;
 	double min_z = 10000;
@@ -255,7 +258,7 @@ void Signal::HoughTracking(long event_nb){
 				else ++clus_it;
 			}
 			cout << "number of suitable cluster for detector n°" << current_det->get_mg_n_in_tree() << " : " << current_cluster.size() << endl;
-			all_cluster.insert(all_cluster.end(),current_cluster.begin(),current_cluster.end());
+			all_cluster[current_det->get_is_X()][current_det->get_z()].insert(all_cluster[current_det->get_is_X()][current_det->get_z()].end(),current_cluster.begin(),current_cluster.end());
 			events.push_back(new MG_Event(current_event));
 			(events.back())->MultiCluster();
 		}
@@ -264,7 +267,7 @@ void Signal::HoughTracking(long event_nb){
 	}
 	//max_z+=10;
 	//min_z-=10;
-	int bin_n = 250;
+	int bin_n = 500;
 	double min_coord = -6*Tomography::XY_size/10.;
 	double max_coord = 6*Tomography::XY_size/10.;
 	TH2D * hough_space_X = new TH2D("hough_space_X","hough_space_X",bin_n,min_coord,max_coord,bin_n,min_coord,max_coord);
@@ -272,30 +275,107 @@ void Signal::HoughTracking(long event_nb){
 	int suitable_clus_n = 0;
 	//draw clusters in hough space
 	bin_n = 2*bin_n;
-	for(vector<MG_Cluster>::iterator it=all_cluster.begin();it!=all_cluster.end();++it){
-		suitable_clus_n++;
-		if(!it->get_is_up()){
-			for(int i=0;i<bin_n;i++){
-				double current_coord_up = min_coord +i*(max_coord-min_coord)/bin_n;
-				double current_coord_down = current_coord_up + (it->get_pos_mm() - current_coord_up)*(min_z-max_z)/(it->get_z()-max_z);
-				if(it->get_is_X()){
-					hough_space_X->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
+	map<bool,map<double,int> > sizes;
+	for(map<bool,map<double,vector<MG_Cluster> > >::iterator jt = all_cluster.begin();jt!=all_cluster.end();++jt){
+		for(map<double,vector<MG_Cluster> >::iterator kt = (jt->second).begin();kt!=(jt->second).end();++kt){
+			for(vector<MG_Cluster>::iterator it=(kt->second).begin();it!=(kt->second).end();++it){
+				suitable_clus_n++;
+				if(!it->get_is_up()){
+					for(int i=0;i<bin_n;i++){
+						double current_coord_up = min_coord +i*(max_coord-min_coord)/bin_n;
+						double current_coord_down = current_coord_up + (it->get_pos_mm() - current_coord_up)*(min_z-max_z)/(it->get_z()-max_z);
+						if(it->get_is_X()){
+							hough_space_X->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
+						}
+						else{
+							hough_space_Y->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
+						}
+					}
 				}
 				else{
-					hough_space_Y->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
+					for(int i=0;i<bin_n;i++){
+						double current_coord_down = min_coord +i*(max_coord-min_coord)/bin_n;
+						double current_coord_up = current_coord_down + (it->get_pos_mm() - current_coord_down)*(max_z-min_z)/(it->get_z()-min_z);
+						if(it->get_is_X()){
+							hough_space_X->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
+						}
+						else{
+							hough_space_Y->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
+						}
+					}
+				}
+			}
+			sizes[jt->first][kt->first] = (kt->second).size();
+		}
+	}
+	TGraph * int_X = new TGraph();
+	TGraph * int_Y = new TGraph();
+	int X_int_nb = 0;
+	int Y_int_nb = 0;
+	int_X->SetMarkerStyle(24);
+	int_Y->SetMarkerStyle(24);
+	int_X->SetMarkerSize(2);
+	int_Y->SetMarkerSize(2);
+	int_X->SetMarkerColor(2);
+	int_Y->SetMarkerColor(2);
+	map<bool,Point_2D> hough_ray;
+	for(map<bool,map<double,vector<MG_Cluster> > >::iterator jt = all_cluster.begin();jt!=all_cluster.end();++jt){
+		vector<map<double,int> > comb = CosmicBenchEvent::combinaisons(sizes[jt->first]);
+		double smallest_distance = numeric_limits<double>::max();
+		bool found = false;
+		Point_2D best_intersection;
+		for(vector<map<double,int> >::iterator kt = comb.begin();kt!=comb.end();++kt){
+			vector<Point_2D> intersections;
+			for(map<double,int>::iterator map_it = kt->begin();map_it!=kt->end();++map_it){
+				Line_2D first_line;
+				MG_Cluster first_cluster = (jt->second)[map_it->first][map_it->second];
+				if(!(first_cluster.get_is_up())) first_line = Line_2D(Point_2D(min_coord + (first_cluster.get_pos_mm() - min_coord)*(min_z-max_z)/(first_cluster.get_z()-max_z),min_coord),Point_2D(max_coord + (first_cluster.get_pos_mm() - max_coord)*(min_z-max_z)/(first_cluster.get_z()-max_z),max_coord));
+				else first_line = Line_2D(Point_2D(min_coord,min_coord + (first_cluster.get_pos_mm() - min_coord)*(max_z-min_z)/(first_cluster.get_z()-min_z)),Point_2D(max_coord,max_coord + (first_cluster.get_pos_mm() - max_coord)*(max_z-min_z)/(first_cluster.get_z()-min_z)));
+				map<double,int>::iterator map_jt = map_it;
+				map_jt++;
+				while(map_jt!=kt->end()){
+					Line_2D second_line;
+					MG_Cluster second_cluster = (jt->second)[map_jt->first][map_jt->second];
+					if(!(second_cluster.get_is_up())) second_line = Line_2D(Point_2D(min_coord + (second_cluster.get_pos_mm() - min_coord)*(min_z-max_z)/(second_cluster.get_z()-max_z),min_coord),Point_2D(max_coord + (second_cluster.get_pos_mm() - max_coord)*(min_z-max_z)/(second_cluster.get_z()-max_z),max_coord));
+					else second_line = Line_2D(Point_2D(min_coord,min_coord + (second_cluster.get_pos_mm() - min_coord)*(max_z-min_z)/(second_cluster.get_z()-min_z)),Point_2D(max_coord,max_coord + (second_cluster.get_pos_mm() - max_coord)*(max_z-min_z)/(second_cluster.get_z()-min_z)));
+					intersections.push_back(first_line.intersection(second_line));
+					++map_jt;
+				}
+			}
+			if(intersections.size()>1){
+				double biggest_distance = 0;
+				for(vector<Point_2D>::iterator vec_it = intersections.begin();vec_it!=intersections.end();++vec_it){
+					vector<Point_2D>::iterator vec_jt = vec_it;
+					vec_jt++;
+					while(vec_jt!=intersections.end()){
+						double current_distance = ((*vec_it) - (*vec_jt)).norm();
+						if(current_distance> biggest_distance) biggest_distance = current_distance;
+						++vec_jt;
+					}
+				}
+				if(biggest_distance<smallest_distance){
+					smallest_distance = biggest_distance;
+					found = true;
+					vector<Point_2D>::iterator vec_it = intersections.begin();
+					best_intersection = *vec_it;
+					++vec_it;
+					while(vec_it!=intersections.end()){
+						best_intersection += *vec_it;
+						++vec_it;
+					}
+					best_intersection /= intersections.size();
 				}
 			}
 		}
-		else{
-			for(int i=0;i<bin_n;i++){
-				double current_coord_down = min_coord +i*(max_coord-min_coord)/bin_n;
-				double current_coord_up = current_coord_down + (it->get_pos_mm() - current_coord_down)*(max_z-min_z)/(it->get_z()-min_z);
-				if(it->get_is_X()){
-					hough_space_X->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
-				}
-				else{
-					hough_space_Y->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
-				}
+		if(found){
+			hough_ray[jt->first] = best_intersection;
+			if(jt->first){
+				int_X->SetPoint(X_int_nb,best_intersection.get_X(),best_intersection.get_Y());
+				X_int_nb++;
+			}
+			else{
+				int_Y->SetPoint(Y_int_nb,best_intersection.get_X(),best_intersection.get_Y());
+				Y_int_nb++;
 			}
 		}
 	}
@@ -326,9 +406,11 @@ void Signal::HoughTracking(long event_nb){
 	cHough->cd(1);
 	hough_space_X->Draw("colz");
 	if(rays.size()>0) rays_X->Draw("sameP");
+	if(X_int_nb>0) int_X->Draw("sameP");
 	cHough->cd(2);
 	hough_space_Y->Draw("colz");
 	if(rays.size()>0) rays_Y->Draw("sameP");
+	if(Y_int_nb>0) int_Y->Draw("sameP");
 }
 map<int,TProfile*> Signal::SignalOverNoise(){
 	map<int,TProfile*> global_signal_over_noise;

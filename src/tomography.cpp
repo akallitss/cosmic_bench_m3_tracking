@@ -69,6 +69,7 @@ ostream& operator<<(ostream& os,const vector<T>& vec_){
 //template ostream& operator<<(ostream& os, const map<int,int>& map_);
 template ostream& operator<<(ostream& os, const map<int,double>& map_);
 template ostream& operator<<(ostream& os, const map<double,int>& map_);
+template ostream& operator<<(ostream& os, const map<int,int>& map_);
 template ostream& operator<<(ostream& os, const map<bool,map<int,int> >& map_);
 
 Tomography::elec_type Tomography::str_to_elec(string str){
