@@ -1695,15 +1695,16 @@ void Analyse::CalcStripResponseFunction(int bin_nb){
 	TGraphErrors * offset_graph;
 
 	double chisquare_threshold = 10;
-	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 
 	TFile * signal_file = new TFile(signal_file_name.c_str(),"READ");
 	TTree * signal_tree = (TTree*)(signal_file->Get("T"));
 
-	if(nentries != signal_tree->GetEntriesFast()){
+	if(fChain->GetEntriesFast() != signal_tree->GetEntriesFast()){
 		cout << "total number of event in signal and analyse tree does not match" << endl;
 		return;
 	}
+
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 
 	float StripAmpl_MG_corr[MG_N][MG_Detector::Nstrip][Tomography::Nsample];
 	float StripAmpl_CM_corr[CM_N][CM_Detector::Nstrip][Tomography::Nsample];
