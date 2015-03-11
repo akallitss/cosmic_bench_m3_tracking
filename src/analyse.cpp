@@ -510,6 +510,8 @@ void Analyse::Residus_ref(){
 			ray_slope->Draw();
 			ray_slope_X->Draw("SAME");
 			ray_slope_Y->Draw("SAME");
+			c0->cd(4);
+			ray_phi->Draw();
 			c0->Modified();
 			c0->Update();
 		}
@@ -585,6 +587,8 @@ void Analyse::Residus_ref(){
 	ray_slope->Draw();
 	ray_slope_X->Draw("SAME");
 	ray_slope_Y->Draw("SAME");
+	c0->cd(4);
+	ray_phi->Draw();
 	c0->Modified();
 	c0->Update();
 }
