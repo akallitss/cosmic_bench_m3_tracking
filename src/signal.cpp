@@ -19,6 +19,7 @@
 #include <TCanvas.h>
 #include <TStyle.h>
 #include <TGraph.h>
+#include <TGraphErrors.h>
 #include <TProfile.h>
 #include <TH1D.h>
 #include <TROOT.h>
@@ -50,6 +51,8 @@ using TMath::CeilNint;
 using TMath::Min;
 using TMath::Sqrt;
 using TMath::ATan;
+using TMath::Abs;
+using TMath::Pi;
 
 //boost
 using boost::property_tree::ptree;
@@ -607,7 +610,7 @@ void Signal::SignalDispersion(){
 	TCanvas * cDisplay = new TCanvas("cDisplay");
 	cDisplay->Divide(2,2);
 	TCanvas * cControl = new TCanvas("cControl");
-	cControl->Divide(3);
+	cControl->Divide(2,2);
 	TCanvas * cAnalyse = new TCanvas("cAnalyse");
 	cAnalyse->Divide(2);
 	int nbin_time = Tomography::Nsample;
@@ -630,6 +633,12 @@ void Signal::SignalDispersion(){
 	TH1D * clus_pos = new TH1D("clus_pos","clus_pos",1024,0,1023);
 	TH1D * clus_size = new TH1D("clus_size","clus_size",50,-1,47);
 	TH1D * ray_slope = new TH1D("slope","slope",100,0,1);
+	TH1D * ray_phi = new TH1D("phi","phi",100,-Pi(),Pi());
+	TH1D * ray_slope_X = new TH1D("slope_X","slope_X",100,0,1);
+	TH1D * ray_slope_Y = new TH1D("slope_Y","slope_Y",100,0,1);
+	ray_slope->SetLineColor(1);
+	ray_slope_X->SetLineColor(2);
+	ray_slope_Y->SetLineColor(3);
 	double min_angle = -1;
 	double max_angle = 10;
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
@@ -682,9 +691,14 @@ void Signal::SignalDispersion(){
 		CosmicBenchEvent * CBEvent = new CosmicBenchEvent(this,events);
 		vector<Ray> current_rays = CBEvent->get_absorption_rays();
 		for(vector<Ray>::iterator ray_it = current_rays.begin();ray_it!=current_rays.end();++ray_it){
-			double slope = ATan(Sqrt((ray_it->get_slope_Y()*ray_it->get_slope_Y()) + (ray_it->get_slope_X()*ray_it->get_slope_X())));
+			double slope = Sqrt((ray_it->get_slope_Y()*ray_it->get_slope_Y()) + (ray_it->get_slope_X()*ray_it->get_slope_X()));
 			if(slope<min_angle || slope>max_angle) continue;
-			ray_slope->Fill(slope);
+			ray_slope->Fill(ATan(slope));
+			ray_slope_X->Fill(ATan(Abs(ray_it->get_slope_X())));
+			ray_slope_Y->Fill(ATan(Abs(ray_it->get_slope_Y())));
+			double phi = 2*ATan((ray_it->get_slope_Y())/(slope + ray_it->get_slope_X()));
+			if(ray_it->get_slope_X()==0 && ray_it->get_slope_Y()<0) phi = Pi();
+			ray_phi->Fill(phi);
 			vector<Cluster*> current_clusters = ray_it->get_clus();
 			for(vector<Cluster*>::iterator clus_it = current_clusters.begin();clus_it!=current_clusters.end();++clus_it){
 				clus_pos->Fill((*clus_it)->get_pos());
@@ -693,19 +707,22 @@ void Signal::SignalDispersion(){
 				int right = (((*clus_it)->get_pos() + (*clus_it)->get_size()) < 1023) ? ((*clus_it)->get_pos() + (*clus_it)->get_size()) : 1023;
 				int current_n = (*clus_it)->get_n_in_tree();
 				int current_X = (*clus_it)->get_is_X();
-				TGraph * gFit = new TGraph();
+				TGraphErrors * gFit = new TGraphErrors();
+				int gFit_nb = 0;
 				TF1 * lFit = new TF1("lfit","pol1(0)",5,15);
 				lFit->SetParameters(0,0);
-				lFit->SetParLimits(0,-5,5);
-				lFit->SetParLimits(1,-1,1);
+				lFit->SetParLimits(0,-10,10);
+				lFit->SetParLimits(1,-2,2);
 				for(int j=0;j<Tomography::Nsample;j++){
 					double mean = 0;
 					double ampl = 0;
+					double max_ampl = 0;
 					for(int i=left;i<=right;i++){
 						double current_ampl = StripAmpl_MG_corr[current_n][MG_Detector::StripToChannel[i]][j];
 						double current_pos = i - (*clus_it)->get_pos();
 						mean = (mean*ampl + current_pos*current_ampl)/(ampl+current_ampl);
 						ampl += current_ampl;
+						if(current_ampl > max_ampl) max_ampl = current_ampl;
 						if(current_X){
 							if(ray_it->get_slope_X() > 0) signalShape_X_pos->Fill(current_pos,j,current_ampl);
 							else signalShape_X_neg->Fill(current_pos,j,current_ampl);
@@ -715,11 +732,19 @@ void Signal::SignalDispersion(){
 							else signalShape_Y_neg->Fill(current_pos,j,current_ampl);
 						}
 					}
-					gFit->SetPoint(j,j,mean);
+					if(Abs(mean)<=(*clus_it)->get_size() && j>4 && j<16){
+						gFit->SetPoint(gFit_nb,j,mean);
+						double error_y = (ampl>0) ? 512./ampl : (right - left);
+						gFit->SetPointError(gFit_nb,0.5,error_y);
+						gFit_nb++;
+					}
 				}
-				gFit->Fit(lFit,"QNR");
-				if(current_X) angle_shape_corr_X->Fill(ray_it->get_slope_X(), lFit->GetParameter(1));
-				else angle_shape_corr_Y->Fill(ray_it->get_slope_Y(), lFit->GetParameter(1));
+				if(gFit_nb>1){
+					gFit->Fit(lFit,"QNRFM");
+					
+					if(current_X) angle_shape_corr_X->Fill(ray_it->get_slope_X(), lFit->GetParameter(1));
+					else angle_shape_corr_Y->Fill(ray_it->get_slope_Y(), lFit->GetParameter(1));
+				}
 				delete gFit; delete lFit;
 				delete *clus_it;
 			}
@@ -757,6 +782,10 @@ void Signal::SignalDispersion(){
 			clus_size->Draw();
 			cControl->cd(3);
 			ray_slope->Draw();
+			ray_slope_X->Draw("SAME");
+			ray_slope_Y->Draw("SAME");
+			cControl->cd(4);
+			ray_phi->Draw();
 			cControl->Modified();
 			cControl->Update();
 			cAnalyse->cd(1);
@@ -794,6 +823,10 @@ void Signal::SignalDispersion(){
 	clus_size->Draw();
 	cControl->cd(3);
 	ray_slope->Draw();
+	ray_slope_X->Draw("SAME");
+	ray_slope_Y->Draw("SAME");
+	cControl->cd(4);
+	ray_phi->Draw();
 	cControl->Modified();
 	cControl->Update();
 	cAnalyse->cd(1);
