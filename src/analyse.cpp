@@ -64,6 +64,7 @@ using TMath::FloorNint;
 using TMath::CeilNint;
 using TMath::Max;
 using TMath::Min;
+using TMath::Pi;
 
 Analyse::Analyse(string configFilePath){
 	ptree config_tree;
@@ -301,10 +302,16 @@ void Analyse::Residus_ref(){
 		cout << "too many non ref det" << endl;
 	}
 	TCanvas * c0 = new TCanvas("stats","stats");
-	c0->Divide(2);
+	c0->Divide(2,2);
 	TH1D * chisquares = new TH1D("chiSquares","chiSquares",nbins,0,chisquare_threshold);
 	TH1D * ray_clus_n = new TH1D("clus_n","clus_n",MG_N + CM_N + 2,0,MG_N + CM_N + 2);
-
+	TH1D * ray_slope = new TH1D("slope","slope",100,0,1);
+	TH1D * ray_phi = new TH1D("phi","phi",100,-Pi(),Pi());
+	TH1D * ray_slope_X = new TH1D("slope_X","slope_X",100,0,1);
+	TH1D * ray_slope_Y = new TH1D("slope_Y","slope_Y",100,0,1);
+	ray_slope->SetLineColor(1);
+	ray_slope_X->SetLineColor(2);
+	ray_slope_Y->SetLineColor(3);
 	if (fChain == 0) return;
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
 	for (Long64_t jentry=0; jentry<nentries;jentry++){
@@ -318,6 +325,13 @@ void Analyse::Residus_ref(){
 			if(ray_it->get_chiSquare_X()>-1 && ray_it->get_chiSquare_Y()>-1 && ((ray_it->get_chiSquare_X()+ray_it->get_chiSquare_Y())/ray_it->get_clus_n())<chisquare_threshold){
 				chisquares->Fill(ray_it->get_chiSquare_X()+ray_it->get_chiSquare_Y());
 				ray_clus_n->Fill(ray_it->get_clus_n());
+				double slope = Sqrt((ray_it->get_slope_Y()*ray_it->get_slope_Y()) + (ray_it->get_slope_X()*ray_it->get_slope_X()));
+				ray_slope->Fill(ATan(slope));
+				ray_slope_X->Fill(ATan(Abs(ray_it->get_slope_X())));
+				ray_slope_Y->Fill(ATan(Abs(ray_it->get_slope_Y())));
+				double phi = 2*ATan((ray_it->get_slope_Y())/(slope + ray_it->get_slope_X()));
+				if(ray_it->get_slope_X()==0 && ray_it->get_slope_Y()<0) phi = Pi();
+				ray_phi->Fill(phi);
 				++ray_it;
 			}
 			else ray_it = currentRays.erase(ray_it);
@@ -489,9 +503,13 @@ void Analyse::Residus_ref(){
 				it->second->Update();
 			}
 			c0->cd(1);
-			chisquares->Draw();
-			c0->cd(2);
 			ray_clus_n->Draw();
+			c0->cd(2);
+			chisquares->Draw();
+			c0->cd(3);
+			ray_slope->Draw();
+			ray_slope_X->Draw("SAME");
+			ray_slope_Y->Draw("SAME");
 			c0->Modified();
 			c0->Update();
 		}
@@ -560,9 +578,13 @@ void Analyse::Residus_ref(){
 		cout << it->first << " efficacity : " << 100.*efficacity[it->first] << "%" << endl;
 	}
 	c0->cd(1);
-	chisquares->Draw();
-	c0->cd(2);
 	ray_clus_n->Draw();
+	c0->cd(2);
+	chisquares->Draw();
+	c0->cd(3);
+	ray_slope->Draw();
+	ray_slope_X->Draw("SAME");
+	ray_slope_Y->Draw("SAME");
 	c0->Modified();
 	c0->Update();
 }
