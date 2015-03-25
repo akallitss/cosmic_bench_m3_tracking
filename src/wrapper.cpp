@@ -27,12 +27,12 @@ int main(int argc, char ** argv){
 	read_json("config_default.cfg", config_tree_bench);
 	config_tree_bench.put<string>("Ped",config_tree_wrapper.get<string>("Ped"));
 	config_tree_bench.put<string>("RMSPed",config_tree_wrapper.get<string>("RMSPed"));
-	remove("dumb_signal.root");
+	remove(config_tree_bench.get<string>("signal_file"));
 	config_tree_bench.put<string>("data_file_basename",config_tree_wrapper.get<string>("pedrun_name"));
 	config_tree_bench.put<int>("data_file_first",config_tree_wrapper.get<int>("pedrun_min"));
 	config_tree_bench.put<int>("data_file_last",config_tree_wrapper.get<int>("pedrun_max"));
 	Tomography::process_elec_files(config_tree_bench);
-	remove("dumb_signal.root");
+	remove(config_tree_bench.get<string>("signal_file"));
 	config_tree_bench.put<string>("data_file_basename",config_tree_wrapper.get<string>("datarun_name"));
 	config_tree_bench.put<int>("data_file_first",config_tree_wrapper.get<int>("datarun_min"));
 	config_tree_bench.put<int>("data_file_last",config_tree_wrapper.get<int>("datarun_max"));
