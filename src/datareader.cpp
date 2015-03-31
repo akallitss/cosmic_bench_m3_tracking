@@ -196,6 +196,7 @@ void DataReader::Fill(){
 	outTree->Fill();
 }
 void DataReader::Write(){
+	outFile->cd();
 	outTree->Write();
 }
 void DataReader::reset_tree_leaf(){

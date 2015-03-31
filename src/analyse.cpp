@@ -1630,6 +1630,7 @@ void Analyse::StoreRayPairs(string outFileName){
 		}
 	}
 	cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << eventSuitable << "|" << setw(20) << nentries << endl;
+	outFile->cd();
 	outTree->Write();
 	outFile->Close();
 	c1->cd();

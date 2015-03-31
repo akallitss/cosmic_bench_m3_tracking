@@ -180,6 +180,7 @@ TTree * Tanalyse::getTree() const{
    return T->CloneTree();
 }
 void Tanalyse::Write(){
+   saveFile->cd();
    T->Write();
 }
 void Tanalyse::CloseFile(){

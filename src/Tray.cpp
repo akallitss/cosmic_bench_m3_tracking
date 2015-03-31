@@ -37,6 +37,7 @@ TTree * Tray::getTree() const{
    return T->CloneTree();
 }
 void Tray::Write(){
+   saveFile->cd();
    T->Write();
 }
 void Tray::CloseFile(){
