@@ -74,8 +74,9 @@ int main(int argc, char ** argv){
 	struct timespec wait_time;
 	struct timespec remaining_time;
 	wait_time.tv_sec = (config_tree.get<int>("tick_length")>0 ) ? (config_tree.get<int>("tick_length") - 1) : 0;
-	struct ntptimeval current_time;
+	struct ntptimeval current_time, first_time;
 	ntp_gettime(&current_time);
+	first_time = current_time;
 	cout << fixed << setprecision(2);
 	cout << "\rt = " << current_time.time.tv_sec << " | " << setw(7) << 0 << "%" << flush;
 
@@ -140,9 +141,14 @@ int main(int argc, char ** argv){
 		}
 		if(has_IMon) IMon_csv << endl;
 		outTree->Fill();
+		if((current_time.time.tv_sec - first_time.time.tv_sec)%3600 == 0){
+			fOut->cd();
+			outTree->Write();
+		}
 		cout << "\rt = " << current_time.time.tv_sec << " | " << setw(7) << 100.*(i+1)/duration << "%" << flush;
 	}
 	cout << endl;
+	fOut->cd();
 	outTree->Write();
 	fOut->Close();
 	delete blah;
