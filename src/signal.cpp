@@ -310,6 +310,9 @@ void Signal::ElecToRays(string outFileName){
 	else if(electronic_type == Tomography::Dream){
 		extension = "_01.fdf";
 		current_data_reader = new DreamDataReader("tmp",det_type_by_asic,det_n_by_asic);
+		ostringstream name;
+		name << data_file_basename << setfill('0') << setw(3) << data_file_first << extension;
+		Nevent = dynamic_cast<DreamDataReader*>(current_data_reader)->get_first_event_nb(name.str());
 	}
 	else return;
 	map<Tomography::det_type,int> detector_div;
@@ -364,6 +367,9 @@ void Signal::ElecToRays(string outFileName){
 			}
 			CosmicBenchEvent CBEvent(this,events);
 			rayFile->fillTree(Nevent,evttime,CBEvent.get_absorption_rays(),Z_Up,Z_Down);
+			for(vector<Event*>:: iterator event_it=events.begin();event_it!=events.end();++event_it){
+				delete (*event_it);
+			}
 			Nevent++;
 			event_nb++;
 			event_nb_file++;
