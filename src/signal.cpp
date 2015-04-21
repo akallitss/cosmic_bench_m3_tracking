@@ -1,7 +1,7 @@
 #define signal_cpp
 #include "signal.h"
 #include "event.h"
-#include "Tanalyse.h"
+#include "Tanalyse_W.h"
 #include "ray.h"
 #include "datareader.h"
 #include "point.h"
@@ -87,10 +87,10 @@ Signal::Signal(string configFilePath){
 	if(exists){
 		fIn = new TFile(signalName.c_str(),"READ");
 		TTree * treeIn = (TTree*)(fIn->Get("T"));
-		Tsignal::Init(treeIn,CM_N,MG_N);
+		Tsignal_R::Init(treeIn,CM_N,MG_N);
 	}
 	else{
-		Tsignal::Init(0,CM_N,MG_N);
+		Tsignal_R::Init(0,CM_N,MG_N);
 		cout << "Waring, signal file is missing !" << endl;
 	}
 	analyseTree = config_tree.get<string>("Tree");
@@ -124,10 +124,10 @@ Signal::Signal(ptree config_tree){
 	if(exists){
 		fIn = new TFile(signalName.c_str(),"READ");
 		TTree * treeIn = (TTree*)(fIn->Get("T"));
-		Tsignal::Init(treeIn,CM_N,MG_N);
+		Tsignal_R::Init(treeIn,CM_N,MG_N);
 	}
 	else{
-		Tsignal::Init(0,CM_N,MG_N);
+		Tsignal_R::Init(0,CM_N,MG_N);
 		cout << "Waring, signal file is missing !" << endl;
 	}
 	analyseTree = config_tree.get<string>("Tree");
@@ -141,7 +141,7 @@ Signal::~Signal(){
 }
 void Signal::MultiCluster(){
 	cout << "destination file : " << analyseTree << endl;
-	Tanalyse * analyseFile = new Tanalyse(analyseTree,CM_N,MG_N);
+	Tanalyse_W * analyseFile = new Tanalyse_W(analyseTree,CM_N,MG_N);
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	for(long i=0;i<nentries;i++){
 		LoadTree(i);
@@ -189,7 +189,7 @@ void Signal::ElecToAnalyse(){
 	}
 	pedFile.close();
 	cout << "destination file : " << analyseTree << endl;
-	Tanalyse * analyseFile = new Tanalyse(analyseTree,CM_N,MG_N);
+	Tanalyse_W * analyseFile = new Tanalyse_W(analyseTree,CM_N,MG_N);
 	Nevent = 0;
 	long event_nb = 0;
 	string extension = "";

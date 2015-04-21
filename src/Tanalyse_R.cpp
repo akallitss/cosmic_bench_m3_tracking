@@ -1,15 +1,15 @@
-#define T_cxx
-#include "T.h"
+#define Tanalyse_R_cxx
+#include "Tanalyse_R.h"
 #include <iostream>
 
 using std::cout;
 using std::endl;
 
-T::T(){
+Tanalyse_R::Tanalyse_R(){
    
 }
 
-T::T(TTree *tree, int CM_n_, int MG_n_)
+Tanalyse_R::Tanalyse_R(TTree *tree, int CM_n_, int MG_n_)
 {
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
@@ -24,7 +24,7 @@ T::T(TTree *tree, int CM_n_, int MG_n_)
    Init(tree, CM_n_, MG_n_);
 }
 
-T::~T()
+Tanalyse_R::~Tanalyse_R()
 {
    if(CM_n>0){
       delete[] CM_NClus;
@@ -56,13 +56,13 @@ T::~T()
    delete fChain->GetCurrentFile();
 }
 
-Int_t T::GetEntry(Long64_t entry)
+Int_t Tanalyse_R::GetEntry(Long64_t entry)
 {
 // Read contents of entry.
    if (!fChain) return 0;
    return fChain->GetEntry(entry);
 }
-Long64_t T::LoadTree(Long64_t entry)
+Long64_t Tanalyse_R::LoadTree(Long64_t entry)
 {
 // Set the environment to read one entry
    if (!fChain) return -5;
@@ -77,7 +77,7 @@ Long64_t T::LoadTree(Long64_t entry)
    return centry;
 }
 
-void T::Init(TTree *tree, int CM_n_, int MG_n_)
+void Tanalyse_R::Init(TTree *tree, int CM_n_, int MG_n_)
 {
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
@@ -155,7 +155,7 @@ void T::Init(TTree *tree, int CM_n_, int MG_n_)
    Notify();
 }
 
-Bool_t T::Notify()
+Bool_t Tanalyse_R::Notify()
 {
    // The Notify() function is called when a new file is opened. This
    // can be either for a new TTree in a TChain or when when a new TTree
@@ -166,7 +166,7 @@ Bool_t T::Notify()
    return kTRUE;
 }
 
-void T::Show(Long64_t entry)
+void Tanalyse_R::Show(Long64_t entry)
 {
 // Print contents of entry.
 // If entry is not specified, print current entry

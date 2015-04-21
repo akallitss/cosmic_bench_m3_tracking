@@ -1,6 +1,6 @@
 #ifndef analyse_h
 #define analyse_h
-#include "T.h"
+#include "Tanalyse_R.h"
 #include "detector.h"
 #include <TTree.h>
 #include <string>
@@ -12,7 +12,7 @@
 using std::string;
 using boost::property_tree::ptree;
 
-class Analyse: public T, public CosmicBench{
+class Analyse: public Tanalyse_R, public CosmicBench{
 	public:
 		Analyse(string configFilePath);
 		Analyse(ptree config_tree);

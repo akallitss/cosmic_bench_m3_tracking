@@ -1,5 +1,5 @@
-#define Tsignal_cxx
-#include "Tsignal.h"
+#define Tsignal_R_cxx
+#include "Tsignal_R.h"
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCanvas.h>
@@ -11,16 +11,16 @@ using std::vector;
 using std::cout;
 using std::endl;
 
-Tsignal::Tsignal(){
+Tsignal_R::Tsignal_R(){
    
 }
 
-Tsignal::Tsignal(TTree *tree, int CMN_, int MGN_) : fChain(0) 
+Tsignal_R::Tsignal_R(TTree *tree, int CMN_, int MGN_) : fChain(0) 
 {
    Init(tree, CMN_, MGN_);
 }
 
-Tsignal::~Tsignal()
+Tsignal_R::~Tsignal_R()
 {
    if(MGN>0){
       delete StripAmpl_MG;
@@ -36,13 +36,13 @@ Tsignal::~Tsignal()
    delete fChain->GetCurrentFile();
 }
 
-Int_t Tsignal::GetEntry(Long64_t entry)
+Int_t Tsignal_R::GetEntry(Long64_t entry)
 {
 // Read contents of entry.
    if (!fChain) return 0;
    return fChain->GetEntry(entry);
 }
-Long64_t Tsignal::LoadTree(Long64_t entry)
+Long64_t Tsignal_R::LoadTree(Long64_t entry)
 {
 // Set the environment to read one entry
    if (!fChain) return -5;
@@ -55,7 +55,7 @@ Long64_t Tsignal::LoadTree(Long64_t entry)
    return centry;
 }
 
-void Tsignal::Init(TTree *tree, int CMN_, int MGN_)
+void Tsignal_R::Init(TTree *tree, int CMN_, int MGN_)
 {
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
@@ -99,7 +99,7 @@ void Tsignal::Init(TTree *tree, int CMN_, int MGN_)
    Notify();
 }
 
-Bool_t Tsignal::Notify()
+Bool_t Tsignal_R::Notify()
 {
    // The Notify() function is called when a new file is opened. This
    // can be either for a new TTree in a TChain or when when a new TTree
@@ -110,14 +110,14 @@ Bool_t Tsignal::Notify()
    return kTRUE;
 }
 
-void Tsignal::Show(Long64_t entry)
+void Tsignal_R::Show(Long64_t entry)
 {
 // Print contents of entry.
 // If entry is not specified, print current entry
    if (!fChain) return;
    fChain->Show(entry);
 }
-Int_t Tsignal::Cut(Long64_t entry)
+Int_t Tsignal_R::Cut(Long64_t entry)
 {
 // This function may be called from Loop.
 // returns  1 if entry is accepted.
@@ -125,7 +125,7 @@ Int_t Tsignal::Cut(Long64_t entry)
    return 1;
 }
 
-vector<vector<double> > Tsignal::get_mg_ampl(int mg_n){
+vector<vector<double> > Tsignal_R::get_mg_ampl(int mg_n){
 	vector<vector<double> > return_array(61,vector<double>(Tomography::Nsample,0));
 	for(int i=0;i<61;i++){
 		for(int j=0;j<Tomography::Nsample;j++){
@@ -134,7 +134,7 @@ vector<vector<double> > Tsignal::get_mg_ampl(int mg_n){
 	}
 	return return_array;
 }
-vector<vector<double> > Tsignal::get_cm_ampl(int cm_n){
+vector<vector<double> > Tsignal_R::get_cm_ampl(int cm_n){
 	vector<vector<double> > return_array(64,vector<double>(Tomography::Nsample,0));
 	for(int i=0;i<64;i++){
 		for(int j=0;j<Tomography::Nsample;j++){

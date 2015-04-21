@@ -1,7 +1,7 @@
 #define cluster_cpp
 #include "cluster.h"
 #include <string>
-#include "T.h"
+#include "Tanalyse_R.h"
 #include "detector.h"
 #include "ray.h"
 #include <TMath.h>
@@ -81,7 +81,7 @@ Cluster& Cluster::operator=(const Cluster& other){
 	angle_z = other.angle_z;
 	return *this;
 }
-Cluster::Cluster(T * treeObject, long entry){
+Cluster::Cluster(Tanalyse_R * treeObject, long entry){
 	if(entry>-1){
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);
@@ -215,7 +215,7 @@ CM_Cluster& CM_Cluster::operator=(const CM_Cluster& other){
 	cm_n_in_tree = other.cm_n_in_tree;
 	return *this;
 }
-CM_Cluster::CM_Cluster(T * treeObject,int number_,CM_Detector * det, long entry): Cluster(treeObject,entry){
+CM_Cluster::CM_Cluster(Tanalyse_R * treeObject,int number_,CM_Detector * det, long entry): Cluster(treeObject,entry){
 	if(entry>-1){
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);
@@ -258,7 +258,7 @@ CM_Cluster::CM_Cluster(CM_Detector * det, int number_, double pos_, double size_
 CM_Cluster::~CM_Cluster(){
 	
 }
-bool CM_Cluster::is_suitable(T * treeObject,int number_,CM_Detector * detector, long entry){
+bool CM_Cluster::is_suitable(Tanalyse_R * treeObject,int number_,CM_Detector * detector, long entry){
 	//cout << "blah" << endl;
 	if(entry>-1){
 		treeObject->LoadTree(entry);
@@ -470,7 +470,7 @@ MG_Cluster& MG_Cluster::operator=(const MG_Cluster& other){
 	mg_n_in_tree = other.mg_n_in_tree;
 	return *this;
 }
-MG_Cluster::MG_Cluster(T * treeObject,int number_,MG_Detector * det, long entry): Cluster(treeObject,entry){
+MG_Cluster::MG_Cluster(Tanalyse_R * treeObject,int number_,MG_Detector * det, long entry): Cluster(treeObject,entry){
 	if(entry>-1){
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);
@@ -512,7 +512,7 @@ MG_Cluster::MG_Cluster(MG_Detector * det, int number_, double pos_, double size_
 MG_Cluster::~MG_Cluster(){
 	
 }
-bool MG_Cluster::is_suitable(T * treeObject,int number_,MG_Detector * detector, long entry){
+bool MG_Cluster::is_suitable(Tanalyse_R * treeObject,int number_,MG_Detector * detector, long entry){
 	if(entry>-1){
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);

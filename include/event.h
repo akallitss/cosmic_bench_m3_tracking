@@ -5,7 +5,7 @@
 #include <map>
 #include "cluster.h"
 #include "ray.h"
-#include "T.h"
+#include "Tanalyse_R.h"
 #include "detector.h"
 #include "analyse.h"
 #include <TH1D.h>
@@ -26,7 +26,7 @@ class Detector;
 class CM_Detector;
 class MG_Detector;
 class CosmicBench;
-class T;
+class Tanalyse_R;
 
 class Event{
 	public:
@@ -45,7 +45,7 @@ class Event{
 		Event();
 		Event(const Event& other);
 		Event& operator=(const Event& other);
-		Event(T * treeObject, bool use_srf_,long entry = -1);
+		Event(Tanalyse_R * treeObject, bool use_srf_,long entry = -1);
 		int evn;
 		double z;
 		bool is_X;
@@ -71,7 +71,7 @@ class CM_Event: public Event{
 		CM_Event();
 		CM_Event(const CM_Event& other);
 		CM_Event& operator=(const CM_Event& other);
-		CM_Event(T * treeObject,CM_Detector * det, bool use_srf_, long entry = -1);
+		CM_Event(Tanalyse_R * treeObject,CM_Detector * det, bool use_srf_, long entry = -1);
 		CM_Event(CM_Detector detector_, vector<vector<double> > strip_ampl_, bool use_srf_, int evn_);
 		~CM_Event();
 		void MultiCluster();
@@ -106,7 +106,7 @@ class MG_Event: public Event{
 		MG_Event();
 		MG_Event(const MG_Event& other);
 		MG_Event& operator=(const MG_Event& other);
-		MG_Event(T * treeObject,MG_Detector * det, bool use_srf_, long entry = -1);
+		MG_Event(Tanalyse_R * treeObject,MG_Detector * det, bool use_srf_, long entry = -1);
 		MG_Event(MG_Detector detector_, vector<vector<double> > strip_ampl_, bool use_srf_, int evn_);
 		void set_strip_ampl(vector<vector<double> > strip_ampl_);
 		~MG_Event();
@@ -127,7 +127,7 @@ class CosmicBenchEvent{
 		CosmicBenchEvent();
 		CosmicBenchEvent(const CosmicBenchEvent& other);
 		CosmicBenchEvent& operator=(const CosmicBenchEvent& other);
-		CosmicBenchEvent(CosmicBench * detectors, T * treeObject, bool use_srf_, long entry = -1);
+		CosmicBenchEvent(CosmicBench * detectors, Tanalyse_R * treeObject, bool use_srf_, long entry = -1);
 		CosmicBenchEvent(CosmicBench * detectors, vector<Event*> events_);
 		~CosmicBenchEvent();
 		void createPairs();

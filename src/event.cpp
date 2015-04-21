@@ -1,7 +1,7 @@
 #define event_cpp
 #include "event.h"
 
-#include "T.h"
+#include "Tanalyse_R.h"
 #include "detector.h"
 #include "cluster.h"
 #include "ray.h"
@@ -127,7 +127,7 @@ Event& Event::operator=(const Event& other){
 	is_X = other.is_X;
 	return *this;
 }
-Event::Event(T * treeObject, bool use_srf_,long entry){
+Event::Event(Tanalyse_R * treeObject, bool use_srf_,long entry){
 	if(entry>-1){
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);
@@ -183,7 +183,7 @@ CM_Event& CM_Event::operator=(const CM_Event& other){
 	detector = other.detector;
 	return *this;
 }
-CM_Event::CM_Event(T * treeObject,CM_Detector * det, bool use_srf_,long entry): Event(treeObject,use_srf_,entry){
+CM_Event::CM_Event(Tanalyse_R * treeObject,CM_Detector * det, bool use_srf_,long entry): Event(treeObject,use_srf_,entry){
 	if(entry>-1){
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);
@@ -324,7 +324,7 @@ MG_Event& MG_Event::operator=(const MG_Event& other){
 	detector = other.detector;
 	return *this;
 }
-MG_Event::MG_Event(T * treeObject,MG_Detector * det, bool use_srf_,long entry): Event(treeObject,use_srf_,entry){
+MG_Event::MG_Event(Tanalyse_R * treeObject,MG_Detector * det, bool use_srf_,long entry): Event(treeObject,use_srf_,entry){
 	if(entry>-1){
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);
@@ -775,7 +775,7 @@ CosmicBenchEvent& CosmicBenchEvent::operator=(const CosmicBenchEvent& other){
 	}
 	return *this;
 }
-CosmicBenchEvent::CosmicBenchEvent(CosmicBench * detectors, T * treeObject, bool use_srf_, long entry){
+CosmicBenchEvent::CosmicBenchEvent(CosmicBench * detectors, Tanalyse_R * treeObject, bool use_srf_, long entry){
 	if(entry>-1){
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);

@@ -1,15 +1,15 @@
-#define Tanalyse_cxx
-#include "Tanalyse.h"
+#define Tanalyse_W_cxx
+#include "Tanalyse_W.h"
 #include <iostream>
 
 using std::cout;
 using std::endl;
 /*
-Tanalyse::Tanalyse(string saveFileName){
+Tanalyse_W::Tanalyse_W(string saveFileName){
    saveFile = new TFile(saveFileName.c_str(),"RECREATE");
 }
 */
-Tanalyse::Tanalyse(string saveFileName, int CM_n, int MG_n)
+Tanalyse_W::Tanalyse_W(string saveFileName, int CM_n, int MG_n)
 {
    saveFile = new TFile(saveFileName.c_str(),"RECREATE");
    T = new TTree("T","event");
@@ -19,7 +19,7 @@ Tanalyse::Tanalyse(string saveFileName, int CM_n, int MG_n)
    Init();
 }
 
-Tanalyse::~Tanalyse()
+Tanalyse_W::~Tanalyse_W()
 {
    if(CMN>0){
       delete CM_NClus;
@@ -51,7 +51,7 @@ Tanalyse::~Tanalyse()
    delete saveFile;
 }
 
-void Tanalyse::Init()
+void Tanalyse_W::Init()
 {
    T->Branch("evn", &evn, "evn/I");
    T->Branch("evttime", &evttime, "evttime/D");
@@ -176,17 +176,17 @@ void Tanalyse::Init()
       T->Branch("CM_StripMaxAmpl", CM_StripMaxAmpl, leefCM_StripMaxAmpl);
    }
 }
-TTree * Tanalyse::getTree() const{
+TTree * Tanalyse_W::getTree() const{
    return T->CloneTree();
 }
-void Tanalyse::Write(){
+void Tanalyse_W::Write(){
    saveFile->cd();
    T->Write();
 }
-void Tanalyse::CloseFile(){
+void Tanalyse_W::CloseFile(){
    saveFile->Close();
 }
-void Tanalyse::fillTree(int evn_, double evttime_, vector<MG_Event> mg_events, vector<CM_Event> cm_events){
+void Tanalyse_W::fillTree(int evn_, double evttime_, vector<MG_Event> mg_events, vector<CM_Event> cm_events){
    evn = evn_;
    evttime = evttime_;
    if(mg_events.size()!=static_cast<unsigned int>(MGN)){

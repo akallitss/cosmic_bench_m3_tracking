@@ -1,11 +1,11 @@
 #define analyse_cpp
 //my class
 #include "analyse.h"
-#include "T.h"
+#include "Tanalyse_R.h"
 #include "detector.h"
 #include "ray.h"
 #include "event.h"
-#include "Tsignal.h"
+#include "Tsignal_R.h"
 #include "tomography.h"
 #include "acceptanceFunction.h"
 #include "Tray.h"
@@ -75,7 +75,7 @@ Analyse::Analyse(string configFilePath){
 	TTree * tree = (TTree*)(f->Get("T"));
 	max_event = config_tree.get<long>("max_event");
 	CosmicBench::Init(config_tree);
-	T::Init(tree,CM_N,MG_N);
+	Tanalyse_R::Init(tree,CM_N,MG_N);
 	signal_file_name = config_tree.get<string>("signal_file");
 }
 Analyse::Analyse(ptree config_tree){
@@ -84,7 +84,7 @@ Analyse::Analyse(ptree config_tree){
 	TTree * tree = (TTree*)(f->Get("T"));
 	max_event = config_tree.get<long>("max_event");
 	CosmicBench::Init(config_tree);
-	T::Init(tree,CM_N,MG_N);
+	Tanalyse_R::Init(tree,CM_N,MG_N);
 	signal_file_name = config_tree.get<string>("signal_file");
 }
 Analyse::~Analyse(){
@@ -2032,7 +2032,7 @@ void Analyse::EventDisplay(long event_nb, TCanvas * c1){
 	}
 	TFile * signal_file = new TFile(signal_file_name.c_str(),"READ");
 	TTree * signal_tree = (TTree*)(signal_file->Get("T"));
-	Tsignal * signalT = new Tsignal(signal_tree,CM_N,MG_N);
+	Tsignal_R * signalT = new Tsignal_R(signal_tree,CM_N,MG_N);
 
 	if(nentries != signal_tree->GetEntriesFast()){
 		cout << "total number of event in signal and analyse tree does not match" << endl;

@@ -5,14 +5,14 @@
 // found on file: run6_Pb_analyse.root
 //////////////////////////////////////////////////////////
 
-#ifndef T_h
-#define T_h
+#ifndef Tanalyse_R_h
+#define Tanalyse_R_h
 
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
 
-class T{
+class Tanalyse_R{
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
    Int_t           fCurrent; //!current Tree number in a TChain
@@ -71,9 +71,9 @@ public :
    TBranch        *b_MG_ClusMaxStrip;   //!
    TBranch        *b_MG_StripMaxAmpl;   //!
 
-   T();
-   T(TTree *tree, int CM_n_, int MG_n_);
-   virtual ~T();
+   Tanalyse_R();
+   Tanalyse_R(TTree *tree, int CM_n_, int MG_n_);
+   virtual ~Tanalyse_R();
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
    virtual void     Init(TTree *tree, int CM_n_, int MG_n_);

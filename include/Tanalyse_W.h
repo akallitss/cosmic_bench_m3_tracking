@@ -1,5 +1,5 @@
-#ifndef Tanalyse_h
-#define Tanalyse_h
+#ifndef Tanalyse_W_h
+#define Tanalyse_W_h
 
 //#include <TROOT.h>
 #include <TTree.h>
@@ -14,7 +14,7 @@ using std::vector;
 class MG_Event;
 class CM_Event;
 
-class Tanalyse{
+class Tanalyse_W{
    public:
       TTree          *T;
       TFile          *saveFile;
@@ -49,8 +49,8 @@ class Tanalyse{
       Double_t        (*MG_StripMaxAmpl)[61];
 
       //Tanalyse(string saveFileName);
-      Tanalyse(string saveFileName, int CM_n, int MG_n);
-      ~Tanalyse();
+      Tanalyse_W(string saveFileName, int CM_n, int MG_n);
+      ~Tanalyse_W();
       void Init();
       TTree * getTree() const;
       void Write();

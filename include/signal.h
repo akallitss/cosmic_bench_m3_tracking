@@ -1,6 +1,6 @@
 #ifndef signal_h
 #define signal_h
-#include "Tsignal.h"
+#include "Tsignal_R.h"
 #include "detector.h"
 #include "tomography.h"
 
@@ -17,7 +17,7 @@ using std::map;
 
 using boost::property_tree::ptree;
 
-class Signal: public Tsignal, public CosmicBench{
+class Signal: public Tsignal_R, public CosmicBench{
 	public:
 		Signal(string configFilePath);
 		Signal(ptree config_tree);

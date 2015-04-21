@@ -5,8 +5,8 @@
 // found on file: ../MG2Dalone_200fC_shaping63_gasstarted_140818_11H23_025_signal.root
 //////////////////////////////////////////////////////////
 
-#ifndef Tsignal_h
-#define Tsignal_h
+#ifndef Tsignal_R_h
+#define Tsignal_R_h
 
 //#include <TROOT.h>
 #include <TChain.h>
@@ -20,7 +20,7 @@ using std::vector;
 
 // Fixed size dimensions of array or collections stored in the TTree if any.
 
-class Tsignal {
+class Tsignal_R {
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
    Int_t           fCurrent; //!current Tree number in a TChain
@@ -49,9 +49,9 @@ public :
    TBranch        *b_StripAmpl_CM_ped;   //!
    TBranch        *b_StripAmpl_CM_corr;   //!
 
-   Tsignal(TTree *tree, int CMN_, int MGN_);
-   Tsignal();
-   virtual ~Tsignal();
+   Tsignal_R(TTree *tree, int CMN_, int MGN_);
+   Tsignal_R();
+   virtual ~Tsignal_R();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
