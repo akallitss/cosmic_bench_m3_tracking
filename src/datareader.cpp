@@ -830,11 +830,11 @@ map<Tomography::det_type,vector<vector<vector<double> > > > DreamDataReader::rea
 				zs_mode = false;
 				file->ignore(sizeof(current_data));
 				if(isample == (Nsample-1)){
-					if(FeuHeaderLine>4 && current_event != (event_nb+1)){
+					if(FeuHeaderLine>4 && current_event != (event_nb)){
 						cout << "Warning ! Event ID gap : " << event_nb << " -> " << current_event << endl;
 						event_nb = current_event;
 					}
-					else event_nb++;
+					//else event_nb++;
 					isample=-1; isample_prev=-2;
 					event_complete = true;
 					break;
