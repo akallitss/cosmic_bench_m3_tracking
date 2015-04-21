@@ -24,7 +24,7 @@ int main(int argc, char ** argv){
 	ptree config_tree_wrapper;
 	read_json(config_file_wrapper, config_tree_wrapper);
 	ptree config_tree_bench;
-	read_json("config_default.cfg", config_tree_bench);
+	read_json("config_default.json", config_tree_bench);
 	config_tree_bench.put<string>("Ped",config_tree_wrapper.get<string>("Ped"));
 	config_tree_bench.put<string>("RMSPed",config_tree_wrapper.get<string>("RMSPed"));
 	remove((config_tree_bench.get<string>("signal_file")).c_str());
