@@ -30,7 +30,6 @@ public :
    int MGN;
    Int_t           Nevent;
    Double_t        evttime;
-   Int_t           TsampleNum[Tomography::Nsample];
    Float_t         (*StripAmpl_MG)[61][Tomography::Nsample];
    Float_t         (*StripAmpl_MG_ped)[61][Tomography::Nsample];
    Float_t         (*StripAmpl_MG_corr)[61][Tomography::Nsample];
@@ -41,7 +40,6 @@ public :
    // List of branches
    TBranch        *b_Nevent;   //!
    TBranch        *b_evttime;   //!
-   TBranch        *b_TsampleNum;   //!
    TBranch        *b_StripAmpl_MG;   //!
    TBranch        *b_StripAmpl_MG_ped;   //!
    TBranch        *b_StripAmpl_MG_corr;   //!
