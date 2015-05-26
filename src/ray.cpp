@@ -419,6 +419,12 @@ double Ray::eval_Y(Detector * det) const{
 	double z = (n_z*det->get_z() - Z_intercept_X*n_x - Z_intercept_Y*n_y)/(n_z + slope_X*n_x + slope_Y*n_y);
 	return slope_Y*z + Z_intercept_Y;
 }
+Point Ray::eval_plane(Plane proj) const{
+	Point first(Z_intercept_X,Z_intercept_Y,0);
+	Point second(slope_X,slope_Y,1);
+	Line ray_line(first,second);
+	return proj.intersection(ray_line);
+}
 double Ray::get_residu(Detector * det) const{
 	bool is_in_ray = false;
 	for(vector<Cluster*>::const_iterator it = clusters.begin(); it!=clusters.end();++it){

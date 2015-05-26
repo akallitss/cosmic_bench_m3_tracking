@@ -70,6 +70,7 @@ class Ray{
 		double eval_Y(double z) const;
 		double eval_X(Detector * det) const;
 		double eval_Y(Detector * det) const;
+		Point eval_plane(Plane proj) const;
 		double get_residu(Detector * det) const;
 		double get_residu_ref(Cluster * clus) const;
 		double get_t_mean() const;

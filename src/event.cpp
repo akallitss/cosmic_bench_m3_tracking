@@ -494,8 +494,9 @@ void MG_Event::MultiCluster(){
 		int ClusMaxStrip = -1;
 		double ClusT = 0;
 		double ClusTOT = 0;
-		double tot_ampl = 0;
-		double pos_TPC = 0;
+		//Micro TPC
+		//double tot_ampl = 0;
+		//double pos_TPC = 0;
 		for(int j = cluster_list[i].first;j<((cluster_list[i].second)+1);j++){
 			StripInfo current_strip = allChannels[MG_Detector::StripToChannel[j]];
 			double effective_ampl = current_strip.MaxAmpl/count(global_used_channel.begin(),global_used_channel.end(),MG_Detector::StripToChannel[j]);
