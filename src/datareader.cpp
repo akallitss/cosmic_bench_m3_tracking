@@ -64,8 +64,14 @@ void DataReader::Init(map<int,Tomography::det_type> det_type_by_asic_, map<int,i
 	mapping = NULL;
 	Nevent = -1;
 	evttime = 0;
-	if(MG_N>0) StripAmpl[Tomography::MG] = vector<vector<vector<float> > >(MG_N,vector<vector<float> >(MG_Detector::Nstrip,vector<float>(Tomography::Nsample,0)));
-	if(CM_N>0) StripAmpl[Tomography::CM] = vector<vector<vector<float> > >(CM_N,vector<vector<float> >(CM_Detector::Nstrip,vector<float>(Tomography::Nsample,0)));
+	if(MG_N>0){
+		StripAmpl[Tomography::MG] = vector<vector<vector<float> > >(MG_N,vector<vector<float> >(MG_Detector::Nstrip,vector<float>(Tomography::Nsample,0)));
+		Ped[Tomography::MG] = vector<vector<float> >(MG_N,vector<float>(MG_Detector::Nstrip,0));
+	}
+	if(CM_N>0){
+		StripAmpl[Tomography::CM] = vector<vector<vector<float> > >(CM_N,vector<vector<float> >(CM_Detector::Nstrip,vector<float>(Tomography::Nsample,0)));
+		Ped[Tomography::CM] = vector<vector<float> >(CM_N,vector<float>(CM_Detector::Nstrip,0));
+	}
 	PedName = PedName_;
 	RMSName = RMSName_;
 	Ped.clear();
