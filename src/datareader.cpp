@@ -74,7 +74,6 @@ void DataReader::Init(map<int,Tomography::det_type> det_type_by_asic_, map<int,i
 	}
 	PedName = PedName_;
 	RMSName = RMSName_;
-	Ped.clear();
 }
 DataReader::DataReader(map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, string base_name_, map<int,int> feu_id_to_n_, int first_index_, int last_index_, string PedName_, string RMSName_){
 	Init(det_type_by_asic_,det_n_by_asic_,PedName_,RMSName_);
@@ -153,7 +152,6 @@ DataReader::DataReader(ptree config_tree, bool save_to_disk){
 		StripAmpl[Tomography::CM] = vector<vector<vector<float> > >(CM_N,vector<vector<float> >(CM_Detector::Nstrip,vector<float>(Tomography::Nsample,0)));
 		Ped[Tomography::CM] = vector<vector<float> >(CM_N,vector<float>(CM_Detector::Nstrip,0));
 	}
-	Ped.clear();
 }
 DataReader::~DataReader(){
 	if(reader != NULL) delete reader;
