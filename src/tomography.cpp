@@ -92,7 +92,14 @@ Tomography::elec_type Tomography::str_to_elec(string str){
 	else if(str == "feminos") return_value = Feminos;
 	return return_value;
 }
-
+static map<Tomography::det_type,int> CMN_div_build(){
+	map<Tomography::det_type,int> return_map;
+	return_map[Tomography::CM] = 2;
+	return_map[Tomography::MG] = 2;
+	return return_map;
+}
+const map<Tomography::det_type,int> Tomography::CMN_div = CMN_div_build();
+/*
 void Tomography::process_elec_files(ptree config_tree){
 	int total_CM_N = config_tree.get<int>("total_CM_N");
 	int total_MG_N = config_tree.get<int>("total_MG_N");
@@ -157,3 +164,4 @@ void Tomography::process_elec_files(ptree config_tree){
 	blah->do_common_noise_sub();
 	if(compute_rms) blah->compute_RMSPed();
 }
+*/

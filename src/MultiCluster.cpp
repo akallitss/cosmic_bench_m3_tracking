@@ -27,15 +27,17 @@ int main(int argc, char ** argv){
 	string multicluster = "multicluster";
 	string hough = "hough";
 	string SoB = "SoB";
-	string EtA = "EtA";
+	//string EtA = "EtA";
 	string display = "display";
 	string dispersion = "dispersion";
 	if(argv[2] == multicluster){
 		blah->MultiCluster();
 	}
+	/*
 	else if(argv[2] == EtA){
 		blah->ElecToAnalyse();
 	}
+	*/
 	else if(argv[2] == SoB){
 		blah->SignalOverNoiseDisplay();
 		theApp->Run(true);

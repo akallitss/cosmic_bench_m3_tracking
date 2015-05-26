@@ -1,1179 +1,448 @@
 #define datareader_cpp
 #include "datareader.h"
+#include "tomography.h"
+#include "detector.h"
 #include <iostream>
-#include <fstream>
-#include <vector>
 #include <map>
-#include <string>
-#include <algorithm>
-#include <iomanip>
-#include <TBranch.h>
-#include <TH1F.h>
+#include <vector>
+#include <sstream>
+#include <fstream>
+
 #include <TFitResultPtr.h>
 #include <TFitResult.h>
-#include <TROOT.h>
+#include <TH1F.h>
 #include <TMath.h>
-#include <sstream>
-#include "dataline.h"
-#include "header.h"
+
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/foreach.hpp>
 
 using std::cout;
 using std::endl;
 using std::flush;
-using std::string;
-using std::vector;
 using std::map;
-using std::ifstream;
-using std::ofstream;
-using std::sort;
-using std::setw;
-using std::setfill;
+using std::vector;
 using std::ostringstream;
+using std::ofstream;
 
 using TMath::Min;
-using TMath::Ldexp;
 
-//const int DataReader::Nsample = 32;
-//const int DataReader::Nstrip_MG = 61;
-//const int DataReader::Nstrip_CM = 64;
+using boost::property_tree::ptree;
 
-DataReader::DataReader(string baseFileName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, long max_event_){
-	string signalName = baseFileName + "_signal.root";
-	string pedName = baseFileName + "_Ped.dat";
-	string RMSName = baseFileName + "_RMSPed.dat";
-	Init(signalName, pedName, RMSName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_);
+DataReader::DataReader(){
+	reader = NULL;
+	outTree = NULL;
+	DAQtype = Tomography::unknown_elec;
+	det_type_by_asic.clear();
+	det_n_by_asic.clear();
+	max_event = -1;
+	mapping = NULL;
+	Nevent = -1;
+	evttime = 0;
+	StripAmpl.clear();
+	PedName.clear();
+	RMSName.clear();
+	Ped.clear();
 }
-DataReader::DataReader(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, long max_event_){
-	Init(signalName, pedName, RMSName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_);
-}
-
-void DataReader::Init(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, long max_event_){
-	exists = exists_;
-	ped_done = ped_done_;
-	cns_done = cns_done_;
-	max_event = max_event_;
-	global_offset = 0;
-	MG_N = 0;
-	CM_N = 0;
+void DataReader::Init(map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, string PedName_, string RMSName_, string outFileName, long max_event_){
 	det_type_by_asic = det_type_by_asic_;
 	det_n_by_asic = det_n_by_asic_;
-	if(det_n_by_asic.size()!= det_type_by_asic.size()){
-		cout << "problem in detector caracs" << endl;
+	int CM_N = 0;
+	int MG_N = 0;
+	for(map<int,Tomography::det_type>::iterator type_it = det_type_by_asic.begin();type_it!=det_type_by_asic.end();++type_it){
+		if(type_it->second == Tomography::MG) MG_N++;
+		else if(type_it->second == Tomography::CM) CM_N++;
+	}
+	if(CM_N>0) cout << "Warning CM are not totally supported !" << endl;
+	if(outFileName.size()>0){
+		outTree = new Tsignal_W(outFileName,CM_N,MG_N);
+	}
+	else outTree = NULL;
+	reader = NULL;
+	DAQtype = Tomography::unknown_elec;
+	max_event = max_event_;
+	mapping = NULL;
+	Nevent = -1;
+	evttime = 0;
+	if(MG_N>0) StripAmpl[Tomography::MG] = vector<vector<vector<float> > >(MG_N,vector<vector<float> >(MG_Detector::Nstrip,vector<float>(Tomography::Nsample,0)));
+	if(CM_N>0) StripAmpl[Tomography::CM] = vector<vector<vector<float> > >(CM_N,vector<vector<float> >(CM_Detector::Nstrip,vector<float>(Tomography::Nsample,0)));
+	PedName = PedName_;
+	RMSName = RMSName_;
+	Ped.clear();
+}
+DataReader::DataReader(map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, string base_name_, map<int,int> feu_id_to_n_, int first_index_, int last_index_, string PedName_, string RMSName_){
+	Init(det_type_by_asic_,det_n_by_asic_,PedName_,RMSName_);
+	DAQtype = Tomography::Dream;
+	reader = new DreamElecReader(base_name_,feu_id_to_n_,first_index_,last_index_);
+	mapping = &Dream_mapping;
+}
+DataReader::DataReader(map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, string base_name_, vector<int> fem_id, int first_index_, int last_index_, string PedName_, string RMSName_){
+	Init(det_type_by_asic_,det_n_by_asic_,PedName_,RMSName_);
+	DAQtype = Tomography::Feminos;
+	reader = new FeminosElecReader(base_name_,fem_id,first_index_,last_index_);
+	mapping = &Feminos_mapping;
+}
+DataReader::DataReader(ptree config_tree, bool save_to_disk){
+	int total_CM_N = config_tree.get<int>("total_CM_N");
+	int total_MG_N = config_tree.get<int>("total_MG_N");
+	int CM_N = 0;
+	int MG_N = 0;
+	BOOST_FOREACH(const ptree::value_type& child, config_tree.get_child("CosmicBench.CosMultis")){
+		det_type_by_asic[child.second.get<int>("asic_n")] = Tomography::CM;
+		det_n_by_asic[child.second.get<int>("asic_n")] = child.second.get<int>("cm_n");
+		CM_N++;
+	}
+	BOOST_FOREACH(const ptree::value_type& child, config_tree.get_child("CosmicBench.MultiGens")){
+		det_type_by_asic[child.second.get<int>("asic_n")] = Tomography::MG;
+		det_n_by_asic[child.second.get<int>("asic_n")] = child.second.get<int>("mg_n");
+		MG_N++;
+	}
+	if((total_CM_N!=CM_N) || (total_MG_N!=MG_N)){
+		cout << "problem in detectors number" << endl;
 		return;
 	}
-	for(map<int,Tomography::det_type>::iterator it=det_type_by_asic.begin();it!=det_type_by_asic.end();++it){
-		if(det_n_by_asic[it->first]>=0){
-			if(it->second == Tomography::MG) MG_N++;
-			else if(it->second == Tomography::CM) CM_N++;
-			else{
-				cout << "detector type unknown : " << it->second << endl;
-				return;
+	DAQtype = Tomography::str_to_elec(config_tree.get<string>("electronic_type"));
+	string data_file_basename = config_tree.get<string>("data_file_basename");
+	string signalName = config_tree.get<string>("signal_file");
+	PedName = config_tree.get<string>("Ped");
+	RMSName = config_tree.get<string>("RMSPed");
+	max_event = config_tree.get<long>("max_event");
+	int first_index = config_tree.get<int>("data_file_first");
+	int last_index = config_tree.get<int>("data_file_last");
+	if(save_to_disk){
+		outTree = new Tsignal_W(signalName,CM_N,MG_N);
+	}
+	if(DAQtype==Tomography::Dream){
+		map<int,int> feu_id_to_n;
+		BOOST_FOREACH(const ptree::value_type& child, config_tree.get_child("FEU")){
+			feu_id_to_n[child.second.get<int>("id")] = child.second.get<int>("n");
+		}
+		reader = new DreamElecReader(data_file_basename,feu_id_to_n,first_index,last_index);
+		mapping = &Dream_mapping;
+	}
+	else if(DAQtype==Tomography::Feminos){
+		vector<int> fem_id;
+		for(map<int,int>::iterator map_it=det_n_by_asic.begin();map_it!=det_n_by_asic.end();++map_it){
+			bool exists = false;
+			for(vector<int>::iterator vec_it=fem_id.begin();vec_it!=fem_id.end();++vec_it){
+				if((*vec_it) == ((map_it->first)/Tomography::Nasic_Feminos)) exists = true;
 			}
+			if(!exists) fem_id.push_back((map_it->first)/Tomography::Nasic_Feminos);
 		}
-	}
-	if(MG_N>0){
-		StripAmpl_MG = new float[MG_N][Nstrip_MG][Nsample];
-		StripAmpl_MG_ped = new float[MG_N][Nstrip_MG][Nsample];
-		StripAmpl_MG_corr = new float[MG_N][Nstrip_MG][Nsample];
-		Pedestal_MG = new float[MG_N][Nstrip_MG];
-	}
-	if(CM_N>0){
-		StripAmpl_CM = new float[CM_N][Nstrip_CM][Nsample];
-		StripAmpl_CM_ped = new float[CM_N][Nstrip_CM][Nsample];
-		StripAmpl_CM_corr = new float[CM_N][Nstrip_CM][Nsample];
-		Pedestal_CM = new float[CM_N][Nstrip_CM];
-	}
-	outFileName = signalName;
-	PedFileName = pedName;
-	RMSPedFileName = RMSName;
-	string fileOption = (exists) ? "UPDATE" : "RECREATE";
-	outFile = new TFile(outFileName.c_str(),fileOption.c_str());
-	outTree->SetMaxTreeSize(100000000000LL);
-	Nevent = 0;
-	if(!exists){
-		outTree = new TTree("T","event");
-		outTree->Branch("Nevent", &Nevent, "Nevent/I"); // event number
-		outTree->Branch("evttime", &evttime, "evttime/D"); // event time stamp
-		char leefTsampleNum[100];
-		sprintf(leefTsampleNum,"TsampleNum[%d]/I",Nsample);
-		outTree->Branch("TsampleNum", TsampleNum, leefTsampleNum); // time sample number
-		// For the MG
-		if(MG_N>0){
-			char leefStripAmpl_MG[100];
-			sprintf(leefStripAmpl_MG,"StripAmpl_MG[%d][%d][%d]/F",MG_N,Nstrip_MG,Nsample);
-			outTree->Branch("StripAmpl_MG", StripAmpl_MG, leefStripAmpl_MG); // raw amplitude
-		}
-		// For the CM
-		if(CM_N>0){
-			char leefStripAmpl_CM[100];
-			sprintf(leefStripAmpl_CM,"StripAmpl_CM[%d][%d][%d]/F",CM_N,Nstrip_CM,Nsample);
-			outTree->Branch("StripAmpl_CM", StripAmpl_CM, leefStripAmpl_CM); // raw amplitude
-		}
+		reader = new FeminosElecReader(data_file_basename,fem_id,first_index,last_index);
+		mapping = &Feminos_mapping;
 	}
 	else{
-		outTree = (TTree*)(outFile->Get("T"));
-		outTree->SetBranchAddress("Nevent",&Nevent);
-		outTree->SetBranchAddress("evttime",&evttime);
-		outTree->SetBranchAddress("TsampleNum",TsampleNum);
-		if(CM_N>0) outTree->SetBranchAddress("StripAmpl_CM",StripAmpl_CM);
-		if(MG_N>0) outTree->SetBranchAddress("StripAmpl_MG",StripAmpl_MG);
+		cout << "unknown electronic type !" << endl;
+		reader = NULL;
+		mapping = NULL;
 	}
-	bool ped_done_CM = false;
-	bool ped_done_MG = false;
-	bool cns_done_CM = false;
-	bool cns_done_MG = false;
-	if(CM_N>0){
-		if(outTree->GetListOfBranches()->FindObject("StripAmpl_CM_ped") != 0){
-			outTree->SetBranchAddress("StripAmpl_CM_ped",StripAmpl_CM_ped);
-			ped_done_CM = true;
-		}
-		if(outTree->GetListOfBranches()->FindObject("StripAmpl_CM_corr") != 0){
-			outTree->SetBranchAddress("StripAmpl_CM_corr",StripAmpl_CM_corr);
-			cns_done_CM = true;
-		}
-	}
-	else{
-		ped_done_CM = true;
-		cns_done_CM = true;
-	}
-	if(MG_N>0){
-		if(outTree->GetListOfBranches()->FindObject("StripAmpl_MG_ped") != 0){
-			outTree->SetBranchAddress("StripAmpl_MG_ped",StripAmpl_MG_ped);
-			ped_done_MG = true;
-		}
-		if(outTree->GetListOfBranches()->FindObject("StripAmpl_MG_corr") != 0){
-			outTree->SetBranchAddress("StripAmpl_MG_corr",StripAmpl_MG_corr);
-			cns_done_MG = true;
-		}
-	}
-	else{
-		ped_done_MG = true;
-		cns_done_MG = true;
-	}
-	ped_done = ped_done_CM && ped_done_MG;
-	cns_done = cns_done_CM && cns_done_MG;
-	for(int k=0;k<Nsample;k++){
-		TsampleNum[k] = k;
-	}
-	for(unsigned int i=0;i<MG_N;i++){
-		for(int j=0;j<Nstrip_MG;j++){
-			for(int k=0;k<Nsample;k++){
-				StripAmpl_MG[i][j][k] = 0;
-			}
-		}
-	}
-	for(unsigned int i=0;i<CM_N;i++){
-		for(int j=0;j<Nstrip_CM;j++){
-			for(int k=0;k<Nsample;k++){
-				StripAmpl_CM[i][j][k] = 0;
-			}
-		}
-	}
-	is_first = true;
-	dumb_branch = new TBranch();
+	Nevent = -1;
+	evttime = 0;
+	if(MG_N>0) StripAmpl[Tomography::MG] = vector<vector<vector<float> > >(MG_N,vector<vector<float> >(MG_Detector::Nstrip,vector<float>(Tomography::Nsample,0)));
+	if(CM_N>0) StripAmpl[Tomography::CM] = vector<vector<vector<float> > >(CM_N,vector<vector<float> >(CM_Detector::Nstrip,vector<float>(Tomography::Nsample,0)));
+	Ped.clear();
 }
 DataReader::~DataReader(){
-	if(MG_N>0){
-		delete StripAmpl_MG;
-		delete StripAmpl_MG_ped;
-		delete StripAmpl_MG_corr;
-		delete Pedestal_MG;
+	if(reader != NULL) delete reader;
+	if(outTree != NULL){
+		outTree->Write();
+		outTree->CloseFile();
+		delete outTree;
 	}
-	if(CM_N>0){
-		delete StripAmpl_CM;
-		delete StripAmpl_CM_ped;
-		delete StripAmpl_CM_corr;
-		delete Pedestal_CM;
-	}
-	delete dumb_branch;
-	outFile->Close();
-	delete outFile;
-}
-void DataReader::add_file_to_process(string inFileName){
-	file_names.push_back(inFileName);
-}
-void DataReader::Fill(){
-	outTree->Fill();
-}
-void DataReader::Write(){
-	outFile->cd();
-	outTree->Write();
-}
-void DataReader::reset_tree_leaf(){
-	//Nevent = 0;
-	/*
-	for(int k=0;k<Nsample;k++){
-		TsampleNum[k] = k;
-	}
-	*/
-	for(unsigned int i=0;i<MG_N;i++){
-		for(int j=0;j<Nstrip_MG;j++){
-			for(int k=0;k<Nsample;k++){
-				StripAmpl_MG[i][j][k] = 0;
-			}
-		}
-	}
-	for(unsigned int i=0;i<CM_N;i++){
-		for(int j=0;j<Nstrip_CM;j++){
-			for(int k=0;k<Nsample;k++){
-				StripAmpl_CM[i][j][k] = 0;
-			}
-		}
-	}
+	DAQtype = Tomography::unknown_elec;
+	det_type_by_asic.clear();
+	det_n_by_asic.clear();
+	StripAmpl.clear();
+	Nevent = -1;
 	evttime = 0;
+	PedName.clear();
+	RMSName.clear();
+	Ped.clear();
+}
+void DataReader::process(){
+	if(reader == NULL){
+		cout << "Data Reader not initialized !" << endl;
+		return;
+	}
+	long event_nb = 0;
+	if(outTree != NULL){
+		outTree->Reset_raw();
+	}
+	while((!(reader->is_end())) && (event_nb<max_event)){
+		process_event();
+		event_nb++;
+	}
+	if(outTree != NULL){
+		outTree->Write();
+	}
+}
+void DataReader::process_event(){
+	if(reader == NULL){
+		cout << "Data Reader not initialized !" << endl;
+		return;
+	}
+	reader->read_next_event();
+	Nevent = reader->get_event_n();
+	evttime = reader->get_evttime();
+	for(map<int,int>::iterator map_it=det_n_by_asic.begin();map_it!=det_n_by_asic.end();++map_it){
+		for(int j=0;j<Tomography::Nchannel;j++){
+			int channel = mapping(det_type_by_asic[map_it->first],j);
+			if(channel<0) continue;
+			if(static_cast<unsigned int>(channel)>=StripAmpl[det_type_by_asic[map_it->first]][map_it->second].size()) continue;
+			for(int k=0;k<Tomography::Nsample;k++){
+				StripAmpl[det_type_by_asic[map_it->first]][map_it->second][channel][k] = reader->get_data(map_it->first,j,k);
+			}
+		}
+	}
+	if(outTree != NULL){
+		outTree->fillTree_raw(Nevent,evttime,StripAmpl[Tomography::MG],StripAmpl[Tomography::CM]);
+	}
 }
 void DataReader::compute_ped(){
-	for(unsigned int i=0;i<MG_N;i++){
-		for(int j=0;j<Nstrip_MG;j++){
-			Pedestal_MG[i][j] = 0;
+	int total_CM_N = StripAmpl[Tomography::CM].size();
+	int total_MG_N = StripAmpl[Tomography::MG].size();
+	for(int i=0;i<total_MG_N;i++){
+		for(int j=0;j<MG_Detector::Nstrip;j++){
+			Ped[Tomography::MG][i][j] = 0;
 		}
 	}
-	for(unsigned int i=0;i<CM_N;i++){
-		for(int j=0;j<Nstrip_CM;j++){
-			Pedestal_CM[i][j] = 0;
+	for(int i=0;i<total_CM_N;i++){
+		for(int j=0;j<CM_Detector::Nstrip;j++){
+			Ped[Tomography::CM][i][j] = 0;
 		}
 	}
-	long nentries = outTree->GetEntries();
+	long nentries = outTree->T->GetEntriesFast();
 	for(long n=0;n<nentries;n++){
-		outTree->LoadTree(n);
-		outTree->GetEntry(n);
-		for(unsigned int i=0;i<MG_N;i++){
-			for(int j=0;j<Nstrip_MG;j++){
-				vector<float> current_strip(Nsample,0);
-				for(int k=0;k<Nsample;k++){
-					current_strip[k] = StripAmpl_MG[i][j][k];
+		StripAmpl = outTree->read_raw(n);
+		for(int i=0;i<total_MG_N;i++){
+			for(int j=0;j<MG_Detector::Nstrip;j++){
+				vector<float> current_strip(Tomography::Nsample,0);
+				for(int k=0;k<Tomography::Nsample;k++){
+					current_strip[k] = StripAmpl[Tomography::MG][i][j][k];
 				}
 				sort(current_strip.begin(),current_strip.end());
-				Pedestal_MG[i][j] += current_strip[Nsample/2];
+				Ped[Tomography::MG][i][j] += current_strip[Tomography::Nsample/2];
 			}
 		}
-		for(unsigned int i=0;i<CM_N;i++){
-			for(int j=0;j<Nstrip_CM;j++){
-				vector<float> current_strip(Nsample,0);
-				for(int k=0;k<Nsample;k++){
-					current_strip[k] = StripAmpl_CM[i][j][k];
+		for(int i=0;i<total_CM_N;i++){
+			for(int j=0;j<CM_Detector::Nstrip;j++){
+				vector<float> current_strip(Tomography::Nsample,0);
+				for(int k=0;k<Tomography::Nsample;k++){
+					current_strip[k] = StripAmpl[Tomography::CM][i][j][k];
 				}
 				sort(current_strip.begin(),current_strip.end());
-				Pedestal_CM[i][j] += current_strip[Nsample/2];
+				Ped[Tomography::CM][i][j] += current_strip[Tomography::Nsample/2];
 			}
 		}
 		if((n%100) == 0) cout << "\r" << "computing pedestal (" << n << "/" << nentries << ")" << flush;
 	}
 	cout << "\r" << "computing pedestal (" << nentries << "/" << nentries << ")" << endl;
 	cout << "writing it to file..." << flush;
-	ofstream pedFile(PedFileName.c_str());
-	for(unsigned int i=0;i<CM_N;i++){
-		for(int j=0;j<Nstrip_CM;j++){
-			Pedestal_CM[i][j] /= nentries;
-			pedFile << i << " " << j << " " << Pedestal_CM[i][j] << "\n";
+	ofstream pedFile(PedName.c_str());
+	for(int i=0;i<total_CM_N;i++){
+		for(int j=0;j<CM_Detector::Nstrip;j++){
+			Ped[Tomography::CM][i][j] /= nentries;
+			pedFile << i << " " << j << " " << Ped[Tomography::CM][i][j] << "\n";
 		}
 	}
-	for(unsigned int i=0;i<MG_N;i++){
-		for(int j=0;j<Nstrip_MG;j++){
-			Pedestal_MG[i][j] /= nentries;
-			pedFile << i << " " << j << " " << Pedestal_MG[i][j] << "\n";
-		}
-	}
-	pedFile.close();
-	cout << "!" << endl;
-}
-
-void DataReader::read_ped(string ped_file){
-	if(ped_file != "") PedFileName = ped_file;
-	cout << "reading pedestal from file : " << PedFileName << "..." << flush;
-	ifstream pedFile(PedFileName.c_str());
-	for(unsigned int i=0;i<CM_N;i++){
-		for(int j=0;j<Nstrip_CM;j++){
-			pedFile >> i >> j >> Pedestal_CM[i][j];
-		}
-	}
-	for(unsigned int i=0;i<MG_N;i++){
-		for(int j=0;j<Nstrip_MG;j++){
-			pedFile >> i >> j >> Pedestal_MG[i][j];
+	for(int i=0;i<total_MG_N;i++){
+		for(int j=0;j<MG_Detector::Nstrip;j++){
+			Ped[Tomography::MG][i][j] /= nentries;
+			pedFile << i << " " << j << " " << Ped[Tomography::MG][i][j] << "\n";
 		}
 	}
 	pedFile.close();
 	cout << "!" << endl;
 }
-void DataReader::do_ped_sub(string ped_file){
-	if(ped_done){
-		cout << "pedestal already substracted" << endl;
-		return;
-	}
-	read_ped(ped_file);
-	TBranch *newBranch_MG = dumb_branch;
-	TBranch *newBranch_CM = dumb_branch;
-	if(MG_N>0){
-		char leefStripAmpl_MG[100];
-		sprintf(leefStripAmpl_MG,"StripAmpl_MG_ped[%d][%d][%d]/F",MG_N,Nstrip_MG,Nsample);
-		newBranch_MG = outTree->Branch("StripAmpl_MG_ped", StripAmpl_MG_ped,leefStripAmpl_MG);
-	}
-	if(CM_N>0){
-		char leefStripAmpl_CM[100];
-		sprintf(leefStripAmpl_CM,"StripAmpl_CM_ped[%d][%d][%d]/F",CM_N,Nstrip_CM,Nsample);
-		newBranch_CM = outTree->Branch("StripAmpl_CM_ped", StripAmpl_CM_ped,leefStripAmpl_CM);
-	}
-	long nentries = outTree->GetEntries();
-	for(long n=0;n<nentries;n++){
-		outTree->LoadTree(n);
-		outTree->GetEntry(n);
-		for(unsigned int i=0;i<MG_N;i++){
-			for(int j=0;j<Nstrip_MG;j++){
-				for(int k=0;k<Nsample;k++){
-					StripAmpl_MG_ped[i][j][k] = StripAmpl_MG[i][j][k] - Pedestal_MG[i][j];
-				}
-			}
+void DataReader::read_ped(){
+	ifstream in;
+	in.open(PedName.c_str());
+	int ped_strip, det;
+	Ped.clear();
+	int total_CM_N = StripAmpl[Tomography::CM].size();
+	int total_MG_N = StripAmpl[Tomography::MG].size();
+	Ped[Tomography::CM] = vector<vector<float> >(total_CM_N,vector<float>(CM_Detector::Nstrip,0));
+	Ped[Tomography::MG] = vector<vector<float> >(total_MG_N,vector<float>(MG_Detector::Nstrip,0));
+	int n_lines = 0;
+	while(in.good() && n_lines<((total_CM_N*CM_Detector::Nstrip)+(total_MG_N*MG_Detector::Nstrip))){
+		float current_ped;
+		in >> det >> ped_strip >> current_ped;
+		Tomography::det_type current_type = (n_lines<(total_CM_N*CM_Detector::Nstrip)) ? Tomography::CM : Tomography::MG;
+		if(det<0 || det>(total_MG_N+total_CM_N-1)){
+			cout << "problem reading Ped file" << endl;
 		}
-		for(unsigned int i=0;i<CM_N;i++){
-			for(int j=0;j<Nstrip_CM;j++){
-				for(int k=0;k<Nsample;k++){
-					StripAmpl_CM_ped[i][j][k] = StripAmpl_CM[i][j][k] - Pedestal_CM[i][j];
-				}
-			}
+		else if(det<total_CM_N && ped_strip>63){
+			cout << "problem reading Ped file" << endl;
 		}
-		if(CM_N>0) newBranch_CM->Fill();
-		if(MG_N>0) newBranch_MG->Fill();
-		if((n%100) == 0) cout << "\r" << "substracting pedestal (" << n << "/" << nentries << ")" << flush;
-	}
-	cout << "\r" << "substracting pedestal (" << nentries << "/" << nentries << ")" << endl;
-	Write();
-	ped_done = true;
-}
-void DataReader::do_common_noise_sub(){
-	if(cns_done){
-		cout << "common noise already substracted" << endl;
-		return;
-	}
-	if(!ped_done){
-		cout << "cannot substract common noise before the pedestal substraction" << endl;
-		return;
-	}
-	TBranch *newBranch_MG = dumb_branch;
-	TBranch *newBranch_CM = dumb_branch;
-	if(MG_N>0){
-		char leefStripAmpl_MG[100];
-		sprintf(leefStripAmpl_MG,"StripAmpl_MG_corr[%d][%d][%d]/F",MG_N,Nstrip_MG,Nsample);
-		newBranch_MG = outTree->Branch("StripAmpl_MG_corr", StripAmpl_MG_corr,leefStripAmpl_MG);
-	}
-	if(CM_N>0){
-		char leefStripAmpl_CM[100];
-		sprintf(leefStripAmpl_CM,"StripAmpl_CM_corr[%d][%d][%d]/F",CM_N,Nstrip_CM,Nsample);
-		newBranch_CM = outTree->Branch("StripAmpl_CM_corr", StripAmpl_CM_corr,leefStripAmpl_CM);
-	}
-	int detector_div_MG = 2;
-	int detector_div_CM = 2;
-	long nentries = outTree->GetEntries();
-	for(long n=0;n<nentries;n++){
-		outTree->LoadTree(n);
-		outTree->GetEntry(n);
-		for(unsigned int i=0;i<MG_N;i++){
-			for(int k=0;k<Nsample;k++){
-				for(int det_div=0;det_div<detector_div_MG;det_div++){
-					int strip_nb = (Nstrip_MG/detector_div_MG) + (Nstrip_MG%detector_div_MG);
-					int strip_offset = det_div*strip_nb;
-					vector<float> current_sample(strip_nb,0);
-					for(int j=0;(j<strip_nb && j+strip_offset<Nstrip_MG);j++){
-						current_sample[j] = StripAmpl_MG_ped[i][j+strip_offset][k];
-					}
-					sort(current_sample.begin(),current_sample.end());
-					float median = current_sample[strip_nb/2];
-					for(int j=0;(j<strip_nb && j+strip_offset<Nstrip_MG);j++){
-						StripAmpl_MG_corr[i][j+strip_offset][k] = StripAmpl_MG_ped[i][j+strip_offset][k] - median;
-					}
-				}
-			}
+		else if(ped_strip>60){
+			cout << "problem reading Ped file" << endl;
 		}
-		for(unsigned int i=0;i<CM_N;i++){
-			for(int k=0;k<Nsample;k++){
-				for(int det_div=0;det_div<detector_div_CM;det_div++){
-					int strip_nb = Nstrip_CM/detector_div_CM + (Nstrip_CM%detector_div_CM);
-					int strip_offset = det_div*strip_nb;
-					vector<float> current_sample(strip_nb,0);
-					for(int j=0;(j<strip_nb && j+strip_offset<Nstrip_CM);j++){
-						current_sample[j] = StripAmpl_CM_ped[i][j+strip_offset][k];
-					}
-					sort(current_sample.begin(),current_sample.end());
-					float median = current_sample[strip_nb/2];
-					for(int j=0;(j<strip_nb && j+strip_offset<Nstrip_CM);j++){
-						StripAmpl_CM_corr[i][j+strip_offset][k] = StripAmpl_CM_ped[i][j+strip_offset][k] - median;
-					}
-				}
-			}
-		}
-		if(CM_N>0) newBranch_CM->Fill();
-		if(MG_N>0) newBranch_MG->Fill();
-		if((n%100) == 0) cout << "\r" << "substracting common noise (" << n << "/" << nentries << ")" << flush;
+		Ped[current_type][det][ped_strip] = current_ped;
+		n_lines++;
 	}
-	cout << "\r" << "substracting common noise (" << nentries << "/" << nentries << ")" << endl;
-	Write();
-	cns_done = true;
+	in.close();
 }
 void DataReader::compute_RMSPed(){
 	double Ymin=-500;
 	double Ymax=500;
 	int bin_n = 500;
-	ofstream RMSPedFile(RMSPedFileName.c_str());
 	int sample_min = 1;
-	int sample_max = Min(Nsample,4);
-	Long64_t tot_event = 5500 + 500*(4-sample_max);
-	long nentries = Min(outTree->GetEntries(),tot_event);
-	if(CM_N>0){
-		outTree->SetBranchStatus("*",0);
-		outTree->SetBranchStatus("StripAmpl_CM_corr",1);
-		for(unsigned int i=0;i<CM_N;i++){
-			cout << "\r" << "computing RMS Ped for CM_" << i << flush;
-			vector<TH1F*> ampl_hist(Nstrip_CM);
-			for(int j=0;j<Nstrip_CM;j++){
+	int sample_max = Tomography::Nsample-1;//Min(Nsample,4);
+	Long64_t tot_event = 1000;
+	long nentries = Min(outTree->T->GetEntries(),tot_event);
+	map<Tomography::det_type,vector<vector<TH1F*> > > ampl_hist;
+	for(map<Tomography::det_type,vector<vector<vector<float> > > >::iterator type_it = StripAmpl.begin();type_it!=StripAmpl.end();++type_it){
+		ampl_hist[type_it->first] = vector<vector<TH1F*> >((type_it->second).size(),vector<TH1F*>((type_it->second)[0].size()));
+		for(vector<vector<TH1F*> >::iterator det_it = ampl_hist[type_it->first].begin();det_it!=ampl_hist[type_it->first].end();++det_it){
+			for(unsigned int i=0;i<det_it->size();i++){
 				ostringstream name;
-				name << "ampl_hist_" << j;
-				ampl_hist[j] = new TH1F(name.str().c_str(),name.str().c_str(),bin_n,Ymin,Ymax);
+				name << "ampl_hist_" << type_it->first << "_" << i;
+				(*det_it)[i] = new TH1F(name.str().c_str(),name.str().c_str(),bin_n,Ymin,Ymax);
 			}
-			for(long n=0;n<nentries;n++){
-				outTree->LoadTree(n);
-				outTree->GetEntry(n);
-				for(int j=0;j<Nstrip_CM;j++){
-					for(int k=sample_min;k<sample_max;k++){
-						ampl_hist[j]->Fill(StripAmpl_CM_corr[i][j][k]);
-					}
-				}
-			}
-			for(int j=0;j<Nstrip_CM;j++){
-				TFitResultPtr res = ampl_hist[j]->Fit("gaus","SQN");
-				RMSPedFile << i << " " << j << " " << res->Parameter(2) << "\n";
-				delete ampl_hist[j];
-			}
-			/*
-			for(int j=0;j<Nstrip_CM;j++){
-				cout << "\r" << "computing RMS Ped for CM_" << i << " and strip_" << setw(2) << setfill('0') << j << flush;
-				TH1F * ampl_hist = new TH1F("ampl_hist","ampl_hist",bin_n,Ymin,Ymax);
-				for(int n=0;n<nentries;n++){
-					outTree->LoadTree(n);
-					outTree->GetEntry(n);
-					for(int k=sample_min;k<sample_max;k++){
-						ampl_hist->Fill(StripAmpl_CM_corr[i][j][k]);
-					}
-				}
-				TFitResultPtr res = ampl_hist->Fit("gaus","SQN");
-				RMSPedFile << i << " " << j << " " << res->Parameter(2) << "\n";
-				delete ampl_hist;
-			}
-			*/
 		}
-		cout << "\r" << "RMS Ped for CMs computed !                             " << endl;
 	}
-	if(MG_N>0){
-		outTree->SetBranchStatus("*",0);
-		outTree->SetBranchStatus("StripAmpl_MG_corr",1);
-		for(unsigned int i=0;i<MG_N;i++){
-			cout << "\r" << "computing RMS Ped for MG_" << i << flush;
-			vector<TH1F*> ampl_hist(Nstrip_MG);
-			for(int j=0;j<Nstrip_MG;j++){
-				ostringstream name;
-				name << "ampl_hist_" << j;
-				ampl_hist[j] = new TH1F(name.str().c_str(),name.str().c_str(),bin_n,Ymin,Ymax);
-			}
-			for(long n=0;n<nentries;n++){
-				outTree->LoadTree(n);
-				outTree->GetEntry(n);
-				for(int j=0;j<Nstrip_MG;j++){
+	for(long n=0;n<nentries;n++){
+		StripAmpl = outTree->read_corr(n);
+		for(map<Tomography::det_type,vector<vector<TH1F*> > >::iterator type_it = ampl_hist.begin();type_it!=ampl_hist.end();++type_it){
+			for(unsigned int i=0;i<(type_it->second).size();i++){
+				for(unsigned int j=0;j<(type_it->second)[i].size();j++){
 					for(int k=sample_min;k<sample_max;k++){
-						ampl_hist[j]->Fill(StripAmpl_MG_corr[i][j][k]);
+						(type_it->second)[i][j]->Fill(StripAmpl[type_it->first][i][j][k]);
 					}
 				}
 			}
-			for(int j=0;j<Nstrip_MG;j++){
-				TFitResultPtr res = ampl_hist[j]->Fit("gaus","SQN");
-				RMSPedFile << i+CM_N << " " << j << " " << res->Parameter(2) << "\n";
-				delete ampl_hist[j];
-			}
-			/*
-			for(int j=0;j<Nstrip_MG;j++){
-				cout << "\r" << "computing RMS Ped for MG_" << i << " and strip_" << setw(2) << setfill('0') << j << flush;
-				TH1F * ampl_hist = new TH1F("ampl_hist","ampl_hist",bin_n,Ymin,Ymax);
-				for(int n=0;n<nentries;n++){
-					outTree->LoadTree(n);
-					outTree->GetEntry(n);
-					for(int k=sample_min;k<sample_max;k++){
-						ampl_hist->Fill(StripAmpl_MG_corr[i][j][k]);
-					}
-				}
-				TFitResultPtr res = ampl_hist->Fit("gaus","SQN");
-				RMSPedFile << i << " " << j << " " << res->Parameter(2) << "\n";
-				delete ampl_hist;
-			}
-			*/
 		}
-		cout << "\r" << "RMS Ped for MGs computed !                             " << endl;
 	}
-	outTree->SetBranchStatus("*",1);
+	ofstream RMSPedFile(RMSName.c_str());
+	for(map<Tomography::det_type,vector<vector<TH1F*> > >::iterator type_it = ampl_hist.begin();type_it!=ampl_hist.end();++type_it){
+		for(unsigned int i=0;i<(type_it->second).size();i++){
+			for(unsigned int j=0;j<(type_it->second)[i].size();j++){
+				TFitResultPtr res = (type_it->second)[i][j]->Fit("gaus","SQN");
+				RMSPedFile << i << " " << j << " " << res->Parameter(2) << "\n";
+				delete (type_it->second)[i][j];
+			}
+		}
+	}
 	RMSPedFile.close();
 }
-map<Tomography::det_type,vector<vector<vector<double> > > > DataReader::read_event(ifstream * file,int& event_nb, double& evttime_){
-	long event_nb_ = event_nb;
-	map<Tomography::det_type,vector<vector<vector<double> > > > return_map = read_event(file,event_nb_,evttime_);
-	event_nb = event_nb_;
-	return return_map;
+void DataReader::do_ped_sub(){
+	read_ped();
+	long event_nb = 0;
+	if(outTree != NULL){
+		outTree->Reset_ped();
+	}
+	while(event_nb<max_event && event_nb<outTree->T->GetEntriesFast()){
+		StripAmpl = outTree->read_raw(event_nb);
+		do_ped_sub_event();
+		outTree->fillTree_ped(StripAmpl[Tomography::MG],StripAmpl[Tomography::CM]);
+		event_nb++;
+	}
+	if(outTree != NULL){
+		outTree->Write();
+	}
 }
-
-DreamDataReader::DreamDataReader(string baseFileName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, long max_event_): DataReader(baseFileName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
-	DAQType = Tomography::Dream;
+void DataReader::do_common_noise_sub(){
+	long event_nb = 0;
+	if(outTree != NULL){
+		outTree->Reset_corr();
+	}
+	while(event_nb<max_event && event_nb<outTree->T->GetEntriesFast()){
+		StripAmpl = outTree->read_ped(event_nb);
+		do_common_noise_sub_event();
+		outTree->fillTree_corr(StripAmpl[Tomography::MG],StripAmpl[Tomography::CM]);
+		event_nb++;
+	}
+	if(outTree != NULL){
+		outTree->Write();
+	}
 }
-DreamDataReader::DreamDataReader(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, long max_event_): DataReader(signalName,pedName,RMSName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
-	DAQType = Tomography::Dream;
+void DataReader::do_ped_sub_event(){
+	for(map<Tomography::det_type,vector<vector<vector<float> > > >::iterator type_it=StripAmpl.begin();type_it!=StripAmpl.end();++type_it){
+		vector<vector<float> >::iterator ped_det_it = Ped[type_it->first].begin();
+		for(vector<vector<vector<float> > >::iterator det_it=(type_it->second).begin();det_it!=(type_it->second).end();++det_it){
+			vector<float>::iterator ped_strip_it = ped_det_it->begin();
+			for(vector<vector<float> >::iterator strip_it=det_it->begin();strip_it!=det_it->end();++strip_it){
+				for(vector<float>::iterator sample_it=strip_it->begin();sample_it!=strip_it->end();++sample_it){
+					*sample_it -= *ped_strip_it;
+					//*sample_it -= Ped[type_it->first][det_it - (type_it->second).begin()][strip_it - det_it->begin()];
+				}
+				++ped_strip_it;
+			}
+			++ped_det_it;
+		}
+	}
 }
-DreamDataReader::~DreamDataReader(){
-
+void DataReader::do_common_noise_sub_event(){
+	map<Tomography::det_type,int> Nstrip;
+	Nstrip[Tomography::CM] = CM_Detector::Nstrip;
+	Nstrip[Tomography::MG] = MG_Detector::Nstrip;
+	for(map<Tomography::det_type,vector<vector<vector<float> > > >::iterator it = StripAmpl.begin();it!=StripAmpl.end();++it){
+		for(vector<vector<vector<float> > >::iterator jt = (it->second).begin();jt!=(it->second).end();++jt){
+			for(int k=0;k<Tomography::Nsample;k++){
+				for(int det_div=0;det_div<(Tomography::CMN_div.find(it->first))->second;det_div++){
+					int strip_nb = Nstrip[it->first]/(Tomography::CMN_div.find(it->first))->second + Nstrip[it->first]%(Tomography::CMN_div.find(it->first))->second;
+					int strip_offset = det_div*strip_nb;
+					vector<float> current_sample(strip_nb,0);
+					for(int j=0;(j<strip_nb && (j+strip_offset)<Nstrip[it->first]);j++){
+						current_sample[j] = (*jt)[j+strip_offset][k];
+					}
+					sort(current_sample.begin(),current_sample.end());
+					float median = current_sample[strip_nb/2];
+					for(int j=0;(j<strip_nb && (j+strip_offset)<Nstrip[it->first]);j++){
+						(*jt)[j+strip_offset][k] -= median;
+					}
+				}
+			}
+		}
+	}
 }
-int DreamDataReader::mapping(Tomography::det_type det_type, int channel){
-	if(det_type == Tomography::MG){
-		return channel + 1 - (2*(channel%2));
+void DataReader::do_ped_CMN_sub_event(){
+	map<Tomography::det_type,int> Nstrip;
+	Nstrip[Tomography::CM] = CM_Detector::Nstrip;
+	Nstrip[Tomography::MG] = MG_Detector::Nstrip;
+	for(map<Tomography::det_type,vector<vector<vector<float> > > >::iterator it = StripAmpl.begin();it!=StripAmpl.end();++it){
+		vector<vector<float> >::iterator ped_jt = Ped[it->first].begin();
+		for(vector<vector<vector<float> > >::iterator jt = (it->second).begin();jt!=(it->second).end();++jt){
+			for(int k=0;k<Tomography::Nsample;k++){
+				for(int det_div=0;det_div<(Tomography::CMN_div.find(it->first))->second;det_div++){
+					int strip_nb = Nstrip[it->first]/((Tomography::CMN_div.find(it->first))->second) + Nstrip[it->first]%((Tomography::CMN_div.find(it->first))->second);
+					int strip_offset = det_div*strip_nb;
+					vector<float> current_sample(strip_nb,0);
+					for(int j=0;(j<strip_nb && (j+strip_offset)<Nstrip[it->first]);j++){
+						current_sample[j] = (*jt)[j+strip_offset][k] - (*ped_jt)[j+strip_offset];
+					}
+					sort(current_sample.begin(),current_sample.end());
+					float median = current_sample[strip_nb/2];
+					for(int j=0;(j<strip_nb && (j+strip_offset)<Nstrip[it->first]);j++){
+						(*jt)[j+strip_offset][k] -= median + (*ped_jt)[j+strip_offset];
+					}
+				}
+			}
+			++ped_jt;
+		}
+	}
+}
+long DataReader::get_event_n(){
+	return Nevent;
+}
+double DataReader::get_evttime(){
+	return evttime;
+}
+map<Tomography::det_type,vector<vector<vector<float> > > > DataReader::get_data(){
+	return StripAmpl;
+}
+int DataReader::Dream_mapping(Tomography::det_type det,int channel){
+	if(det == Tomography::MG){
+		return (channel + 1 - (2*(channel%2)));
 	}
 	return channel;
 }
-void DreamDataReader::process(){
-	if(exists){
-		cout << "tree already initiated" << endl;
-		return;
-	}
-	for(vector<string>::iterator it=file_names.begin();it!=file_names.end();++it){
-		int current_offset = get_first_event_nb(*it);
-		read_file(*it,current_offset);
-	}
-	Write();
-	exists = true;
-}
-void DreamDataReader::read_file(string file_name,long evn_offset){
-	ifstream iFile(file_name.c_str(),ifstream::binary);
-	if(!iFile.is_open()){
-		cout << "file : " << file_name << " can't be opened" << endl;
-		return;
-	}
-	long evNinFile = 0;
-	// Loop on event
-	int isample=-1; int isample_prev=-2;
-	int isample_nb=0;
-	int ichannel=0;
-	int asicN=0;
-	int det=0;
-	int detN=0;
-	int channelN=0;
-	int FeuN=0;
-	int FeuHeaderLine=0;
-	int DataHeaderLine=0;
-	bool zs_mode = false;
-	bool got_channel_id=false;
-	int current_event = -1;
-	int current_event_old = -1;
-	reset_tree_leaf();
-	DataLineDream current_data;
-	iFile.read((char*)&current_data,sizeof(current_data));
-	current_data.ntohs_();
-	while(iFile.good() && evNinFile<26000 && !(((evNinFile + evn_offset - global_offset)>max_event)*(max_event>0))){
-		if(FeuHeaderLine<8 && current_data.is_Feu_header()){
-			if(FeuHeaderLine==0){
-				zs_mode = current_data.get_zs_mode();
-				FeuN = current_data.get_Feu_ID();
-			}
-			else if(FeuHeaderLine==1){
-				current_event = current_data.get_data();
-			}
-			else if(FeuHeaderLine==2){
-				evttime = current_data.get_data();
-			}
-			else if(FeuHeaderLine==3){
-				isample_prev = isample;
-				isample = current_data.get_sample_ID();
-				if(isample!=isample_prev+1){
-					cout << "problem in sample index : " << isample << "; " << isample_prev << endl;
-					break;
-				}
-			}
-			else if(FeuHeaderLine==4){
-				current_event += static_cast<int>(current_data.get_data()) << 12;
-			}
-			else{
-				evttime += Ldexp(static_cast<double>(current_data.get_data()),12*(FeuHeaderLine-4)); // data*2^(12*(FeuHeaderLine-4))
-			}
-			FeuHeaderLine++;
-		}
-		else if(FeuHeaderLine>7 && current_data.is_Feu_header()){
-			cout << "problem in Feu header" << endl;
-			break;
-		}
-		else if(FeuHeaderLine>3){
-			if(DataHeaderLine<4 && current_data.is_data_header()){
-				asicN = current_data.get_dream_ID();
-				det = FeuN*8 + asicN;
-				detN = det_n_by_asic[det];
-				DataHeaderLine++;
-			}
-			else if(DataHeaderLine>3 && current_data.is_data_header()){
-				cout << "problem in data header" << endl;
-				break;
-			}
-			else if(DataHeaderLine>0){
-				if(current_data.is_data() && !zs_mode){
-					channelN = mapping(det_type_by_asic[det],ichannel);
-					if(det_type_by_asic[det] == Tomography::MG){
-						if(channelN>-1 && channelN<Nstrip_MG) StripAmpl_MG[detN][channelN][isample] = current_data.get_data();
-					}
-					else if(det_type_by_asic[det] == Tomography::CM){
-						if(channelN>-1 && channelN<Nstrip_CM) StripAmpl_CM[detN][channelN][isample] = current_data.get_data();
-					}
-					ichannel++;
-				}
-				else if(current_data.is_data_zs() && zs_mode){
-					if(!got_channel_id){
-						ichannel = current_data.get_channel_ID();
-						channelN = mapping(det_type_by_asic[asicN],ichannel);
-						got_channel_id = true;
-					}
-					else{
-						if(det_type_by_asic[det] == Tomography::MG){
-							if(channelN>-1 && channelN<Nstrip_MG) StripAmpl_MG[detN][channelN][isample] = current_data.get_data();
-						}
-						else if(det_type_by_asic[det] == Tomography::CM){
-							if(channelN>-1 && channelN<Nstrip_CM) StripAmpl_CM[detN][channelN][isample] = current_data.get_data();
-						}
-						got_channel_id = false;
-					}
-				}
-				else if(current_data.is_data_trailer()){
-					if(ichannel!=64 && !zs_mode){
-						cout << "problem in channel number" << endl;
-						break;
-					}
-					if(got_channel_id){
-						cout << "problem in ZS data" << endl;
-						break;
-					}
-					if(DataHeaderLine!=4 && DataHeaderLine!=1){
-						cout << "problem in data header" << endl;
-						break;
-					}
-					ichannel=0;
-					asicN=0;
-					det=0;
-					detN=0;
-					channelN=0;
-					DataHeaderLine=0;
-				}
-			}
-			else if(current_data.is_final_trailer()){
-				if(ichannel!=0){
-					cout << "problem in channel number" << endl;
-					break;
-				}
-				if(FeuHeaderLine!=4 && FeuHeaderLine!=8){
-					cout << "problem in Feu Header" << endl;
-					break;
-				}
-				if(isample==0) current_event_old = current_event;
-				else if(current_event_old != current_event){
-					cout << "problem in event ID" << endl;
-				}
-				isample_nb++;
-				FeuN=0;
-				zs_mode = false;
-				if(isample == (Nsample-1)){
-					if(FeuHeaderLine>4 && current_event != (Nevent+1)){
-						cout << "Warning ! Event ID gap : " << Nevent << " -> " << current_event << endl;
-						Nevent = current_event;
-					}
-					else Nevent++;
-					if((evNinFile%100) == 0) cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << evNinFile + evn_offset - global_offset << ")" << flush;
-					evNinFile++;
-					Fill();
-					isample=-1; isample_prev=-2;
-					reset_tree_leaf();
-				}
-				FeuHeaderLine=0;
-				iFile.ignore(sizeof(current_data));
-			}
-		}
-		iFile.read((char*)&current_data,sizeof(current_data));
-		current_data.ntohs_();	
-	}
-	cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << evNinFile + evn_offset - global_offset << ")" << endl;
-	iFile.close();
-}
-map<Tomography::det_type,vector<vector<vector<double> > > > DreamDataReader::read_event(ifstream * file,long& event_nb, double& evttime_){
-	int isample=-1; int isample_prev=-2;
-	int isample_nb=0;
-	int ichannel=0;
-	int asicN=0;
-	int det=0;
-	int detN=0;
-	int channelN=0;
-	int FeuN=0;
-	int FeuHeaderLine=0;
-	int DataHeaderLine=0;
-	bool zs_mode = false;
-	bool got_channel_id=false;
-	bool event_complete = false;
-	int current_event = -1;
-	int current_event_old = -1;
-	reset_tree_leaf();
-	DataLineDream current_data;
-	file->read((char*)&current_data,sizeof(current_data));
-	current_data.ntohs_();
-	while(file->good()){
-		if(FeuHeaderLine<8 && current_data.is_Feu_header()){
-			if(FeuHeaderLine==0){
-				zs_mode = current_data.get_zs_mode();
-				FeuN = current_data.get_Feu_ID();
-			}
-			else if(FeuHeaderLine==1){
-				current_event = current_data.get_data();
-			}
-			else if(FeuHeaderLine==2){
-				evttime = current_data.get_data();
-			}
-			else if(FeuHeaderLine==3){
-				isample_prev = isample;
-				isample = current_data.get_sample_ID();
-				if(isample!=isample_prev+1){
-					cout << "problem in sample index : " << isample << "; " << isample_prev << endl;
-					break;
-				}
-			}
-			else if(FeuHeaderLine==4){
-				current_event += static_cast<int>(current_data.get_data()) << 12;
-			}
-			else{
-				evttime += Ldexp(static_cast<double>(current_data.get_data()),12*(FeuHeaderLine-4)); // data*2^(12*(FeuHeaderLine-4))
-			}
-			FeuHeaderLine++;
-		}
-		else if(FeuHeaderLine>7 && current_data.is_Feu_header()){
-			cout << "problem in Feu header" << endl;
-			break;
-		}
-		else if(FeuHeaderLine>3){
-			if(DataHeaderLine<4 && current_data.is_data_header()){
-				asicN = current_data.get_dream_ID();
-				det = FeuN*8 + asicN;
-				detN = det_n_by_asic[det];
-				DataHeaderLine++;
-			}
-			else if(DataHeaderLine>3 && current_data.is_data_header()){
-				cout << "problem in data header" << endl;
-				break;
-			}
-			else if(DataHeaderLine>3){
-				if(current_data.is_data() && !zs_mode){
-					channelN = mapping(det_type_by_asic[det],ichannel);
-					if(det_type_by_asic[det] == Tomography::MG){
-						if(channelN>-1 && channelN<Nstrip_MG) StripAmpl_MG[detN][channelN][isample] = current_data.get_data();
-					}
-					else if(det_type_by_asic[det] == Tomography::CM){
-						if(channelN>-1 && channelN<Nstrip_CM) StripAmpl_CM[detN][channelN][isample] = current_data.get_data();
-					}
-					ichannel++;
-				}
-				else if(current_data.is_data_zs() && zs_mode){
-					if(!got_channel_id){
-						ichannel = current_data.get_channel_ID();
-						channelN = mapping(det_type_by_asic[asicN],ichannel);
-						got_channel_id = true;
-					}
-					else{
-						if(det_type_by_asic[det] == Tomography::MG){
-							if(channelN>-1 && channelN<Nstrip_MG) StripAmpl_MG[detN][channelN][isample] = current_data.get_data();
-						}
-						else if(det_type_by_asic[det] == Tomography::CM){
-							if(channelN>-1 && channelN<Nstrip_CM) StripAmpl_CM[detN][channelN][isample] = current_data.get_data();
-						}
-						got_channel_id = false;
-					}
-				}
-				else if(current_data.is_data_trailer()){
-					if(ichannel!=64 && !zs_mode){
-						cout << "problem in channel number" << endl;
-						break;
-					}
-					if(got_channel_id){
-						cout << "problem in ZS data" << endl;
-						break;
-					}
-					if(DataHeaderLine!=4 && DataHeaderLine!=1){
-						cout << "problem in data header" << endl;
-						break;
-					}
-					ichannel=0;
-					asicN=0;
-					det=0;
-					detN=0;
-					channelN=0;
-					DataHeaderLine=0;
-				}
-			}
-			else if(current_data.is_final_trailer()){
-				if(ichannel!=0){
-					cout << "problem in channel number" << endl;
-					break;
-				}
-				if(got_channel_id){
-					cout << "problem in ZS data" << endl;
-					break;
-				}
-				if(FeuHeaderLine!=4 && FeuHeaderLine!=8){
-					cout << "problem in Feu Header" << endl;
-					break;
-				}
-				if(isample==0) current_event_old = current_event;
-				else if(current_event_old != current_event){
-					cout << "problem in event ID" << endl;
-				}
-				isample_nb++;
-				FeuN=0;
-				zs_mode = false;
-				file->ignore(sizeof(current_data));
-				if(isample == (Nsample-1)){
-					if(FeuHeaderLine>4 && current_event != (event_nb)){
-						cout << "Warning ! Event ID gap : " << event_nb << " -> " << current_event << endl;
-						event_nb = current_event;
-					}
-					//else event_nb++;
-					isample=-1; isample_prev=-2;
-					event_complete = true;
-					break;
-				}
-				FeuHeaderLine=0;
-			}
-		}
-		file->read((char*)&current_data,sizeof(current_data));
-		current_data.ntohs_();	
-	}
-	map<Tomography::det_type,vector<vector<vector<double> > > > event_ampl;
-	evttime_ = 0;
-	if(!event_complete) return event_ampl;
-	Nevent = event_nb;
-	evttime_ = evttime;
-	vector<vector<vector<double> > > MG_Ampl(MG_N,vector<vector<double> >(Nstrip_MG,vector<double>(Nsample,0)));
-	vector<vector<vector<double> > > CM_Ampl(CM_N,vector<vector<double> >(Nstrip_CM,vector<double>(Nsample,0)));
-	for(unsigned int i=0;i<MG_N;i++){
-		for(int j=0;j<Nstrip_MG;j++){
-			for(int k=0;k<Nsample;k++){
-				MG_Ampl[i][j][k] = StripAmpl_MG[i][j][k];
-			}
-		}
-	}
-	for(unsigned int i=0;i<CM_N;i++){
-		for(int j=0;j<Nstrip_CM;j++){
-			for(int k=0;k<Nsample;k++){
-				CM_Ampl[i][j][k] = StripAmpl_CM[i][j][k];
-			}
-		}
-	}
-	event_ampl[Tomography::MG] = MG_Ampl;
-	event_ampl[Tomography::CM] = CM_Ampl;
-	return event_ampl;
-}
-int DreamDataReader::get_first_event_nb(string file_name){
-	ifstream iFile(file_name.c_str(),ifstream::binary);
-	if(!iFile.is_open()){
-		cout << "file : " << file_name << " can't be opened" << endl;
-		return -1;
-	}
-	DataLineDream current_data;
-	int FeuHeaderLine = 0;
-	iFile.read((char*)&current_data,sizeof(current_data));
-	current_data.ntohs_();
-	long event_nb = -1;
-	while(iFile.good() /*&& evNinFile<6000*/){
-		if(current_data.is_Feu_header() && FeuHeaderLine<8){
-			if(FeuHeaderLine==1){
-				event_nb = current_data.get_data();
-			}
-			else if(FeuHeaderLine==4){
-				event_nb += static_cast<int>(current_data.get_data()) << 12;
-			}
-			FeuHeaderLine++;
-		}
-		else if(FeuHeaderLine>0 && !(current_data.is_Feu_header())){
-			break;
-		}
-		iFile.read((char*)&current_data,sizeof(current_data));
-		current_data.ntohs_();
-	}
-	iFile.close();
-	return event_nb;
-}
-
-FeminosDataReader::FeminosDataReader(string baseFileName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, long max_event_): DataReader(baseFileName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
-	DAQType = Tomography::Feminos;
-}
-FeminosDataReader::FeminosDataReader(string signalName, string pedName, string RMSName, map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, bool exists_,bool ped_done_,bool cns_done_, long max_event_): DataReader(signalName,pedName,RMSName,det_type_by_asic_,det_n_by_asic_,exists_,ped_done_,cns_done_,max_event_){
-	DAQType = Tomography::Feminos;
-}
-FeminosDataReader::~FeminosDataReader(){
-
-}
-int FeminosDataReader::mapping(Tomography::det_type det_type, int channel){
-	if(det_type == Tomography::MG){
-		int tmpchan = -1;
-		if(channel<14) tmpchan = channel-2;
-		else if(channel<25) tmpchan = channel-3;
-		else if(channel<48) tmpchan = channel-4;
-		else if(channel<59) tmpchan = channel-5;
-		else tmpchan = channel-6;
-		if(tmpchan<16 || tmpchan>47) tmpchan = 62 + (2*(tmpchan%2)) - tmpchan;
+int DataReader::Feminos_mapping(Tomography::det_type det,int channel){
+	if(det == Tomography::MG){
+		int tmpchan = channel - 2 - (channel>13) - (channel>24) - (channel>47) - (channel>58);
 		if(tmpchan>15 && tmpchan<48) return tmpchan;
-		else return 63 - tmpchan;
+		else return (tmpchan + 1 - (2*(tmpchan%2)));
 	}
 	return channel;
-}
-void FeminosDataReader::process(){
-	if(exists){
-		cout << "tree already initiated" << endl;
-		return;
-	}
-	global_offset = get_first_event_nb(file_names.front());
-	for(vector<string>::iterator it=file_names.begin();it!=file_names.end();++it){
-		long current_offset = get_first_event_nb(*it);
-		read_file(*it,current_offset);
-	}
-	Write();
-	exists = true;
-}
-void FeminosDataReader::read_file(string file_name,long evn_offset){
-	ifstream iFile(file_name.c_str(),ifstream::binary);
-	if(!iFile.is_open()){
-		cout << "file : " << file_name << " can't be opened" << endl;
-		return;
-	}
-	iFile.ignore(26); //You can read run UID here
-	iFile.ignore(2); //Beginning of frame (28 bytes from the beginning)
-	long evNinFile = 0;
-	int card=0;
-	int chip=0;
-	int channel=0;
-	int itime = 0;
-	int channelN=0;
-	int det = 0;
-	int detN=0;
-	bool inEvent = false;
-	bool inFrame = false;
-	int event_started = 0;
-	DataLineFeminos current_data;
-	iFile.read((char*)&current_data,sizeof(current_data));
-	while(iFile.good() && !(((evNinFile + evn_offset - global_offset)>max_event)*(max_event>0))){
-
-
-		if(inEvent){
-			if(inFrame){
-				if(current_data.is_event_start()){
-					event_started++;
-					long evttime_int = 0;
-					iFile.read((char*)&evttime_int,3*sizeof(DataLineFeminos));
-					evttime = evttime_int >> 16;
-					//iFile.ignore(3*sizeof(current_data)); //contain timestamp
-					int current_event;
-					iFile.read((char*)&current_event,sizeof(current_event));
-					if(current_event != (evNinFile + evn_offset)){
-						cout << "problem in event number" << endl;
-						cout << std::hex << current_event << " " << evNinFile << endl;
-						return;
-					}
-				}
-				else if(current_data.is_end_of_event()){
-					event_started--;
-					iFile.ignore(sizeof(current_data)); //contain eventsize
-				}
-				else if(current_data.is_end_of_frame()){
-					inFrame = false;
-				}
-				else if(current_data.is_info()){
-					card = current_data.get_card_ID();
-					chip = current_data.get_chip_ID();
-					det = chip + (4*card);
-					detN = det_n_by_asic[det];
-					channel = current_data.get_channel_ID();
-					channelN = mapping(det_type_by_asic[det],channel);
-					itime = 0;
-				}
-				else if(current_data.is_time()){
-					itime= current_data.get_time();
-				}
-				else if(current_data.is_data()){
-					if(det_type_by_asic[det] == Tomography::MG && channelN>-1 && channelN<61){
-						StripAmpl_MG[detN][channelN][itime] = current_data.get_data();
-						itime++;
-					}
-					else if(det_type_by_asic[det] == Tomography::CM && channelN>-1 && channelN<64){
-						StripAmpl_CM[detN][channelN][itime] = current_data.get_data();
-						itime++;
-					}
-				}
-
-			}
-			else if(current_data.is_end_of_built_event()){
-				if(event_started != 0){
-					cout << "problem in fem number" << endl;
-					return;
-				}
-				inEvent = false;
-				Nevent = evNinFile + evn_offset;
-				if((evNinFile%100) == 0) cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << Nevent - global_offset << ")" << flush;
-				evNinFile++;
-				Fill();
-			}
-			else if(current_data.is_frame_start()){
-				inFrame = true;
-			}
-		}
-		else if(current_data.is_built_event_start()){
-			inEvent = true;
-			reset_tree_leaf();
-			chip=0;
-			channel=0;
-			itime = 0;
-			channelN=0;
-			det=0;
-			detN=0;
-			event_started = 0;
-		}
-		iFile.read((char*)&current_data,sizeof(current_data));
-	}
-	cout << "\r" << "event processed in file : " << file_name << " : " << evNinFile << " (total number of event : " << evNinFile + evn_offset - global_offset << ")" << endl;
-	iFile.close();
-}
-
-map<Tomography::det_type,vector<vector<vector<double> > > > FeminosDataReader::read_event(ifstream * file,long& event_nb, double& evttime_){
-	int card=0;
-	int chip=0;
-	int channel=0;
-	int itime = 0;
-	int channelN=0;
-	int det = 0;
-	int detN=0;
-	bool inEvent = false;
-	bool inFrame = false;
-	int event_started = 0;
-	DataLineFeminos current_data;
-	file->read((char*)&current_data,sizeof(current_data));
-	bool event_complete = false;
-	map<Tomography::det_type,vector<vector<vector<double> > > > event_ampl;
-	while(file->good()){
-
-
-		if(inEvent){
-			if(inFrame){
-				if(current_data.is_event_start()){
-					event_started++;
-					long evttime_int = 0;
-					file->read((char*)&evttime_int,3*sizeof(DataLineFeminos));
-					evttime = evttime_int >> 16;
-					//file->ignore(3*sizeof(current_data)); //contain timestamp
-					int current_event;
-					file->read((char*)&current_event,sizeof(current_event));
-					if(current_event != event_nb){
-						cout << "warning : event numbers does not match" << endl;
-						cout << current_event << " " << event_nb << endl;
-					}
-				}
-				else if(current_data.is_end_of_event()){
-					event_started--;
-					file->ignore(sizeof(current_data)); //contain eventsize
-				}
-				else if(current_data.is_end_of_frame()){
-					inFrame = false;
-				}
-				else if(current_data.is_info()){
-					card = current_data.get_card_ID();
-					chip = current_data.get_chip_ID();
-					det = chip + (4*card);
-					detN = det_n_by_asic[det];
-					channel = current_data.get_channel_ID();
-					channelN = mapping(det_type_by_asic[det],channel);
-					itime = 0;
-				}
-				else if(current_data.is_time()){
-					itime= current_data.get_time();
-				}
-				else if(current_data.is_data()){
-					if(det_type_by_asic[det] == Tomography::MG && channelN>-1 && channelN<61){
-						StripAmpl_MG[detN][channelN][itime] = current_data.get_data();
-						itime++;
-					}
-					else if(det_type_by_asic[det] == Tomography::CM && channelN>-1 && channelN<64){
-						StripAmpl_CM[detN][channelN][itime] = current_data.get_data();
-						itime++;
-					}
-				}
-
-			}
-			else if(current_data.is_end_of_built_event()){
-				if(event_started != 0){
-					cout << "problem in fem number" << endl;
-					return event_ampl;
-				}
-				inEvent = false;
-				event_complete = true;
-				break;
-			}
-			else if(current_data.is_frame_start()){
-				inFrame = true;
-			}
-		}
-		else if(current_data.is_built_event_start()){
-			inEvent = true;
-			reset_tree_leaf();
-			chip=0;
-			channel=0;
-			itime = 0;
-			channelN=0;
-			det=0;
-			detN=0;
-			event_started = 0;
-		}
-		file->read((char*)&current_data,sizeof(current_data));
-	}
-	evttime_ = 0;
-	if(!event_complete) return event_ampl;
-	event_nb++;
-	Nevent = event_nb;
-	evttime_ = evttime;
-	vector<vector<vector<double> > > MG_Ampl(MG_N,vector<vector<double> >(Nstrip_MG,vector<double>(Nsample,0)));
-	vector<vector<vector<double> > > CM_Ampl(CM_N,vector<vector<double> >(Nstrip_CM,vector<double>(Nsample,0)));
-	for(unsigned int i=0;i<MG_N;i++){
-		for(int j=0;j<Nstrip_MG;j++){
-			for(int k=0;k<Nsample;k++){
-				MG_Ampl[i][j][k] = StripAmpl_MG[i][j][k];
-			}
-		}
-	}
-	for(unsigned int i=0;i<CM_N;i++){
-		for(int j=0;j<Nstrip_CM;j++){
-			for(int k=0;k<Nsample;k++){
-				CM_Ampl[i][j][k] = StripAmpl_CM[i][j][k];
-			}
-		}
-	}
-	event_ampl[Tomography::MG] = MG_Ampl;
-	event_ampl[Tomography::MG] = CM_Ampl;
-	return event_ampl;
-}
-
-int FeminosDataReader::get_first_event_nb(string file_name){
-	ifstream iFile(file_name.c_str(),ifstream::binary);
-	if(!iFile.is_open()){
-		cout << "file : " << file_name << " can't be opened" << endl;
-		return -1;
-	}
-	iFile.ignore(26); //You can read run UID here
-	iFile.ignore(2); //Beginning of frame (28 bytes from the beginning)
-	DataLineFeminos current_data;
-	while(iFile.good() /*&& evNinFile<6000*/){
-		if(current_data.is_event_start()){
-			iFile.ignore(3*sizeof(current_data)); //contain timestamp
-			int current_event;
-			iFile.read((char*)&current_event,sizeof(current_event));
-			return current_event;
-		}
-		iFile.read((char*)&current_data,sizeof(current_data));
-	}
-	iFile.close();
-	return -1;
 }

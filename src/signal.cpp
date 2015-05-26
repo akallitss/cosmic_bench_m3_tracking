@@ -6,6 +6,7 @@
 #include "datareader.h"
 #include "point.h"
 #include "Tray.h"
+#include "detector.h"
 
 #include <fstream>
 #include <string>
@@ -170,20 +171,20 @@ void Signal::MultiCluster(){
 	analyseFile->CloseFile();
 	//delete analyseFile;
 }
-
+/*
 void Signal::ElecToAnalyse(){
 	cout << "Reading Pedestal : " << PedName << endl;
 	map<Tomography::det_type,vector<vector<float> > > Pedestal;
-	Pedestal[Tomography::CM] = vector<vector<float> >(CM_N,vector<float>(DataReader::Nstrip_CM,0));
-	Pedestal[Tomography::MG] = vector<vector<float> >(MG_N,vector<float>(DataReader::Nstrip_MG,0));
+	Pedestal[Tomography::CM] = vector<vector<float> >(CM_N,vector<float>(CM_Detector::Nstrip,0));
+	Pedestal[Tomography::MG] = vector<vector<float> >(MG_N,vector<float>(MG_Detector::Nstrip,0));
 	ifstream pedFile(PedName.c_str());
 	for(int i=0;i<CM_N;i++){
-		for(int j=0;j<DataReader::Nstrip_CM;j++){
+		for(int j=0;j<CM_Detector::Nstrip;j++){
 			pedFile >> i >> j >> Pedestal[Tomography::CM][i][j];
 		}
 	}
 	for(int i=0;i<MG_N;i++){
-		for(int j=0;j<DataReader::Nstrip_MG;j++){
+		for(int j=0;j<MG_Detector::Nstrip;j++){
 			pedFile >> i >> j >> Pedestal[Tomography::MG][i][j];
 		}
 	}
@@ -210,8 +211,8 @@ void Signal::ElecToAnalyse(){
 	detector_div[Tomography::CM] = 2;
 	detector_div[Tomography::MG] = 2;
 	map<Tomography::det_type,int> Nstrip;
-	Nstrip[Tomography::CM] = DataReader::Nstrip_CM;
-	Nstrip[Tomography::MG] = DataReader::Nstrip_MG;
+	Nstrip[Tomography::CM] = CM_Detector::Nstrip;
+	Nstrip[Tomography::MG] = MG_Detector::Nstrip;
 	for(int i=data_file_first;i<=data_file_last;i++){
 		int event_nb_file = 0;
 		ostringstream name;
@@ -224,7 +225,7 @@ void Signal::ElecToAnalyse(){
 			for(map<Tomography::det_type,vector<vector<vector<double> > > >::iterator it = event_ampl.begin();it!=event_ampl.end();++it){
 				vector<vector<float> >::iterator ped_jt = (ped_it->second).begin();
 				for(vector<vector<vector<double> > >::iterator jt = (it->second).begin();jt!=(it->second).end();++jt){
-					for(int k=0;k<DataReader::Nsample;k++){
+					for(int k=0;k<Tomography::Nsample;k++){
 						for(int det_div=0;det_div<detector_div[it->first];det_div++){
 							int strip_nb = Nstrip[it->first]/detector_div[it->first] + Nstrip[it->first]%detector_div[it->first];
 							int strip_offset = det_div*strip_nb;
@@ -271,16 +272,16 @@ void Signal::ElecToAnalyse(){
 void Signal::ElecToRays(string outFileName){
 	cout << "Reading Pedestal : " << PedName << endl;
 	map<Tomography::det_type,vector<vector<float> > > Pedestal;
-	Pedestal[Tomography::CM] = vector<vector<float> >(CM_N,vector<float>(DataReader::Nstrip_CM,0));
-	Pedestal[Tomography::MG] = vector<vector<float> >(MG_N,vector<float>(DataReader::Nstrip_MG,0));
+	Pedestal[Tomography::CM] = vector<vector<float> >(CM_N,vector<float>(CM_Detector::Nstrip,0));
+	Pedestal[Tomography::MG] = vector<vector<float> >(MG_N,vector<float>(MG_Detector::Nstrip,0));
 	ifstream pedFile(PedName.c_str());
 	for(int i=0;i<CM_N;i++){
-		for(int j=0;j<DataReader::Nstrip_CM;j++){
+		for(int j=0;j<CM_Detector::Nstrip;j++){
 			pedFile >> i >> j >> Pedestal[Tomography::CM][i][j];
 		}
 	}
 	for(int i=0;i<MG_N;i++){
-		for(int j=0;j<DataReader::Nstrip_MG;j++){
+		for(int j=0;j<MG_Detector::Nstrip;j++){
 			pedFile >> i >> j >> Pedestal[Tomography::MG][i][j];
 		}
 	}
@@ -319,8 +320,8 @@ void Signal::ElecToRays(string outFileName){
 	detector_div[Tomography::CM] = 2;
 	detector_div[Tomography::MG] = 2;
 	map<Tomography::det_type,int> Nstrip;
-	Nstrip[Tomography::CM] = DataReader::Nstrip_CM;
-	Nstrip[Tomography::MG] = DataReader::Nstrip_MG;
+	Nstrip[Tomography::CM] = CM_Detector::Nstrip;
+	Nstrip[Tomography::MG] = MG_Detector::Nstrip;
 	for(int i=data_file_first;i<=data_file_last;i++){
 		int event_nb_file = 0;
 		ostringstream name;
@@ -333,7 +334,7 @@ void Signal::ElecToRays(string outFileName){
 			for(map<Tomography::det_type,vector<vector<vector<double> > > >::iterator it = event_ampl.begin();it!=event_ampl.end();++it){
 				vector<vector<float> >::iterator ped_jt = (ped_it->second).begin();
 				for(vector<vector<vector<double> > >::iterator jt = (it->second).begin();jt!=(it->second).end();++jt){
-					for(int k=0;k<DataReader::Nsample;k++){
+					for(int k=0;k<Tomography::Nsample;k++){
 						for(int det_div=0;det_div<detector_div[it->first];det_div++){
 							int strip_nb = Nstrip[it->first]/detector_div[it->first] + Nstrip[it->first]%detector_div[it->first];
 							int strip_offset = det_div*strip_nb;
@@ -381,7 +382,7 @@ void Signal::ElecToRays(string outFileName){
 	rayFile->Write();
 	rayFile->CloseFile();
 }
-
+*/
 void Signal::HoughTracking(long event_nb){
 	if(CM_N!=0){
 		cout << "not implemented with CM" << endl;
@@ -712,7 +713,7 @@ void Signal::EventDisplay(int evn_min, int evn_max){
 	TCanvas * cDisplay = new TCanvas("cDisplay","cDisplay",800,600);
 	cDisplay->Divide(column_nb,2);
 	vector<TGraph*> signal_shape;
-	for(int i=0;i<((CM_N*DataReader::Nstrip_CM)+(MG_N*DataReader::Nstrip_MG));i++){
+	for(int i=0;i<((CM_N*CM_Detector::Nstrip)+(MG_N*MG_Detector::Nstrip));i++){
 		signal_shape.push_back(new TGraph());
 	}
 	long nentries = Min(fChain->GetEntriesFast(),static_cast<Long64_t>(evn_max));
@@ -721,10 +722,10 @@ void Signal::EventDisplay(int evn_min, int evn_max){
 		LoadTree(i);
 		GetEntry(i);
 		for(int j=0;j<CM_N;j++){
-			for(int k=0;k<DataReader::Nstrip_CM;k++){
-				int index = k+(j*DataReader::Nstrip_CM);
+			for(int k=0;k<CM_Detector::Nstrip;k++){
+				int index = k+(j*CM_Detector::Nstrip);
 				int point_nb = 0;
-				for(int l=0;l<DataReader::Nsample;l++){
+				for(int l=0;l<Tomography::Nsample;l++){
 					signal_shape[index]->SetPoint(point_nb,l,StripAmpl_CM_corr[j][k][l]);
 					point_nb++;
 				}
@@ -738,10 +739,10 @@ void Signal::EventDisplay(int evn_min, int evn_max){
 			}
 		}
 		for(int j=0;j<MG_N;j++){
-			for(int k=0;k<DataReader::Nstrip_MG;k++){
-				int index = k + (j*DataReader::Nstrip_MG) + (CM_N*DataReader::Nstrip_CM);
+			for(int k=0;k<MG_Detector::Nstrip;k++){
+				int index = k + (j*MG_Detector::Nstrip) + (CM_N*CM_Detector::Nstrip);
 				int point_nb = 0;
-				for(int l=0;l<DataReader::Nsample;l++){
+				for(int l=0;l<Tomography::Nsample;l++){
 					signal_shape[index]->SetPoint(point_nb,l,StripAmpl_MG_corr[j][k][l]);
 					point_nb++;
 				}

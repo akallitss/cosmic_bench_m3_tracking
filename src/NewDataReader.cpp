@@ -3,7 +3,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
-#include "tomography.h"
+#include "datareader.h"
 
 using std::string;
 using std::cout;
@@ -20,6 +20,12 @@ int main(int argc, char ** argv){
 	string config_file = argv[1];
 	ptree config_tree;
 	read_json(config_file, config_tree);
-	Tomography::process_elec_files(config_tree);
+	DataReader blah(config_tree,true);
+	blah.process();
+	blah.compute_ped();
+	blah.read_ped();
+	blah.do_ped_sub();
+	blah.do_common_noise_sub();
+	blah.compute_RMSPed();
 	return 0;
 }

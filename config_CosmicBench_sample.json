@@ -13,6 +13,13 @@
 	"use_SRF" : false, // use Strip Response Function for clustering (kind of deprecated : leave "false" if you don't know what to do)
 	"total_CM_N" : 0, // total number of CosMultis used for the run (used to crosscheck)
 	"total_MG_N" : 8, // total number of Multigens used for the run (used to crosscheck)
+	"FEU": //only needed for DREAM electronic, inform of the conversion between id (present in DREAM packet) and n (present in the fdf file name)
+	[
+		{
+			"id" : 8,
+			"n" : 1
+		}
+	],
 	"CosmicBench":{
 		"CosMultis": // Cosmultis caracs
 		[

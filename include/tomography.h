@@ -50,6 +50,7 @@ namespace Tomography{
 	const int Nchannel = 64;
 	const int Nasic_FEU = 8;
 	const int Nasic_Feminos = 4;
+	extern const map<det_type,int> CMN_div;
 	const string DreamExt = "fdf";
 	const string FeminosExt = "aqs";
 	const double chisquare_threshold = 100;
@@ -58,7 +59,7 @@ namespace Tomography{
 	ostream& operator<<(ostream& os, const det_type& det);
 	ostream& operator<<(ostream& os, const strip_type& strip);
 	ostream& operator<<(ostream& os, const elec_type& elec);
-	void process_elec_files(ptree config_tree);
+	//void process_elec_files(ptree config_tree);
 }
 
 #endif

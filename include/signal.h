@@ -23,8 +23,8 @@ class Signal: public Tsignal_R, public CosmicBench{
 		Signal(ptree config_tree);
 		~Signal();
 		void MultiCluster();
-		void ElecToAnalyse();
-		void ElecToRays(string outFileName);
+		//void ElecToAnalyse();
+		//void ElecToRays(string outFileName);
 		void EventDisplay(int evn_min = 0, int evn_max = 20);
 		void HoughTracking(long event_nb);
 		map<int,TProfile*> SignalOverNoise();
