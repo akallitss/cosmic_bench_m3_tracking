@@ -303,12 +303,14 @@ void DataReader::compute_RMSPed(){
 	long nentries = Min(outTree->T->GetEntries(),tot_event);
 	map<Tomography::det_type,vector<vector<TH1F*> > > ampl_hist;
 	for(map<Tomography::det_type,vector<vector<vector<float> > > >::iterator type_it = StripAmpl.begin();type_it!=StripAmpl.end();++type_it){
-		ampl_hist[type_it->first] = vector<vector<TH1F*> >((type_it->second).size(),vector<TH1F*>((type_it->second)[0].size(),NULL));
-		for(vector<vector<TH1F*> >::iterator det_it = ampl_hist[type_it->first].begin();det_it!=ampl_hist[type_it->first].end();++det_it){
-			for(unsigned int i=0;i<det_it->size();i++){
+		//ampl_hist[type_it->first] = vector<vector<TH1F*> >((type_it->second).size(),vector<TH1F*>((type_it->second)[0].size(),NULL));
+		ampl_hist[type_it->first].resize((type_it->second).size());
+		for(unsigned int j=0;j<ampl_hist[type_it->first].size();j++){
+			ampl_hist[type_it->first][j].resize((type_it->second)[0].size());
+			for(unsigned int i=0;i<ampl_hist[type_it->first][j].size();i++){
 				ostringstream name;
-				name << "ampl_hist_" << type_it->first << "_" << i;
-				(*det_it)[i] = new TH1F(name.str().c_str(),name.str().c_str(),bin_n,Ymin,Ymax);
+				name << "ampl_hist_" << type_it->first << j << "_" << i;
+				ampl_hist[type_it->first][j][i] = new TH1F(name.str().c_str(),name.str().c_str(),bin_n,Ymin,Ymax);
 			}
 		}
 	}

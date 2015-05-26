@@ -140,10 +140,6 @@ DreamElecReader::DreamElecReader(): ElecReader(){
 	feu_id_to_n.clear();
 }
 DreamElecReader::~DreamElecReader(){
-	for(map<int,FeuData>::iterator file_it = feu_data.begin();file_it!=feu_data.end();++file_it){
-		((file_it->second).file)->close();
-		delete (file_it->second).file;
-	}
 	feu_data.clear();
 }
 DreamElecReader::DreamElecReader(string base_name_,map<int,int> feu_id_to_n_,int first_index_,int last_index_): ElecReader(base_name_,first_index_,last_index_){
@@ -245,6 +241,7 @@ void DreamElecReader::read_next_event_file(int feu_id){
 		while((feu_data[feu_id].file)->good()){
 			if(FeuHeaderLine<8 && current_data.is_Feu_header()){
 				if(FeuHeaderLine==0){
+					asic_nb = 0;
 					zs_mode = current_data.get_zs_mode();
 					FeuN = current_data.get_Feu_ID();
 					if(FeuN != feu_id) cout << "problem in FeuN to FeuID mapping" << endl;
@@ -279,7 +276,6 @@ void DreamElecReader::read_next_event_file(int feu_id){
 			}
 			else if(FeuHeaderLine>3){
 				if(DataHeaderLine<4 && current_data.is_data_header()){
-					asic_nb=0;
 					asicN = current_data.get_dream_ID();
 					DataHeaderLine++;
 				}
