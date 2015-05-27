@@ -180,9 +180,11 @@ void DataReader::process(){
 		outTree->Reset_raw();
 	}
 	while((!(reader->is_end())) && !((event_nb>max_event)*(max_event>0))){
+		if((event_nb%100) == 0) cout << "\t" << "event processed : " << event_nb << flush;
 		process_event();
 		event_nb++;
 	}
+	cout << "\t" << "event processed : " << event_nb << endl;
 	if(outTree != NULL){
 		outTree->Write();
 	}
@@ -248,7 +250,7 @@ void DataReader::compute_ped(){
 		if((n%100) == 0) cout << "\r" << "computing pedestal (" << n << "/" << nentries << ")" << flush;
 	}
 	cout << "\r" << "computing pedestal (" << nentries << "/" << nentries << ")" << endl;
-	cout << "writing it to file..." << flush;
+	cout << "writing it to file : " << PedName << "..." << flush;
 	ofstream pedFile(PedName.c_str());
 	for(int i=0;i<total_CM_N;i++){
 		for(int j=0;j<CM_Detector::Nstrip;j++){
@@ -275,6 +277,7 @@ void DataReader::read_ped(){
 	Ped[Tomography::CM] = vector<vector<float> >(total_CM_N,vector<float>(CM_Detector::Nstrip,0));
 	Ped[Tomography::MG] = vector<vector<float> >(total_MG_N,vector<float>(MG_Detector::Nstrip,0));
 	int n_lines = 0;
+	cout << "Reading pedestal from : " << PedName << "..." << endl;
 	while(in.good() && n_lines<((total_CM_N*CM_Detector::Nstrip)+(total_MG_N*MG_Detector::Nstrip))){
 		float current_ped;
 		in >> det >> ped_strip >> current_ped;
@@ -292,6 +295,7 @@ void DataReader::read_ped(){
 		n_lines++;
 	}
 	in.close();
+	cout << "done !" << endl;
 }
 void DataReader::compute_RMSPed(){
 	double Ymin=-500;
@@ -325,7 +329,9 @@ void DataReader::compute_RMSPed(){
 				}
 			}
 		}
+		if((n%100) == 0) cout << "\tcomputing RMS (" << n << "/" << nentries << ")" << flush;
 	}
+	cout << "\tcomputing RMS (" << nentries << "/" << nentries << ")" << endl;
 	ofstream RMSPedFile(RMSName.c_str());
 	for(map<Tomography::det_type,vector<vector<TH1F*> > >::iterator type_it = ampl_hist.begin();type_it!=ampl_hist.end();++type_it){
 		for(unsigned int i=0;i<(type_it->second).size();i++){
@@ -344,12 +350,16 @@ void DataReader::do_ped_sub(){
 	if(outTree != NULL){
 		outTree->Reset_ped();
 	}
-	while((!((event_nb>max_event)*(max_event>0))) && event_nb<outTree->T->GetEntriesFast()){
+	long total_event = outTree->T->GetEntriesFast();
+	if(max_event>0 && max_event<total_event) total_event = max_event;
+	while(event_nb<total_event){
+		if((event_nb%100) == 0) cout << "\tsubstracting pedestal (" << event_nb << "/" << total_event << ")" << flush;
 		StripAmpl = outTree->read_raw(event_nb);
 		do_ped_sub_event();
 		outTree->fillTree_ped(StripAmpl[Tomography::MG],StripAmpl[Tomography::CM]);
 		event_nb++;
 	}
+	cout << "\tsubstracting pedestal (" << total_event << "/" << total_event << ")" << endl;
 	if(outTree != NULL){
 		outTree->Write();
 	}
@@ -359,12 +369,16 @@ void DataReader::do_common_noise_sub(){
 	if(outTree != NULL){
 		outTree->Reset_corr();
 	}
-	while((!((event_nb>max_event)*(max_event>0))) && event_nb<outTree->T->GetEntriesFast()){
+	long total_event = outTree->T->GetEntriesFast();
+	if(max_event>0 && max_event<total_event) total_event = max_event;
+	while(event_nb<total_event){
+		if((event_nb%100) == 0) cout << "\tsubstracting common noise (" << event_nb << "/" << total_event << ")" << flush;
 		StripAmpl = outTree->read_ped(event_nb);
 		do_common_noise_sub_event();
 		outTree->fillTree_corr(StripAmpl[Tomography::MG],StripAmpl[Tomography::CM]);
 		event_nb++;
 	}
+	cout << "\tsubstracting common noise (" << total_event << "/" << total_event << ")" << endl;
 	if(outTree != NULL){
 		outTree->Write();
 	}

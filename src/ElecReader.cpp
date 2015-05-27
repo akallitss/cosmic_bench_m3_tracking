@@ -151,7 +151,7 @@ DreamElecReader::DreamElecReader(string base_name_,map<int,int> feu_id_to_n_,int
 		ostringstream current_name;
 		current_name << base_name << setw(3) << setfill('0') << feu_data[feu_it->first].current_index << "_" << setw(2) << setfill('0') << feu_it->second << "." << Tomography::DreamExt;
 		feu_data[feu_it->first].file = new ifstream(current_name.str().c_str(),ifstream::binary);
-		if((feu_data[feu_it->first].file)->is_open()) cout << current_name.str() << " loaded !" << endl;
+		if((feu_data[feu_it->first].file)->is_open()) cout << "\n" << current_name.str() << " loaded !" << endl;
 		for(int i=0;i<Tomography::Nasic_FEU;i++){
 			for(int j=0;j<Tomography::Nchannel;j++){
 				for(int k=0;k<Tomography::Nsample;k++){
@@ -345,8 +345,8 @@ void DreamElecReader::read_next_event_file(int feu_id){
 					if(isample==0) current_event_old = current_event;
 					else if(current_event_old != current_event && !has_bug){
 						cout << "problem in event ID (" << current_event_old << ";" << current_event << ")[sample=" << isample << "]" << endl;
-						has_bug = true;
-						//break; //comment this until bugfix by irakli :)
+						//has_bug = true;
+						//break; //comment these 2 lines until bugfix by irakli :)
 					}
 					isample_nb++;
 					zs_mode = false;
