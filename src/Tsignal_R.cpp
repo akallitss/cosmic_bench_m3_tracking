@@ -116,7 +116,7 @@ void Tsignal_R::Show(Long64_t entry)
    if (!fChain) return;
    fChain->Show(entry);
 }
-Int_t Tsignal_R::Cut(Long64_t entry)
+Int_t Tsignal_R::Cut(Long64_t /*entry*/)
 {
 // This function may be called from Loop.
 // returns  1 if entry is accepted.

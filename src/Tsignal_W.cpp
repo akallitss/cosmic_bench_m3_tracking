@@ -126,7 +126,7 @@ void Tsignal_W::fillTree_raw(int evn_, double evttime_, vector<vector<vector<flo
          return;
       }
       for(int j=0;j<61;j++){
-         if(mg_ampl[i][j].size()!=Tomography::Nsample){
+         if(mg_ampl[i][j].size()!=static_cast<unsigned int>(Tomography::Nsample)){
             cout << "problem in sample number" << endl;
             return;
          }
@@ -146,7 +146,7 @@ void Tsignal_W::fillTree_raw(int evn_, double evttime_, vector<vector<vector<flo
          return;
       }
       for(int j=0;j<64;j++){
-         if(cm_ampl[i][j].size()!=Tomography::Nsample){
+         if(cm_ampl[i][j].size()!=static_cast<unsigned int>(Tomography::Nsample)){
             cout << "problem in sample number" << endl;
             return;
          }
@@ -169,7 +169,7 @@ void Tsignal_W::fillTree_ped(vector<vector<vector<float> > > mg_ampl, vector<vec
          return;
       }
       for(int j=0;j<61;j++){
-         if(mg_ampl[i][j].size()!=Tomography::Nsample){
+         if(mg_ampl[i][j].size()!=static_cast<unsigned int>(Tomography::Nsample)){
             cout << "problem in sample number" << endl;
             return;
          }
@@ -189,7 +189,7 @@ void Tsignal_W::fillTree_ped(vector<vector<vector<float> > > mg_ampl, vector<vec
          return;
       }
       for(int j=0;j<64;j++){
-         if(cm_ampl[i][j].size()!=Tomography::Nsample){
+         if(cm_ampl[i][j].size()!=static_cast<unsigned int>(Tomography::Nsample)){
             cout << "problem in sample number" << endl;
             return;
          }
@@ -211,7 +211,7 @@ void Tsignal_W::fillTree_corr(vector<vector<vector<float> > > mg_ampl, vector<ve
          return;
       }
       for(int j=0;j<61;j++){
-         if(mg_ampl[i][j].size()!=Tomography::Nsample){
+         if(mg_ampl[i][j].size()!=static_cast<unsigned int>(Tomography::Nsample)){
             cout << "problem in sample number" << endl;
             return;
          }
@@ -231,7 +231,7 @@ void Tsignal_W::fillTree_corr(vector<vector<vector<float> > > mg_ampl, vector<ve
          return;
       }
       for(int j=0;j<64;j++){
-         if(cm_ampl[i][j].size()!=Tomography::Nsample){
+         if(cm_ampl[i][j].size()!=static_cast<unsigned int>(Tomography::Nsample)){
             cout << "problem in sample number" << endl;
             return;
          }

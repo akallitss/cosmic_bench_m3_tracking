@@ -14,7 +14,7 @@ using std::cout;
 using std::endl;
 
 
-int main(int argc, char ** argv){
+int main(int /*argc*/, char ** argv){
 	int argcR = 1;
 	char * argvR[1];
 	argvR[0] = argv[0];

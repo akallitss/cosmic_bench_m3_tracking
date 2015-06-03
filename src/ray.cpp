@@ -181,7 +181,7 @@ double Ray_2D::get_residu(Detector * det) const{
 	double maxZ = numeric_limits<double>::min();
 	double minZ = numeric_limits<double>::max();
 	int i =0;
-	double det_coord;
+	double det_coord = 0;
 	bool is_in_ray = false;
 	for(vector<Cluster*>::const_iterator it = clusters.begin(); it!=clusters.end();++it){
 		if((*it)->get_z()>maxZ) maxZ = (*it)->get_z();

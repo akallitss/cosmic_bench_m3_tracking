@@ -22,10 +22,10 @@ RawData::RawData(){
 RawData::~RawData(){
 
 }
-RawData::RawData(const RawData& other){
+RawData::RawData(const RawData& /*other*/){
 	
 }
-RawData& RawData::operator=(const RawData& other){
+RawData& RawData::operator=(const RawData& /*other*/){
 	return *this;
 }
 
@@ -492,7 +492,7 @@ void FeminosElecReader::read_next_event(){
 	bool inFrame = false;
 	int event_started = 0;
 	DataLineFeminos current_data;
-	double evttime_tmp;
+	double evttime_tmp = 0;
 	uint32_t Nevent_tmp;
 	file->read((char*)&current_data,sizeof(current_data));
 	bool event_complete = false;

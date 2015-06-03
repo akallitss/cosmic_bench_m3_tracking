@@ -13,7 +13,7 @@ using std::endl;
 using std::ostringstream;
 using TMath::Sqrt;
 
-int main(int argc, char ** argv){
+int main(int /*argc*/, char ** argv){
 	int argcR = 1;
 	char * argvR[1];
 	argvR[0] = argv[0];
