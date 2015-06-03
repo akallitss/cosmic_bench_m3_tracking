@@ -66,6 +66,8 @@ using TMath::CeilNint;
 using TMath::Max;
 using TMath::Min;
 using TMath::Pi;
+using TMath::Sin;
+using TMath::Cos;
 
 Analyse::Analyse(string configFilePath){
 	ptree config_tree;
@@ -1231,10 +1233,13 @@ void Analyse::ExportAbsorptionRays(string outFileName){
 	rayTree->Write();
 	rayTree->CloseFile();
 }
-TH2D * Analyse::AbsorptionFluxMap(double z, TCanvas * c1){
+TH2D * Analyse::AbsorptionFluxMap(double z, TCanvas * c1, double y_angle){
 	long eventReconstructed = 0;
 	long eventSuitable = 0;
 	double chisquare_threshold = 100;
+	if(Abs(y_angle)>Pi()/2.){
+		return new TH2D("error","error",1,0,1,1,0,1);
+	}
 
 	gStyle->SetPalette(55,0);
 	gStyle->SetNumberContours(512);
@@ -1249,24 +1254,38 @@ TH2D * Analyse::AbsorptionFluxMap(double z, TCanvas * c1){
 		if(current_z>z_max) z_max = current_z;
 		if(current_z<z_min) z_min = current_z;
 	}
+
 	double x_min = -Tomography::XY_size/2.;
 	double x_max = Tomography::XY_size/2.;
-	if(z>z_max){
-		x_min -= Tomography::XY_size*(z - z_max)/(z_max - z_min);
-		x_max = - x_min;
+	double y_min = -Tomography::XY_size/2.;
+	double y_max = Tomography::XY_size/2.;
+	Point orig(0,0,z);
+	Point norm(0,Sin(y_angle),Cos(y_angle));
+	Plane proj(norm,orig);
+	cout << proj.get_a() << "*x + " << proj.get_b() << "*y + " << proj.get_c() << "*z + " << proj.get_d() << " = 0" << endl;
+	if(z>z_max || z<z_max){
+		Line first_line(Point(-Tomography::XY_size/2.,-Tomography::XY_size/2.,z_min),Point(Tomography::XY_size/2.,Tomography::XY_size/2.,z_max));
+		Line second_line(Point(Tomography::XY_size/2.,Tomography::XY_size/2.,z_min),Point(-Tomography::XY_size/2.,-Tomography::XY_size/2.,z_max));
+		Point corner_a = proj.intersection(first_line);
+		Point corner_b = proj.intersection(second_line);
+		x_max = Max(Abs((corner_a-orig).get_X()),Abs((corner_b-orig).get_X()));
+		y_max = Max(Abs((corner_a-orig).get_Y()),Abs((corner_b-orig).get_Y()));
+		x_min = -x_max;
 	}
-	else if(z<z_min){
-		x_min -= Tomography::XY_size*(z_min - z)/(z_max - z_min);
-		x_max = - x_min;
-	}
-	double width = x_max - x_min;
-	x_min -= 0.05*width;
-	x_max += 0.05*width;
+	y_max = y_max/Cos(y_angle);
+	y_min = -y_max;
+	double width_x = x_max - x_min;
+	double width_y = y_max - y_min;
+	x_max += 0.05*width_x;
+	x_min -= 0.05*width_x;
+	y_max += 0.05*width_y;
+	y_min -= 0.05*width_y;
+	cout << x_min << " " << x_max << " " << y_min << " " << y_max << endl;
 
 	//if (fChain == 0) return fluxMapZ;
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 
-	TH2D * fluxMapZ = new TH2D("fluxMapZ","fluxMapZ",Sqrt(0.02*nentries),x_min,x_max,Sqrt(0.02*nentries),x_min,x_max);
+	TH2D * fluxMapZ = new TH2D("fluxMapZ","fluxMapZ",Sqrt(0.02*nentries),x_min,x_max,Sqrt(0.02*nentries),y_min,y_max);
 	fluxMapZ->SetStats(0);
 
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
@@ -1285,7 +1304,8 @@ TH2D * Analyse::AbsorptionFluxMap(double z, TCanvas * c1){
 		eventSuitable+=currentCBEvent->get_clus_N()/(CM_N+MG_N);
 		delete currentCBEvent;
 		for(vector<Ray>::iterator it=currentRays.begin();it!=currentRays.end();++it){
-			fluxMapZ->Fill(it->eval_X(z),it->eval_Y(z));
+			Point current_point = it->eval_plane(proj);
+			fluxMapZ->Fill(current_point.get_X(),current_point.get_Y()/Cos(y_angle));
 		}
 		if(jentry%500 == 0) cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << eventSuitable << "|" << setw(20) << jentry << flush;
 		if(jentry%5000 == 0 && Tomography::live_graphic_display){
