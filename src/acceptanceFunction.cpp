@@ -2,6 +2,8 @@
 
 #include "acceptanceFunction.h"
 
+#include "point.h"
+
 #include <TH2D.h>
 #include <TCanvas.h>
 #include <TMath.h>
@@ -23,15 +25,16 @@ using TMath::Min;
 using TMath::Pi;
 using TMath::Cos;
 using TMath::Sin;
+using TMath::Abs;
 
-acceptanceFunction::acceptanceFunction(double x_min_,double x_max_,double y_min_,double y_max_,double z_Up_,double z_Down_,double sigma_theta_){
+acceptanceFunction::acceptanceFunction(double x_min_,double x_max_,double y_min_,double y_max_,double z_Up_,double z_Down_,double bench_angle_){
 	x_min = x_min_;
 	x_max = x_max_;
 	y_min = y_min_;
 	y_max = y_max_;
 	z_Up = z_Up_;
 	z_Down = z_Down_;
-	sigma_theta = sigma_theta_;
+	bench_angle = bench_angle_;
 }
 
 acceptanceFunction::~acceptanceFunction(){
@@ -80,6 +83,10 @@ double acceptanceFunction::operator()(double x,double y, double z){
 	theta_x_max = ATan(theta_x_max);
 	theta_y_min = ATan(theta_y_min);
 	theta_y_max = ATan(theta_y_max);
+	theta_y_min -= bench_angle;
+	theta_y_max -= bench_angle;
+	if(theta_x_min<-Pi()/2.) theta_x_min = -Pi()/2.;
+	if(theta_x_max<-Pi()/2.) theta_x_max = -Pi()/2.;
 
 	TF2 dist("dist","cos(sqrt(x*x+y*y))*cos(sqrt(x*x+y*y))",-Pi()/2.,Pi()/2.,-Pi()/2.,Pi()/2.);
 	ROOT::Math::WrappedMultiTF1 wf1(dist);
@@ -164,6 +171,53 @@ TH2D acceptanceFunction::plot_XY(int nbin_x,double x1,double x2,int nbin_y,doubl
 		for(int j=0;j<step_y;j++){
 			double y = y1 + j*(y2-y1)/step_y;
 			double proba = (*this)(x,y,z);
+			proba_XY.Fill(x,y,proba);
+		}
+	}
+	return proba_XY;
+}
+TH2D acceptanceFunction::plot_XY(int nbin_x, int nbin_y,double z, double y_angle){
+	int step_x = 20*nbin_x;
+	int step_y = 20*nbin_y;
+	double x_min_plot = x_min;
+	double x_max_plot = x_max;
+	double y_min_plot = y_min;
+	double y_max_plot = y_max;
+	if(Abs(y_angle)>Pi()/2.){
+		return TH2D("error","error",nbin_x,x_min_plot,x_max_plot,nbin_y,y_min_plot,y_max_plot);
+	}
+	if(z>z_Up || z<z_Down){
+		Point orig(0,0,z);
+		Point norm(0,Sin(y_angle),Cos(y_angle));
+		Plane proj(norm,orig);
+		cout << proj.get_a() << "*x + " << proj.get_b() << "*y + " << proj.get_c() << "*z + " << proj.get_d() << " = 0" << endl;
+		Line first_line(Point(x_min,y_min,z_Down),Point(x_max,y_max,z_Up));
+		Line second_line(Point(x_max,y_max,z_Down),Point(x_min,y_min,z_Up));
+		Point corner_a = proj.intersection(first_line);
+		Point corner_b = proj.intersection(second_line);
+		x_max_plot = Max(Abs((corner_a-orig).get_X()),Abs((corner_b-orig).get_X()));
+		y_max_plot = Max(Abs((corner_a-orig).get_Y()),Abs((corner_b-orig).get_Y()));
+		x_min_plot = -x_max_plot;
+	}
+	y_max_plot = y_max_plot/Cos(y_angle);
+	y_min_plot = -y_max_plot;
+	double width_x = x_max_plot - x_min_plot;
+	double width_y = y_max_plot - y_min_plot;
+	x_max_plot += 0.05*width_x;
+	x_min_plot -= 0.05*width_x;
+	y_max_plot += 0.05*width_y;
+	y_min_plot -= 0.05*width_y;
+	cout << x_min_plot << " " << x_max_plot << " " << y_min_plot << " " << y_max_plot << endl;
+	TH2D proba_XY("proba_XY","proba_XY",nbin_x,x_min_plot,x_max_plot,nbin_y,y_min_plot,y_max_plot);
+	proba_XY.SetStats(false);
+	for(int i=0;i<step_x;i++){
+		double x = x_min_plot + i*(x_max_plot-x_min_plot)/step_x;
+		for(int j=0;j<step_y;j++){
+			double y = y_min_plot + j*(y_max_plot-y_min_plot)/step_y;
+			double real_x = x;
+			double real_y = y*Cos(y_angle);
+			double real_z = z + y*Sin(y_angle);
+			double proba = (*this)(real_x,real_y,real_z);
 			proba_XY.Fill(x,y,proba);
 		}
 	}
