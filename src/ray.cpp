@@ -421,7 +421,7 @@ double Ray::eval_Y(Detector * det) const{
 }
 Point Ray::eval_plane(Plane proj) const{
 	Point first(Z_intercept_X,Z_intercept_Y,0);
-	Point second(slope_X,slope_Y,1);
+	Point second(Z_intercept_X + slope_X,Z_intercept_Y + slope_Y,1); // <-- this is not a direction vector, this is a second point defining the line
 	Line ray_line(first,second);
 	return proj.intersection(ray_line);
 }
