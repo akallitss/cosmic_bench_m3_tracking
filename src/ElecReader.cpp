@@ -234,9 +234,9 @@ void DreamElecReader::read_next_event_file(int feu_id){
 			ostringstream current_name;
 			current_name << base_name << setw(3) << setfill('0') << feu_data[feu_id].current_index << "_" << setw(2) << setfill('0') << feu_id_to_n[feu_id] << "." << Tomography::DreamExt;
 			feu_data[feu_id].file->open(current_name.str().c_str(),ifstream::binary);
-			if((feu_data[feu_id].file)->is_open()) cout << current_name.str() << " loaded !" << endl;
+			if((feu_data[feu_id].file)->is_open()) cout << "\n" << current_name.str() << " loaded !" << endl;
 			else{
-				cout << "can't load : " << current_name.str() << endl;
+				cout << "\ncan't load : " << current_name.str() << endl;
 				reset_data(feu_id);
 				return;
 			}
