@@ -430,9 +430,13 @@ void DreamElecReader::reset_data(int feu_id){
 }
 bool DreamElecReader::is_end(){
 	for(map<int, FeuData>::iterator data_it=feu_data.begin();data_it!=feu_data.end();++data_it){
-		if((data_it->second).current_index<last_index) return false;
-		if(!((data_it->second).file->eof())) return false;
+		if(is_end_feu(data_it->first)) return true;
 	}
+	return false;
+}
+bool DreamElecReader::is_end_feu(int feu_id){
+	if(feu_data[feu_id].current_index<last_index) return false;
+	if(!((feu_data[feu_id].file)->eof())) return false;
 	return true;
 }
 

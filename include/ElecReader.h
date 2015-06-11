@@ -69,6 +69,7 @@ class DreamElecReader: public ElecReader{
 		long get_event_n();
 		double get_evttime();
 		bool is_end();
+		bool is_end_feu(int feu_id);
 	protected:
 		void reset_data();
 		void reset_data(int feu_id);
