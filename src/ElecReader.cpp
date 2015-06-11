@@ -224,6 +224,11 @@ void DreamElecReader::read_next_event_file(int feu_id){
 	DataLineDream current_data;
 	while(feu_data[feu_id].current_index <= last_index){
 		if((feu_data[feu_id].file)->eof()){
+			if(feu_data[feu_id].current_index == last_index){
+				cout << "end of data for FEU : " << feu_id_to_n[feu_id] << endl;
+				reset_data(feu_id);
+				return;
+			}
 			(feu_data[feu_id].file)->close();
 			feu_data[feu_id].current_index++;
 			ostringstream current_name;
@@ -499,6 +504,11 @@ void FeminosElecReader::read_next_event(){
 	bool has_bug = false;
 	while(current_index <= last_index){
 		if(file->eof()){
+			if(current_index == last_index){
+				cout << "end of data" << endl;
+				reset_data();
+				return;
+			}
 			file->close();
 			current_index++;
 			ostringstream current_name;
