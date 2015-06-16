@@ -10,6 +10,7 @@
 #include <TCanvas.h>
 #include "acceptanceFunction.h"
 #include <TMath.h>
+#include <TEllipse.h>
 
 using std::cout;
 using std::endl;
@@ -45,6 +46,7 @@ int main(int argc, char ** argv){
 	string eventdisplaymult = "eventdisplaymult";
 	string SoN = "SoN";
 	string acceptance = "acceptance";
+	string watto = "watto";
 	if(argv[2] == efficacity){
 		blah->Efficacity();
 	}
@@ -145,6 +147,24 @@ int main(int argc, char ** argv){
 		acceptanceFunction chombier(0,500,0,500,1270,0,0);
 		TH2D * plot = new TH2D(chombier.plot_XY(500,-200,700,500,-200,700,1600));
 		plot->Draw("colz");
+	}
+	else if(argv[2] == watto){
+		if(argc<9){
+			cout << "you must indicate in order : flux map altitude, ellipse x center, ellipse y center, ellipse x axis length, ellipse y axis length, ellipse rotation angle" << endl;
+			delete blah; delete theApp;
+			return 1;
+		}
+		else{
+			float z = atof(argv[3]);
+			float y_angle = 0;
+			if(argc>9){
+				y_angle = atof(argv[9]);
+			}
+			cout << "flux map param : " << endl;
+			cout << "   z : " << z << "mm" << endl;
+			cout << "   y_angle : " << y_angle << "°" << endl;
+			blah->WatToFluxMap(z,TEllipse(atof(argv[4]),atof(argv[5]),atof(argv[6]),atof(argv[7]),0,360,atof(argv[8])),0,y_angle*Pi()/180.);
+		}
 	}
 	else{
 		cout << "function not found" << endl;

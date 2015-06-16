@@ -27,6 +27,7 @@
 #include <TLine.h>
 #include <TFitResultPtr.h>
 #include <TFitResult.h>
+#include <TLine.h>
 //Boost
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -1322,6 +1323,147 @@ TH2D * Analyse::AbsorptionFluxMap(double z, TCanvas * c1, double y_angle){
 	c1->Modified();
 	c1->Update();
 	return fluxMapZ;
+}
+void Analyse::WatToFluxMap(double z,TEllipse el, TCanvas * c1, double y_angle){
+	long eventReconstructed = 0;
+	long eventSuitable = 0;
+	double chisquare_threshold = 100;
+	unsigned int interval_length = 10000;
+	if(Abs(y_angle)>Pi()/2.){
+		return;
+	}
+
+	gStyle->SetPalette(55,0);
+	gStyle->SetNumberContours(512);
+	//double z_Pb = 1553;
+	if(c1 == 0){
+		c1 = new TCanvas("fluxMap","fluxMap");
+	}
+	c1->Divide(2);
+	double z_max = numeric_limits<double>::min();
+	double z_min = numeric_limits<double>::max();
+	for(vector<Detector*>::iterator det_it = detectors.begin();det_it!=detectors.end();++det_it){
+		double current_z = (*det_it)->get_z();
+		if(current_z>z_max) z_max = current_z;
+		if(current_z<z_min) z_min = current_z;
+	}
+
+	double x_min = -Tomography::XY_size/2.;
+	double x_max = Tomography::XY_size/2.;
+	double y_min = -Tomography::XY_size/2.;
+	double y_max = Tomography::XY_size/2.;
+	Point orig(0,0,z);
+	Point norm(0,Sin(y_angle),Cos(y_angle));
+	Plane proj(norm,orig);
+	cout << proj.get_a() << "*x + " << proj.get_b() << "*y + " << proj.get_c() << "*z + " << proj.get_d() << " = 0" << endl;
+	if(z>z_max || z<z_max){
+		Line first_line(Point(-Tomography::XY_size/2.,-Tomography::XY_size/2.,z_min),Point(Tomography::XY_size/2.,Tomography::XY_size/2.,z_max));
+		Line second_line(Point(Tomography::XY_size/2.,Tomography::XY_size/2.,z_min),Point(-Tomography::XY_size/2.,-Tomography::XY_size/2.,z_max));
+		Point corner_a = proj.intersection(first_line);
+		Point corner_b = proj.intersection(second_line);
+		x_max = Max(Abs((corner_a-orig).get_X()),Abs((corner_b-orig).get_X()));
+		y_max = Max((corner_a-orig).get_Y(),(corner_b-orig).get_Y());
+		x_min = -x_max;
+		y_min = Min((corner_a-orig).get_Y(),(corner_b-orig).get_Y());
+	}
+	y_max = y_max/Cos(y_angle);
+	y_min = y_min/Cos(y_angle);
+	double width_x = x_max - x_min;
+	double width_y = y_max - y_min;
+	x_max += 0.05*width_x;
+	x_min -= 0.05*width_x;
+	y_max += 0.05*width_y;
+	y_min -= 0.05*width_y;
+	cout << x_min << " " << x_max << " " << y_min << " " << y_max << endl;
+
+	//if (fChain == 0) return fluxMapZ;
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
+
+	TH2D * fluxMapZ = new TH2D("fluxMapZ","fluxMapZ",Sqrt(0.02*nentries),x_min,x_max,Sqrt(0.02*nentries),y_min,y_max);
+	fluxMapZ->SetStats(0);
+	TEllipse * this_el = new TEllipse(el);
+	this_el->SetFillStyle(0);
+	double ellipse_angle = this_el->GetTheta()*Pi()/180.;
+	double band_half_width = Sqrt((this_el->GetR1()*(this_el->GetR1())*Sin(ellipse_angle)*Sin(ellipse_angle))+(this_el->GetR2()*(this_el->GetR2())*Cos(ellipse_angle)*Cos(ellipse_angle)));
+	TLine * up_line = new TLine(x_min,band_half_width+this_el->GetY1(),x_max,band_half_width+this_el->GetY1());
+	TLine * down_line = new TLine(x_min,-band_half_width+this_el->GetY1(),x_max,-band_half_width+this_el->GetY1());
+	unsigned int interval_n = 0;
+	unsigned int event_n_interval = 0;
+	unsigned int reconstructed_track = 0;
+	unsigned int track_in_ellipse = 0;
+	unsigned int track_in_band = 0;
+	double vertical_band_half_width = Sqrt((this_el->GetR1()*(this_el->GetR1())*Cos(ellipse_angle)*Cos(ellipse_angle))+(this_el->GetR2()*(this_el->GetR2())*Sin(ellipse_angle)*Sin(ellipse_angle)));
+	TLine * left_line = new TLine(-vertical_band_half_width+this_el->GetX1(),y_min,-vertical_band_half_width+this_el->GetX1(),y_max);
+	TLine * right_line = new TLine(vertical_band_half_width+this_el->GetX1(),y_min,vertical_band_half_width+this_el->GetX1(),y_max);
+	TH2D * tank_profile = new TH2D("tank_profile","tank_profile",nentries/interval_length,0,nentries/interval_length,Sqrt(0.02*nentries),y_min,y_max);
+	unsigned int track_in_vertical_band = 0;
+	cout << setw(20) << "interval n" <<  "|" << setw(20) << "total track" <<  "|" << setw(20) << "track in ellipse" <<  "|" << setw(20) << "track in H band" <<  "|" << setw(20) << "track in V band" << endl;
+	for (Long64_t jentry=0; jentry<nentries;jentry++){
+		Long64_t ientry = LoadTree(jentry);
+		if (ientry < 0) break;
+		fChain->GetEntry(jentry);
+		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,false,-1);
+		vector<Ray> currentRays = currentCBEvent->get_absorption_rays(chisquare_threshold);
+		vector<Ray>::iterator ray_it = currentRays.begin();
+		while(ray_it!= currentRays.end()){
+			if(ray_it->get_chiSquare_X()>-1 && ray_it->get_chiSquare_Y()>-1 && ((ray_it->get_chiSquare_X()+ray_it->get_chiSquare_Y())/ray_it->get_clus_n())<chisquare_threshold) ++ray_it;
+			else ray_it = currentRays.erase(ray_it);
+		}
+		eventReconstructed+=currentRays.size();
+		eventSuitable+=currentCBEvent->get_clus_N()/(CM_N+MG_N);
+		delete currentCBEvent;
+		for(vector<Ray>::iterator it=currentRays.begin();it!=currentRays.end();++it){
+			Point current_point = it->eval_plane(proj);
+			Point_2D point_in_plane(current_point.get_X(),current_point.get_Y()/Cos(y_angle));
+			fluxMapZ->Fill(point_in_plane.get_X(),point_in_plane.get_Y());
+			reconstructed_track++;
+			if(point_in_plane.is_inside(*this_el)) track_in_ellipse++;
+			if(Abs(point_in_plane.get_Y() - this_el->GetY1()) < band_half_width) track_in_band++;
+			if(Abs(point_in_plane.get_X() - this_el->GetX1()) < vertical_band_half_width){
+				tank_profile->Fill(interval_n,point_in_plane.get_Y());
+				track_in_vertical_band++;
+			}
+		}
+		event_n_interval++;
+		if(event_n_interval%interval_length == 0){
+			cout << setw(20) << interval_n <<  "|" << setw(20) << reconstructed_track <<  "|" << setw(20) << track_in_ellipse <<  "|" << setw(20) << track_in_band <<  "|" << setw(20) << track_in_vertical_band << endl;
+			for(int j=1;j<=tank_profile->GetNbinsX();j++){
+				int binN = tank_profile->GetBin(interval_n,j);
+				tank_profile->SetBinContent(binN,tank_profile->GetBinContent(binN)/track_in_vertical_band);
+			}
+			interval_n++;
+			event_n_interval = 0;
+			reconstructed_track = 0;
+			track_in_ellipse = 0;
+			track_in_band = 0;
+			track_in_vertical_band = 0;
+		}
+		if(jentry%5000 == 0 && Tomography::live_graphic_display){
+			c1->cd(1);
+			fluxMapZ->Draw("COLZ");
+			this_el->Draw();
+			up_line->Draw();
+			down_line->Draw();
+			left_line->Draw();
+			right_line->Draw();
+			c1->cd(2);
+			tank_profile->Draw("COLZ");
+			c1->Modified();
+			c1->Update();
+		}
+	}
+	cout << setw(20) << interval_n <<  "|" << setw(20) << reconstructed_track <<  "|" << setw(20) << track_in_ellipse <<  "|" << setw(20) << track_in_band <<  "|" << setw(20) << track_in_vertical_band << endl;
+	c1->cd(1);
+	fluxMapZ->Draw("COLZ");
+	this_el->Draw();
+	up_line->Draw();
+	down_line->Draw();
+	left_line->Draw();
+	right_line->Draw();
+	c1->cd(2);
+	tank_profile->Draw("COLZ");
+	c1->Modified();
+	c1->Update();
 }
 void Analyse::AbsorptionFluxMapNormTheo(double z, TCanvas * c1, TCanvas * c2, TCanvas * c3, TCanvas * c4){
 	long eventReconstructed = 0;
