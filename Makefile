@@ -13,7 +13,7 @@ CXX           = g++
 CXXFLAGS      = -g -O $(WARNINGS) -fexceptions -fPIC  $(ROOTCFLAGS) -I$(IDIR) -DUNIX -DLINUX
 LD            = g++
 LIBS          = $(ROOTLIBS) -lNetx -lm -ldl -rdynamic 
-GLIBS         = $(ROOTGLIBS) -L/usr/X11R6/lib -lXpm -lX11 -lm -ldl -rdynamic -lpthread -lMinuit2 -lcaenhvwrapper
+GLIBS         = $(ROOTGLIBS) -L/usr/X11R6/lib -lXpm -lX11 -lm -ldl -rdynamic -lpthread -lMinuit2
 LDFLAGS       =  $(GLIBS)
 
 DataReader_obj_tmp = NewDataReader.o datareader.o ElecReader.o Tsignal_W.o dataline.o tomography.o
@@ -54,7 +54,7 @@ $(ODIR):
 
 exec: tracking absorptionMap MultiCluster testCapa DataReader AutoAlign HV_Monitor wrapper
 
-todo: wrapper live
+todo: live
 
 $(ODIR)/%.o: $(SDIR)/%.cpp
 	$(CXX) -o $@ $(CXXFLAGS) -c $<
@@ -81,7 +81,7 @@ AutoAlign: $(AutoAlign_obj)
 	$(LD) $^ -o $@ $(LDFLAGS)
 
 HV_Monitor: $(HV_Monitor_obj)
-	$(LD) $^ -o $@ $(LDFLAGS)
+	$(LD) $^ -o $@ $(LDFLAGS) -lcaenhvwrapper
 
 wrapper: $(wrapper_obj)
 	$(LD) $^ -o $@ $(LDFLAGS)
