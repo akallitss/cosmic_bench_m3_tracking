@@ -2,6 +2,8 @@
 #define point_h
 #include <ostream>
 
+#include <TEllipse.h>
+
 using std::ostream;
 
 class Point;
@@ -115,6 +117,7 @@ class Point_2D{
 		void operator/=(const double& f);
 		Point_2D& operator=(const Point_2D& other);
 		bool is_null() const;
+		bool is_inside(TEllipse shape) const;
 	protected:
 		double x;
 		double y;

@@ -4,6 +4,9 @@
 
 using TMath::Sqrt;
 using TMath::Abs;
+using TMath::Cos;
+using TMath::Sin;
+using TMath::Pi;
 using std::numeric_limits;
 
 Point::Point(){
@@ -350,6 +353,15 @@ Point_2D& Point_2D::operator=(const Point_2D& other){
 bool Point_2D::is_null() const{
 	bool epsilon = numeric_limits<double>::epsilon();
 	return (Abs(x) <= epsilon && Abs(y) <= epsilon);
+}
+bool Point_2D::is_inside(TEllipse shape) const{
+	double theta = shape.GetTheta()*Pi()/180.;
+	Point_2D p_in_ell_coord(*this);
+	p_in_ell_coord -= Point_2D(shape.GetX1(),shape.GetY1());
+	Point_2D p_in_ell_coord_temp(p_in_ell_coord);
+	p_in_ell_coord.x = p_in_ell_coord_temp.x*Cos(theta) + p_in_ell_coord_temp.y*Sin(theta);
+	p_in_ell_coord.y = p_in_ell_coord_temp.y*Cos(theta) - p_in_ell_coord_temp.x*Sin(theta);
+	return (((p_in_ell_coord.x/shape.GetR1())*(p_in_ell_coord.x/shape.GetR1()) + (p_in_ell_coord.y/shape.GetR2())*(p_in_ell_coord.y/shape.GetR2())) < 1);
 }
 
 Line_2D::Line_2D(){
