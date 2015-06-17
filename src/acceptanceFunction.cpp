@@ -1,8 +1,8 @@
 #define acceptanceFunction_cpp
 
 #include "acceptanceFunction.h"
-
 #include "point.h"
+#include "tomography.h"
 
 #include <TH2D.h>
 #include <TCanvas.h>
@@ -121,11 +121,11 @@ void acceptanceFunction::plot_3D(){
 	proba_XZ->SetStats(false);
 	proba_YZ->SetStats(false);
 	int n = 0;
-	for(int i=0;i<step_x;i++){
+	for(int i=0;i<step_x && Tomography::can_continue;i++){
 		double x = x_min_ + i*(x_max_-x_min_)/step_x;
-		for(int j=0;j<step_y;j++){
+		for(int j=0;j<step_y && Tomography::can_continue;j++){
 			double y = y_min_ + j*(y_max_-y_min_)/step_y;
-			for(int k=0;k<step_z;k++){
+			for(int k=0;k<step_z && Tomography::can_continue;k++){
 				double z = z_Down_ + k*(z_Up_-z_Down_)/step_z;
 				double proba = (*this)(x,y,z);
 				proba_XY->Fill(x,y,proba);
@@ -183,10 +183,10 @@ TH2D acceptanceFunction::plot_XY(int nbin_x,double x1,double x2,int nbin_y,doubl
 	y_min_plot += width_y/(nbin_y*100.);
 	double width_step_x = (x_max_plot - x_min_plot)/step_x;
 	double width_step_y = (y_max_plot - y_min_plot)/step_y;
-	for(int i=0;i<step_x;i++){
+	for(int i=0;i<step_x && Tomography::can_continue;i++){
 		double x = x_min_plot + i*width_step_x;
 		if(x<x1 || x>x2) continue;
-		for(int j=0;j<step_y;j++){
+		for(int j=0;j<step_y && Tomography::can_continue;j++){
 			double y = y_min_plot + j*width_step_y;
 			if(y<y1 || y>y2) continue;
 			double real_x = x;
@@ -245,10 +245,10 @@ TH2D acceptanceFunction::plot_XY(int nbin_x, int nbin_y,double z, double y_angle
 	y_min_plot += width_y/(nbin_y*100.);
 	double width_step_x = (x_max_plot - x_min_plot)/step_x;
 	double width_step_y = (y_max_plot - y_min_plot)/step_y;
-	for(int i=0;i<step_x;i++){
+	for(int i=0;i<step_x && Tomography::can_continue;i++){
 		double x = x_min_plot + i*width_step_x;
 		if(x<x_min_hist || x>x_max_hist) continue;
-		for(int j=0;j<step_y;j++){
+		for(int j=0;j<step_y && Tomography::can_continue;j++){
 			double y = y_min_plot + j*width_step_y;
 			if(y<y_min_hist || y>y_max_hist) continue;
 			double real_x = x;

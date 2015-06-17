@@ -1,5 +1,5 @@
-#ifndef signal_h
-#define signal_h
+#ifndef Signal_h
+#define Signal_h
 #include "Tsignal_R.h"
 #include "detector.h"
 #include "tomography.h"

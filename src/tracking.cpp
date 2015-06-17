@@ -1,16 +1,18 @@
 #include "analyse.h"
-#include <TROOT.h>
+//#include <TROOT.h>
 #include <TRint.h>
 #include <iostream>
 #include <sstream>
-#include <cstdlib>
-#include <unistd.h>
 #include <TH2D.h>
-#include <TSystem.h>
 #include <TCanvas.h>
 #include "acceptanceFunction.h"
+#include "tomography.h"
 #include <TMath.h>
 #include <TEllipse.h>
+#include <csignal>
+#include <cstdlib>
+//#include <stdio.h>
+#include <unistd.h>
 
 using std::cout;
 using std::endl;
@@ -20,6 +22,11 @@ using std::ostringstream;
 using TMath::Pi;
 
 int main(int argc, char ** argv){
+	struct sigaction sigIntHandler;
+	sigIntHandler.sa_handler = Tomography::signal_handler;
+	sigemptyset(&sigIntHandler.sa_mask);
+	sigIntHandler.sa_flags = 0;
+	sigaction(SIGINT, &sigIntHandler, NULL);
 	if(argc<3){
 		cout << "You must indicate a config file which contains the Cosmic Bench caracs and what you want to plot" << endl;
 		return 1;
@@ -121,7 +128,7 @@ int main(int argc, char ** argv){
 			for(int j=0;j<i;j++){
 				cout << "\r" << "Event : " << j << flush;
 				blah->EventDisplay(j, cDisplay);
-				gSystem->Sleep(2000);
+				sleep(2);
 			}
 			cout << endl;
 		}

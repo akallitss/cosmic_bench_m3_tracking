@@ -121,7 +121,7 @@ void Analyse::Residus(){
 	if (fChain == 0) return;
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
-	for (Long64_t jentry=0; jentry<nentries;jentry++){
+	for (Long64_t jentry=0; jentry<nentries && Tomography::can_continue;jentry++){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
@@ -318,7 +318,7 @@ void Analyse::Residus_ref(){
 	ray_slope_Y->SetLineColor(3);
 	if (fChain == 0) return;
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
-	for (Long64_t jentry=0; jentry<nentries;jentry++){
+	for (Long64_t jentry=0; jentry<nentries && Tomography::can_continue;jentry++){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
@@ -673,7 +673,7 @@ double Analyse::Residus_ref_cost(){
 
 	if (fChain == 0) return 0;
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
-	for (Long64_t jentry=0; jentry<nentries;jentry++){
+	for (Long64_t jentry=0; jentry<nentries && Tomography::can_continue;jentry++){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
@@ -867,7 +867,7 @@ void Analyse::Residus_ref_2D(){
 	if (fChain == 0) return;
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
-	for (Long64_t jentry=0; jentry<nentries;jentry++){
+	for (Long64_t jentry=0; jentry<nentries && Tomography::can_continue;jentry++){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
@@ -1067,7 +1067,7 @@ void Analyse::Efficacity(){
 	TH1D * test_order = new TH1D("test_order","test_order",nbins,-10,200);
 
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
-	for (Long64_t jentry=0; jentry<nentries;jentry++){
+	for (Long64_t jentry=0; jentry<nentries && Tomography::can_continue;jentry++){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
@@ -1213,7 +1213,7 @@ void Analyse::ExportAbsorptionRays(string outFileName){
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
-	for (Long64_t jentry=0; jentry<nentries;jentry++){
+	for (Long64_t jentry=0; jentry<nentries && Tomography::can_continue;jentry++){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
@@ -1291,7 +1291,7 @@ TH2D * Analyse::AbsorptionFluxMap(double z, TCanvas * c1, double y_angle){
 	fluxMapZ->SetStats(0);
 
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
-	for (Long64_t jentry=0; jentry<nentries;jentry++){
+	for (Long64_t jentry=0; jentry<nentries && Tomography::can_continue;jentry++){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
@@ -1398,7 +1398,7 @@ void Analyse::WatToFluxMap(double z,TEllipse el, TCanvas * c1, double y_angle){
 	TH2D * tank_profile = new TH2D("tank_profile","tank_profile",nentries/interval_length,0,nentries/interval_length,Sqrt(0.02*nentries),y_min,y_max);
 	unsigned int track_in_vertical_band = 0;
 	cout << setw(20) << "interval n" <<  "|" << setw(20) << "total track" <<  "|" << setw(20) << "track in ellipse" <<  "|" << setw(20) << "track in H band" <<  "|" << setw(20) << "track in V band" << endl;
-	for (Long64_t jentry=0; jentry<nentries;jentry++){
+	for (Long64_t jentry=0; jentry<nentries && Tomography::can_continue;jentry++){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
@@ -1514,7 +1514,7 @@ void Analyse::AbsorptionFluxMapNormTheo(double z, TCanvas * c1, TCanvas * c2, TC
 	c4->Update();
 
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
-	for (Long64_t jentry=0; jentry<nentries;jentry++){
+	for (Long64_t jentry=0; jentry<nentries && Tomography::can_continue;jentry++){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
@@ -1609,7 +1609,7 @@ void Analyse::AbsorptionFluxMapNorm(double z,TH2D * background, int nbins, TCanv
 	if (fChain == 0) return;
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
-	for (Long64_t jentry=0; jentry<nentries;jentry++){
+	for (Long64_t jentry=0; jentry<nentries && Tomography::can_continue;jentry++){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
@@ -1732,7 +1732,7 @@ void Analyse::StoreRayPairs(string outFileName){
 	if (fChain == 0) return;
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
-	for (Long64_t jentry=0; jentry<nentries;jentry++){
+	for (Long64_t jentry=0; jentry<nentries && Tomography::can_continue;jentry++){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
@@ -1826,7 +1826,7 @@ void Analyse::StoreRayPairs(string outFileName){
 	if (fChain == 0) return;
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
-	for (Long64_t jentry=0; jentry<nentries;jentry++){
+	for (Long64_t jentry=0; jentry<nentries && Tomography::can_continue;jentry++){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
@@ -1880,7 +1880,7 @@ void Analyse::bugtest(){
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	int limit = 10;
 	if(limit<nentries) nentries = limit;
-	for (Long64_t jentry=0; jentry<nentries;jentry++){
+	for (Long64_t jentry=0; jentry<nentries && Tomography::can_continue;jentry++){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
@@ -2015,7 +2015,7 @@ void Analyse::CalcStripResponseFunction(int bin_nb){
 		offset_graph = new TGraphErrors();
 
 		if (fChain == 0) return;
-		for (Long64_t jentry=0; jentry<nentries;jentry++){
+		for (Long64_t jentry=0; jentry<nentries && Tomography::can_continue;jentry++){
 			Long64_t ientry = LoadTree(jentry);
 			if (ientry < 0) break;
 			fChain->GetEntry(jentry);
@@ -2423,7 +2423,7 @@ void Analyse::Correlation(){
 	double global_corrXY_ampl = 0;
 	double global_corrXY_t = 0;
 	int global_sizeXY = 0;
-	for (Long64_t jentry=0; jentry<nentries;jentry++){
+	for (Long64_t jentry=0; jentry<nentries && Tomography::can_continue;jentry++){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
@@ -2762,7 +2762,7 @@ void Analyse::SignalOverNoise(){
 		}
 	}
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
-	for(long i=0;i<nentries;i++){
+	for(long i=0;i<nentries && Tomography::can_continue;i++){
 		LoadTree(i);
 		GetEntry(i);
 

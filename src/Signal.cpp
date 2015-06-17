@@ -1,5 +1,5 @@
-#define signal_cpp
-#include "signal.h"
+#define Signal_cpp
+#include "Signal.h"
 #include "event.h"
 #include "Tanalyse_W.h"
 #include "ray.h"
@@ -144,7 +144,7 @@ void Signal::MultiCluster(){
 	cout << "destination file : " << analyseTree << endl;
 	Tanalyse_W * analyseFile = new Tanalyse_W(analyseTree,CM_N,MG_N);
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
-	for(long i=0;i<nentries;i++){
+	for(long i=0;i<nentries && Tomography::can_continue;i++){
 		LoadTree(i);
 		GetEntry(i);
 		vector<MG_Event> mg_events;
@@ -598,7 +598,7 @@ map<int,TProfile*> Signal::SignalOverNoise(){
 		}
 	}
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
-	for(long i=0;i<nentries;i++){
+	for(long i=0;i<nentries && Tomography::can_continue;i++){
 		LoadTree(i);
 		GetEntry(i);
 
@@ -648,7 +648,7 @@ void Signal::SignalOverNoiseDisplay(){
 		}
 	}
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
-	for(long i=0;i<nentries;i++){
+	for(long i=0;i<nentries && Tomography::can_continue;i++){
 		LoadTree(i);
 		GetEntry(i);
 
@@ -718,7 +718,7 @@ void Signal::EventDisplay(int evn_min, int evn_max){
 	}
 	long nentries = Min(fChain->GetEntriesFast(),static_cast<Long64_t>(evn_max));
 	if(evn_min>nentries) return;
-	for(long i=evn_min;i<nentries;i++){
+	for(long i=evn_min;i<nentries && Tomography::can_continue;i++){
 		LoadTree(i);
 		GetEntry(i);
 		for(int j=0;j<CM_N;j++){
@@ -805,7 +805,7 @@ void Signal::SignalDispersion(){
 		cout << "does not support CM detectors" << endl;
 		return;
 	}
-	for(long ientry=0;ientry<nentries;ientry++){
+	for(long ientry=0;ientry<nentries && Tomography::can_continue;ientry++){
 		LoadTree(ientry);
 		GetEntry(ientry);
 		/*

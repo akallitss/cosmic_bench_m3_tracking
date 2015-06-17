@@ -55,6 +55,8 @@ namespace Tomography{
 	const string FeminosExt = "aqs";
 	const double chisquare_threshold = 100;
 	const bool live_graphic_display = true; // toggle updating of canvas during calculation
+	extern bool can_continue;
+	void signal_handler(int s);
 	elec_type str_to_elec(string str);
 	ostream& operator<<(ostream& os, const det_type& det);
 	ostream& operator<<(ostream& os, const strip_type& strip);

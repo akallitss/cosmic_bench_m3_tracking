@@ -17,6 +17,8 @@ using std::setfill;
 
 using boost::property_tree::ptree;
 
+bool Tomography::can_continue = true;
+
 ostream& Tomography::operator<<(ostream& os, const det_type& det){
 	switch(det){
 		case CM : os << "CM"; break;
@@ -85,6 +87,11 @@ template ostream& operator<<(ostream& os, const map<int,double>& map_);
 template ostream& operator<<(ostream& os, const map<double,int>& map_);
 template ostream& operator<<(ostream& os, const map<int,int>& map_);
 template ostream& operator<<(ostream& os, const map<bool,map<int,int> >& map_);
+
+void Tomography::signal_handler(int s){
+	cout << "Caught signal " << s << endl;
+	can_continue = false;
+}
 
 Tomography::elec_type Tomography::str_to_elec(string str){
 	elec_type return_value = unknown_elec;
