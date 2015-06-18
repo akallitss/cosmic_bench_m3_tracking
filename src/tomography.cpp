@@ -185,6 +185,7 @@ void Tomography::save_canvases(){
 	strftime(buffer,100,"%y%m%d_%HH%M",localtime(&current_time));
 	string base_name = "canvas_";
 	base_name += buffer;
+	base_name += "_";
 	for(int i=0;i<gROOT->GetListOfCanvases()->GetSize();i++){
 		TCanvas * current_canvas = dynamic_cast<TCanvas*>(gROOT->GetListOfCanvases()->At(i));
 		current_canvas->SaveAs((base_name + current_canvas->GetName() + ".png").c_str());
