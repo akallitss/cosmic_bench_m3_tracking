@@ -558,6 +558,7 @@ void Analyse::Residus_ref(){
 		it->second->cd(6);
 		cout << "angle XY : " << endl;
 		resVSangle[it->first]->Fit(angle_xy_fit[it->first],"R");
+		cout << "-b/2a : " << angle_xy_fit[it->first]->GetParameter(1)/(2.*angle_xy_fit[it->first]->GetParameter(2)) << endl;
 		resVSangle[it->first]->Draw();
 		it->second->cd(7);
 		resVSanglePerp[it->first]->Draw();

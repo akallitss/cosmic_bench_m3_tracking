@@ -4,6 +4,10 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <ctime>
+#include <string>
+#include <TROOT.h>
+#include <TCanvas.h>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/foreach.hpp>
@@ -14,10 +18,13 @@ using std::endl;
 using std::ostringstream;
 using std::setw;
 using std::setfill;
+using std::string;
 
 using boost::property_tree::ptree;
 
 bool Tomography::can_continue = true;
+bool Tomography::is_batch = gROOT->IsBatch();
+bool Tomography::live_graphic_display = !Tomography::is_batch;
 
 ostream& Tomography::operator<<(ostream& os, const det_type& det){
 	switch(det){
@@ -172,3 +179,16 @@ void Tomography::process_elec_files(ptree config_tree){
 	if(compute_rms) blah->compute_RMSPed();
 }
 */
+void Tomography::save_canvases(){
+	time_t current_time = time(NULL);
+	char buffer[100];
+	strftime(buffer,100,"%y%m%d_%HH%M",localtime(&current_time));
+	string base_name = "canvas_";
+	base_name += buffer;
+	for(int i=0;i<gROOT->GetListOfCanvases()->GetSize();i++){
+		TCanvas * current_canvas = dynamic_cast<TCanvas*>(gROOT->GetListOfCanvases()->At(i));
+		current_canvas->SaveAs((base_name + current_canvas->GetName() + ".png").c_str());
+		current_canvas->SaveAs((base_name + current_canvas->GetName() + ".C").c_str());
+	}
+
+}

@@ -54,7 +54,8 @@ namespace Tomography{
 	const string DreamExt = "fdf";
 	const string FeminosExt = "aqs";
 	const double chisquare_threshold = 100;
-	const bool live_graphic_display = true; // toggle updating of canvas during calculation
+	extern bool live_graphic_display; // toggle updating of canvas during calculation
+	extern bool is_batch;
 	extern bool can_continue;
 	void signal_handler(int s);
 	elec_type str_to_elec(string str);
@@ -62,6 +63,7 @@ namespace Tomography{
 	ostream& operator<<(ostream& os, const strip_type& strip);
 	ostream& operator<<(ostream& os, const elec_type& elec);
 	//void process_elec_files(ptree config_tree);
+	void save_canvases();
 }
 
 #endif

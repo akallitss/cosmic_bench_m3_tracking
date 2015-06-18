@@ -22,7 +22,8 @@ int main(int argc, char ** argv){
 	int argcR = 1;
 	char * argvR[1];
 	argvR[0] = argv[0];
-	TRint * theApp = new TRint("Rint",&argcR,argvR,0,0,true);
+	TRint * theApp;
+	if(!Tomography::is_batch) theApp = new TRint("Rint",&argcR,argvR,0,0,true);
 	Signal * blah = new Signal(config_file.str());
 	string multicluster = "multicluster";
 	string hough = "hough";
@@ -64,6 +65,11 @@ int main(int argc, char ** argv){
 		blah->SignalDispersion();
 		theApp->Run(true);
 	}
-	//delete blah; delete theApp;
+	if(Tomography::is_batch) Tomography::save_canvases();
+	else {
+		theApp->Run(true);
+		delete theApp;
+	}
+	delete blah;
 	return 0;
 }

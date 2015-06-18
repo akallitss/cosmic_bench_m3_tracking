@@ -38,7 +38,8 @@ int main(int argc, char ** argv){
 	int argcR = 1;
 	char * argvR[1];
 	argvR[0] = argv[0];
-	TRint * theApp = new TRint("Rint",&argcR,argvR,0,0,true);
+	TRint * theApp;
+	if(!Tomography::is_batch) theApp = new TRint("Rint",&argcR,argvR,0,0,true);
 	Analyse * blah = new Analyse(config_file.str());//"/home/irfulx176/mnt/sbouteil/Documents/deviation/config.cfg");
 	string efficacity = "efficacity";
 	string eff2D = "eff2D";
@@ -181,7 +182,11 @@ int main(int argc, char ** argv){
 		delete blah; delete theApp;
 		return 1;
 	}
-	theApp->Run(true);
-	delete blah; delete theApp;
+	if(Tomography::is_batch) Tomography::save_canvases();
+	else {
+		theApp->Run(true);
+		delete theApp;
+	}
+	delete blah;
 	return 0;
 }
