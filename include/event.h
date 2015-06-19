@@ -123,6 +123,7 @@ class MG_Event: public Event{
 //Group events objects of a same event
 class CosmicBenchEvent{
 	friend class Analyse;
+	friend class Carac;
 	public:
 		CosmicBenchEvent();
 		CosmicBenchEvent(const CosmicBenchEvent& other);
