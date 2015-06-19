@@ -43,16 +43,18 @@ HV_Monitor_obj = $(patsubst %, $(ODIR)/%, $(HV_Monitor_obj_tmp))
 wrapper_obj_tmp = wrapper.o detector.o event.o cluster.o ray.o point.o datareader.o Tsignal_W.o dataline.o ElecReader.o tomography.o Tray.o
 wrapper_obj = $(patsubst %, $(ODIR)/%, $(wrapper_obj_tmp))
 
+carac_all_obj_tmp = carac_all.o carac.o Tanalyse_R.o event.o ray.o cluster.o detector.o point.o tomography.o
+carac_all_obj = $(patsubst %, $(ODIR)/%, $(carac_all_obj_tmp))
+
+$(shell mkdir -p $(ODIR))
+
 #------------------------------------------------------------------------------
 
-all: dir exec
+default: msg
 
-dir: $(ODIR)
+all: exec
 
-$(ODIR):
-	mkdir -p $(ODIR)
-
-exec: tracking absorptionMap MultiCluster testCapa DataReader AutoAlign HV_Monitor wrapper
+exec: tracking absorptionMap MultiCluster testCapa DataReader AutoAlign HV_Monitor wrapper carac_all
 
 todo: live
 
@@ -86,7 +88,16 @@ HV_Monitor: $(HV_Monitor_obj)
 wrapper: $(wrapper_obj)
 	$(LD) $^ -o $@ $(LDFLAGS)
 
-.PHONY: clean
+carac_all: $(carac_all_obj)
+	$(LD) $^ -o $@ $(LDFLAGS)
+
+msg:
+	@echo "Warning : you have to select the module you want to compile : tracking, carac_all, absorptionMap, MultiCluster, testCapa, DataReader, AutoAlign, HV_Monitor, wrapper or all"
+
+.PHONY: clean cleanall default all exec todo
 
 clean:
 	rm -f $(ODIR)/*.o
+
+cleanall: clean
+	rm -f tracking absorptionMap MultiCluster testCapa DataReader AutoAlign HV_Monitor wrapper carac_all live
