@@ -8,6 +8,7 @@ live
 AutoAlign
 HV_Monitor
 wrapper
+carac_all
 Linkdef
 *.[oad]
 *.so
