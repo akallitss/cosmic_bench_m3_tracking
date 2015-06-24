@@ -96,7 +96,8 @@ template ostream& operator<<(ostream& os, const map<int,int>& map_);
 template ostream& operator<<(ostream& os, const map<bool,map<int,int> >& map_);
 
 void Tomography::signal_handler(int s){
-	cout << "Caught signal " << s << endl;
+	cout << "\nCaught signal " << s << endl;
+	cout << endl;
 	can_continue = false;
 }
 
