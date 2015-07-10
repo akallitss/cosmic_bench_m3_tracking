@@ -4,24 +4,21 @@
 
 `Datareader <config_file> {ped,data,analyse}`
 
-config_file : path to config file which contain the cosmic bench caracteristics and different file path
-
-ped : use this option to build signal file with raw, ped and corr branches, and calculate the Ped.dat and RMS.dat
-
-data : use this option to build signal file with raw, ped and corr branches using existing Ped.dat
-
-analyse : use this option to build analyse file using existing Ped.dat and RMS.dat
+config_file : path to config file which contain the cosmic bench caracteristics and different file path  
+ped : use this option to build signal file with raw, ped and corr branches, and calculate the Ped.dat and RMS.dat  
+data : use this option to build signal file with raw, ped and corr branches using existing Ped.dat  
+analyse : use this option to build analyse file using existing Ped.dat and RMS.dat  
 
 * Multicluster
 
 `Multicluster <config_file> {multicluster,SoB,dispersion,display,hough} [additional options]`
 
-config_file : path to config file which contain the cosmic bench caracteristics and different file path
-multicluster : use this option to build analyse file using existing Ped.dat and RMS.dat and signal file
-SoB : use this option to display signal and noise amplitude
-dispersion : use this option to display some correlation between the detectors signal
-display : use this option to display the signal shpape for each detector
-hough : use this option to study hough tracking style
+config_file : path to config file which contain the cosmic bench caracteristics and different file path  
+multicluster : use this option to build analyse file using existing Ped.dat and RMS.dat and signal file  
+SoB : use this option to display signal and noise amplitude  
+dispersion : use this option to display some correlation between the detectors signal  
+display : use this option to display the signal shpape for each detector  
+hough : use this option to study hough tracking style  
 
 * tracking
 
@@ -31,8 +28,8 @@ hough : use this option to study hough tracking style
 
 `wrapper <config_wrapper> [config_file]`
 
-config_wrapper : path to config file which contain path to the pedestal run and the data run in order to output the cosmic rays root file
-config_file : use a custom config_file for the cosmic bench caracteristics (use config_default.json by default)
+config_wrapper : path to config file which contain path to the pedestal run and the data run in order to output the cosmic rays root file  
+config_file : use a custom config_file for the cosmic bench caracteristics (use config_default.json by default)  
 
 ### Extend this soft :
 
