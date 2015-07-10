@@ -1,4 +1,4 @@
-1. Utiliser le soft
+### Utiliser le soft
 
 * Datareader :
 
@@ -8,7 +8,7 @@
 
 `Multicluster <config_file> {multicluster,SoB,dispersion,display,hough}`
 
-2. Etendre le soft :
+### Etendre le soft :
 
 Ajouter un détecteur :
 
