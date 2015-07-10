@@ -33,6 +33,7 @@ ostream& Tomography::operator<<(ostream& os, const det_type& det){
 	switch(det){
 		case CM : os << "CM"; break;
 		case MG : os << "MG"; break;
+		case MGv2 : os << "MGv2"; break;
 		default : os << "unknown det";
 	}
 	return os;
@@ -114,6 +115,7 @@ static map<const Tomography::det_type,const Detector* const> Static_Detector_bui
 	map<const Tomography::det_type,const Detector* const> return_map;
 	return_map.insert(pair<const Tomography::det_type,const Detector* const>(Tomography::CM,new CM_Detector()));
 	return_map.insert(pair<const Tomography::det_type,const Detector* const>(Tomography::MG,new MG_Detector()));
+	return_map.insert(pair<const Tomography::det_type,const Detector* const>(Tomography::MG,new MGv2_Detector()));
 	return return_map;
 }
 map<const Tomography::det_type,const Detector* const> Tomography::Static_Detector = Static_Detector_build();

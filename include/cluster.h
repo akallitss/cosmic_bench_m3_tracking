@@ -119,4 +119,18 @@ class MG_Cluster: public Cluster{
 		Cluster * Clone() const;
 };
 
+class MGv2_Cluster: public Cluster{
+	public:
+		MGv2_Cluster();
+		MGv2_Cluster(const MGv2_Cluster& other);
+		MGv2_Cluster& operator=(const MGv2_Cluster& other);
+		MGv2_Cluster(Tanalyse_R * treeObject,int number_,const Detector * const det, long entry = -1);
+		MGv2_Cluster(const Detector * const det, int number_, double pos_, double size_, double ampl_, double maxSample_, double maxStripAmpl_, double TOT_, double t_, int maxStrip_);
+		~MGv2_Cluster();
+		double get_pos_mm() const;
+		double correct_strip_nb(int strip_nb) const;
+		double get_z() const;
+		Cluster * Clone() const;
+};
+
 #endif

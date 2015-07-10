@@ -176,6 +176,58 @@ class MG_Detector: public Detector{
 		double srf_ratio;
 };
 
+class MGv2_Detector: public Detector{
+	public:
+		MGv2_Detector();
+		MGv2_Detector(const MGv2_Detector& other);
+		MGv2_Detector& operator=(const MGv2_Detector& other);
+		MGv2_Detector(double z_, bool is_X_, bool is_up_, int mg_n, bool is_ref_, double offset_, bool direction_, double angle_x_, double angle_y_, double angle_z_, int perp_n_, int clustering_holes_, int asic_n_);
+		~MGv2_Detector();
+		Detector * build_det(const ptree::value_type& child) const;
+		unsigned int StripToChannel(unsigned int i) const;
+		static const vector<unsigned int> StripToChannel_a;
+		static vector<unsigned int> ChannelToStrip(unsigned int channel_nb);
+		//MultiGen general charac
+		static const double StripPitch = 500./1037.; // distance between the middle of 2 adjacent strips
+		static const int Nchannel = 61;
+		static const int Nstrip = 1037;
+		static const double size = 500.;
+		static const int CMN_div = 2;
+		double get_size() const;
+		int get_Nchannel() const;
+		int get_Nstrip() const;
+		double get_StripPitch() const;
+		int get_CMN_div() const;
+		//Cut
+		void set_ClusSizeCut_Min(double cut);
+		void set_ClusTOTCut_Min(double cut);
+		void set_ClusMaxSampleCut_Min(double cut);
+		void set_ClusMaxSampleCut_Max(double cut);
+		double get_ClusSizeCut_Min() const;
+		//---
+		Tomography::det_type get_type() const;
+		void set_RMS(vector<double> RMS_);
+		void set_SRF(double offset_, double gauss, double lorentz, double ratio);
+		double SRF_fit(double * x, double * p);
+		bool is_suitable(Cluster * clus) const;
+		Detector * Clone() const;
+		Event * build_event(Tanalyse_R * treeObject, int entry = -1) const;
+		Event * build_event(vector<vector<double> > strip_ampl_, int evn_) const;
+		int feminos_mapping(int channel) const;
+		int dream_mapping(int channel) const;
+	protected:
+		//Detector dependant cuts
+		double ClusSizeCut_Min;
+		double ClusTOTCut_Min;
+		double ClusMaxSampleCut_Min;
+		double ClusMaxSampleCut_Max;
+		//Strip Response Function Parameters
+		double srf_offset;
+		double srf_gauss_width;
+		double srf_lorentz_width;
+		double srf_ratio;
+};
+
 class CosmicBench{
 	public:
 		CosmicBench();

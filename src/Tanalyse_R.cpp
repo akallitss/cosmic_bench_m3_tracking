@@ -52,6 +52,19 @@ Tanalyse_R::~Tanalyse_R()
       delete[] MG_ClusMaxStripAmpl;
       delete[] MG_StripMaxAmpl;
    }
+   if(det_N[Tomography::MGv2]>0){
+      delete[] MGv2_NClus;
+      delete[] MGv2_Spark;
+      delete[] MGv2_ClusAmpl;
+      delete[] MGv2_ClusSize;
+      delete[] MGv2_ClusPos;
+      delete[] MGv2_ClusTOT;
+      delete[] MGv2_ClusT;
+      delete[] MGv2_ClusMaxStrip;
+      delete[] MGv2_ClusMaxSample;
+      delete[] MGv2_ClusMaxStripAmpl;
+      delete[] MGv2_StripMaxAmpl;
+   }
    if (!fChain) return;
    delete fChain->GetCurrentFile();
 }
@@ -150,6 +163,33 @@ void Tanalyse_R::Init(TTree *tree, map<Tomography::det_type,unsigned short> det_
       fChain->SetBranchAddress("MG_ClusMaxStrip", MG_ClusMaxStrip, &b_MG_ClusMaxStrip);
       MG_StripMaxAmpl = new Double_t[det_N[Tomography::MG]][MG_Detector::Nchannel];
       fChain->SetBranchAddress("MG_StripMaxAmpl", MG_StripMaxAmpl, &b_MG_StripMaxAmpl);
+   }
+   if(det_N[Tomography::MGv2]>0){
+      MGv2_NClus = new int[det_N[Tomography::MGv2]];
+      fChain->SetBranchAddress("MGv2_NClus", MGv2_NClus, &b_MGv2_NClus);
+      MGv2_Spark = new int[det_N[Tomography::MGv2]];
+      for(int i = 0;i<det_N[Tomography::MGv2];i++){
+         MGv2_Spark[i] = 0;
+      }
+      //fChain->SetBranchAddress("MGv2_Spark", MGv2_Spark, &b_MGv2_Spark);
+      MGv2_ClusAmpl = new Double_t[det_N[Tomography::MGv2]][300];
+      fChain->SetBranchAddress("MGv2_ClusAmpl", MGv2_ClusAmpl, &b_MGv2_ClusAmpl);
+      MGv2_ClusSize = new Double_t[det_N[Tomography::MGv2]][300];
+      MGv2_ClusPos = new Double_t[det_N[Tomography::MGv2]][300];
+      fChain->SetBranchAddress("MGv2_ClusPos", MGv2_ClusPos, &b_MGv2_ClusPos);
+      fChain->SetBranchAddress("MGv2_ClusSize", MGv2_ClusSize, &b_MGv2_ClusSize);
+      MGv2_ClusMaxStripAmpl = new Double_t[det_N[Tomography::MGv2]][300];
+      fChain->SetBranchAddress("MGv2_ClusMaxStripAmpl", MGv2_ClusMaxStripAmpl, &b_MGv2_ClusMaxStripAmpl);
+      MGv2_ClusMaxSample = new Double_t[det_N[Tomography::MGv2]][300];
+      fChain->SetBranchAddress("MGv2_ClusMaxSample", MGv2_ClusMaxSample, &b_MGv2_ClusMaxSample);
+      MGv2_ClusTOT = new Double_t[det_N[Tomography::MGv2]][300];
+      fChain->SetBranchAddress("MGv2_ClusTOT", MGv2_ClusTOT, &b_MGv2_ClusTOT);
+      MGv2_ClusT = new Double_t[det_N[Tomography::MGv2]][300];
+      fChain->SetBranchAddress("MGv2_ClusT", MGv2_ClusT, &b_MGv2_ClusT);
+      MGv2_ClusMaxStrip = new Int_t[det_N[Tomography::MGv2]][300];
+      fChain->SetBranchAddress("MGv2_ClusMaxStrip", MGv2_ClusMaxStrip, &b_MGv2_ClusMaxStrip);
+      MGv2_StripMaxAmpl = new Double_t[det_N[Tomography::MGv2]][MGv2_Detector::Nchannel];
+      fChain->SetBranchAddress("MGv2_StripMaxAmpl", MGv2_StripMaxAmpl, &b_MGv2_StripMaxAmpl);
    }
    Notify();
 }

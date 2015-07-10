@@ -20,6 +20,7 @@ using std::map;
 
 class CM_Detector;
 class MG_Detector;
+class MGv2_Detector;
 
 class Tanalyse_R{
 public :
@@ -52,6 +53,17 @@ public :
    Double_t        (*MG_ClusT)[300];
    Int_t           (*MG_ClusMaxStrip)[300];
    Double_t        (*MG_StripMaxAmpl)[MG_Detector::Nchannel];
+   Int_t           *MGv2_NClus;
+   Int_t           *MGv2_Spark;
+   Double_t        (*MGv2_ClusAmpl)[300];
+   Double_t        (*MGv2_ClusSize)[300];
+   Double_t        (*MGv2_ClusPos)[300];
+   Double_t        (*MGv2_ClusMaxStripAmpl)[300];
+   Double_t        (*MGv2_ClusMaxSample)[300];
+   Double_t        (*MGv2_ClusTOT)[300];
+   Double_t        (*MGv2_ClusT)[300];
+   Int_t           (*MGv2_ClusMaxStrip)[300];
+   Double_t        (*MGv2_StripMaxAmpl)[MGv2_Detector::Nchannel];
 
    // List of branches
    TBranch        *b_evn;   //!
@@ -78,6 +90,17 @@ public :
    TBranch        *b_MG_ClusT;   //!
    TBranch        *b_MG_ClusMaxStrip;   //!
    TBranch        *b_MG_StripMaxAmpl;   //!
+   TBranch        *b_MGv2_NClus;   //!
+   TBranch        *b_MGv2_Spark;
+   TBranch        *b_MGv2_ClusAmpl;   //!
+   TBranch        *b_MGv2_ClusSize;   //!
+   TBranch        *b_MGv2_ClusPos;   //!
+   TBranch        *b_MGv2_ClusMaxStripAmpl;   //!
+   TBranch        *b_MGv2_ClusMaxSample;   //!
+   TBranch        *b_MGv2_ClusTOT;   //!
+   TBranch        *b_MGv2_ClusT;   //!
+   TBranch        *b_MGv2_ClusMaxStrip;   //!
+   TBranch        *b_MGv2_StripMaxAmpl;   //!
 
    Tanalyse_R();
    Tanalyse_R(TTree *tree, map<Tomography::det_type,unsigned short> det_N_);

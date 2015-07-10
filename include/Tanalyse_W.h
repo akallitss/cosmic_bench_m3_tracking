@@ -16,6 +16,7 @@ using std::string;
 using std::vector;
 
 class MG_Event;
+class MGv2_Event;
 class CM_Event;
 
 class Tanalyse_W{
@@ -50,6 +51,17 @@ class Tanalyse_W{
       Double_t        (*MG_ClusT)[300];
       Int_t           (*MG_ClusMaxStrip)[300];
       Double_t        (*MG_StripMaxAmpl)[MG_Detector::Nchannel];
+      Int_t           *MGv2_NClus;
+      Int_t           *MGv2_Spark;
+      Double_t        (*MGv2_ClusAmpl)[300];
+      Double_t        (*MGv2_ClusSize)[300];
+      Double_t        (*MGv2_ClusPos)[300];
+      Double_t        (*MGv2_ClusMaxStripAmpl)[300];
+      Double_t        (*MGv2_ClusMaxSample)[300];
+      Double_t        (*MGv2_ClusTOT)[300];
+      Double_t        (*MGv2_ClusT)[300];
+      Int_t           (*MGv2_ClusMaxStrip)[300];
+      Double_t        (*MGv2_StripMaxAmpl)[MGv2_Detector::Nchannel];
 
       //Tanalyse(string saveFileName);
       Tanalyse_W(string saveFileName, map<Tomography::det_type,unsigned short> det_N_);

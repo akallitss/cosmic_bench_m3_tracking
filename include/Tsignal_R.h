@@ -35,6 +35,9 @@ public :
    Float_t         (*StripAmpl_MG)[MG_Detector::Nchannel][Tomography::Nsample];
    Float_t         (*StripAmpl_MG_ped)[MG_Detector::Nchannel][Tomography::Nsample];
    Float_t         (*StripAmpl_MG_corr)[MG_Detector::Nchannel][Tomography::Nsample];
+   Float_t         (*StripAmpl_MGv2)[MGv2_Detector::Nchannel][Tomography::Nsample];
+   Float_t         (*StripAmpl_MGv2_ped)[MGv2_Detector::Nchannel][Tomography::Nsample];
+   Float_t         (*StripAmpl_MGv2_corr)[MGv2_Detector::Nchannel][Tomography::Nsample];
    Float_t         (*StripAmpl_CM)[CM_Detector::Nchannel][Tomography::Nsample];
    Float_t         (*StripAmpl_CM_ped)[CM_Detector::Nchannel][Tomography::Nsample];
    Float_t         (*StripAmpl_CM_corr)[CM_Detector::Nchannel][Tomography::Nsample];
@@ -45,6 +48,9 @@ public :
    TBranch        *b_StripAmpl_MG;   //!
    TBranch        *b_StripAmpl_MG_ped;   //!
    TBranch        *b_StripAmpl_MG_corr;   //!
+   TBranch        *b_StripAmpl_MGv2;   //!
+   TBranch        *b_StripAmpl_MGv2_ped;   //!
+   TBranch        *b_StripAmpl_MGv2_corr;   //!
    TBranch        *b_StripAmpl_CM;   //!
    TBranch        *b_StripAmpl_CM_ped;   //!
    TBranch        *b_StripAmpl_CM_corr;   //!

@@ -761,6 +761,434 @@ MG_Event::~MG_Event(){
 
 }
 
+MGv2_Event::MGv2_Event(): Event(){
+	type = Tomography::MGv2;
+	detector = new MGv2_Detector();
+	use_srf = false;
+}
+MGv2_Event::MGv2_Event(const MGv2_Event& other): Event(other){
+	type = Tomography::MGv2;
+	use_srf = false;
+}
+MGv2_Event& MGv2_Event::operator=(const MGv2_Event& other){
+	Event::operator=(other);
+	type = Tomography::MGv2;
+	use_srf = other.use_srf;
+	return *this;
+}
+MGv2_Event::MGv2_Event(Tanalyse_R * treeObject, const MGv2_Detector * const det,long entry, bool use_srf_): Event(treeObject,det,entry){
+	if(entry>-1){
+		treeObject->LoadTree(entry);
+		treeObject->GetEntry(entry);
+	}
+	for(int i=0;i<treeObject->MGv2_NClus[detector->get_n_in_tree()];i++){
+		clusters.push_back(new MGv2_Cluster(treeObject,i,det,-1));
+		if(!(det->is_suitable(clusters.back()))){
+			delete clusters.back();
+			clusters.pop_back();
+		}
+	}
+	use_srf = use_srf_;
+	has_spark = (treeObject->MGv2_Spark[detector->get_n_in_tree()]==1) ? true : false;
+	type = Tomography::MGv2;
+}
+MGv2_Event::MGv2_Event(const MGv2_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, bool use_srf_): Event(detector_,evn_){
+	if(strip_ampl_.size()!=MGv2_Detector::Nchannel){
+		cout << "problem in size" << endl;
+		return;
+	}
+	strip_ampl = strip_ampl_;
+	use_srf = use_srf_;
+	type = Tomography::MGv2;
+}
+void MGv2_Event::MultiCluster(){
+	for(vector<Cluster*>::iterator clus_it = clusters.begin();clus_it != clusters.end();++clus_it){
+		delete *clus_it;
+	}
+	clusters.clear();
+	//first loop : find channels with signal and store them with their caracteristics
+	double sigma = Tomography::sigma;
+	int SampleMin = Tomography::SampleMin;
+	int SampleMax = Tomography::SampleMax;
+	int TOTCut = Tomography::TOTCut;
+	int p = 61;
+	int n = 1024;
+	map<int,bool> channelOverThreshold;
+	map<int,StripInfo> allChannels;
+	for(int i=0;i<p;i++){
+		StripInfo current_strip;
+		current_strip.MaxAmpl = 0;
+		current_strip.MaxSample = 0;
+		current_strip.TOT = 0;
+		current_strip.Time = 0;
+		for(int j=0;j<SampleMin;j++){
+			current_strip.signal_sample[j] = false;
+		}
+		for(int j=SampleMax;j<Tomography::Nsample;j++){
+			current_strip.signal_sample[j] = false;
+		}
+		for(int j=SampleMin;j<SampleMax;j++){
+			if(strip_ampl[i][j]>current_strip.MaxAmpl){
+				current_strip.MaxAmpl = strip_ampl[i][j];
+				current_strip.MaxSample = j;
+				// time calculation with maximum
+				
+				if(j>0 && j<31){
+					double a = (0.5*strip_ampl[i][j+1]) - strip_ampl[i][j] + (0.5*strip_ampl[i][j-1]);
+					//double b = strip_ampl[i][j] - strip_ampl[i][j-1] - a*((2*j)-1);
+					double b = (0.5*(strip_ampl[i][j+1] - strip_ampl[i][j-1])) - (2*a*j);
+					current_strip.Time = -0.5*b/a;
+				}
+				else current_strip.Time = 0;
+				
+				// --
+			}
+			if(strip_ampl[i][j]>(sigma*(detector->get_RMS(i)))){
+				current_strip.TOT++;
+				current_strip.signal_sample[j] = true;
+			}
+			else current_strip.signal_sample[j] = false;
+		}
+		// time calculation with rising edge
+		/*
+		if(current_strip.TOT>2){
+			int k=current_strip.MaxSample;
+			TGraph * rising_edge = new TGraph();
+			while(k>=SampleMin && strip_ampl[i][k]>(sigma*(detector.get_RMS(i)))){
+				rising_edge->SetPoint(current_strip.MaxSample - k,k,strip_ampl[i][k]);
+				k--;
+			}
+			TF1 * rising_fit = new TF1("rising_fit","pol1(0)",k-1,current_strip.MaxSample +1);
+			rising_fit->SetParameters(k,Tomography::ADC_max/(2.*Tomography::Nsample));
+			rising_fit->SetParLimits(0,0,Tomography::Nsample);
+			rising_fit->SetParLimits(1,0,Tomography::ADC_max);
+			rising_edge->Fit(rising_fit,"QN");
+			current_strip.Time = rising_fit->GetParameter(0);
+			delete rising_edge; delete rising_fit;
+		}
+		else current_strip.Time = 0;
+		*/
+		// --
+		if(current_strip.TOT>TOTCut) channelOverThreshold.insert(pair<int,bool>(i,true));
+		allChannels.insert(pair<int,StripInfo>(i,current_strip));
+	}
+	//second loop : group the channels in clusters
+	vector<pair<int,int> > cluster_list;
+	vector<int> global_used_channel;
+	unsigned int max_hole_size = detector->get_clustering_holes();
+	while(global_used_channel.size()<channelOverThreshold.size()){
+		pair<int,int> biggest_current_cluster(0,-1);
+		vector<int> current_used_channel;
+		for(int i=0;i<n;i++){
+			if(channelOverThreshold.count(MGv2_Detector::StripToChannel_a[i])>0 && find(global_used_channel.begin(),global_used_channel.end(),MGv2_Detector::StripToChannel_a[i]) == global_used_channel.end()){
+				pair<int,int> current_cluster(i,i);
+				vector<int> used_channel;
+				used_channel.push_back(MGv2_Detector::StripToChannel_a[i]);
+				map<int,int> hole_channel;
+				for(int j=i+1;j<n;j++){
+					if(/*find(used_channel.begin(),used_channel.end(),MGv2_Detector::StripToChannel_a[j]) == used_channel.end() &&*/ find(global_used_channel.begin(),global_used_channel.end(),MGv2_Detector::StripToChannel_a[j]) == global_used_channel.end() /*&& !(hole_channel.count(MGv2_Detector::StripToChannel_a[j])>0)*/){
+						if(channelOverThreshold.count(MGv2_Detector::StripToChannel_a[j])>0){
+							current_cluster.second = j;
+							used_channel.push_back(MGv2_Detector::StripToChannel_a[j]);
+						}
+						else if(hole_channel.size()<max_hole_size){
+							hole_channel.insert(pair<int,int>(MGv2_Detector::StripToChannel_a[j],j));
+						}
+						else break;
+					}		
+					else break;
+				}
+				map<int,int>::iterator hole_it = hole_channel.begin();
+				while(hole_it!=hole_channel.end()){
+					if(hole_it->second > current_cluster.second){
+						hole_channel.erase(hole_it);
+						hole_it = hole_channel.begin();
+					}
+					else{
+						++hole_it;
+					}
+				}
+				for(hole_it = hole_channel.begin();hole_it!=hole_channel.end();++hole_it){
+					used_channel.push_back(hole_it->first);
+				}
+				if((current_cluster.second - current_cluster.first)>(biggest_current_cluster.second - biggest_current_cluster.first)){
+					biggest_current_cluster = current_cluster;
+					current_used_channel = used_channel;
+				}
+			}
+		}
+		if(biggest_current_cluster.second != -1){
+			cluster_list.push_back(biggest_current_cluster);
+			global_used_channel.insert(global_used_channel.end(),current_used_channel.begin(),current_used_channel.end());
+		}
+	}
+	//third loop : store the clusters and their caracteristics
+	//NClus = cluster_list.size();
+	for(unsigned int i=0;i<cluster_list.size();i++){
+		TF1 * SRFfit = new TF1("SRFfit",dynamic_cast<MGv2_Detector*>(detector),&MGv2_Detector::SRF_fit,0,1024,2,"MGv2_Detector","SRF_fit");
+		TGraphErrors * SRFgraph = new TGraphErrors();
+		int graph_point_n = 0;
+		double ClusSize = 1 + cluster_list[i].second - cluster_list[i].first;
+		double ClusPos = 0;
+		double ClusAmpl = 0;
+		double ClusMaxStripAmpl = 0;
+		double ClusMaxSample = 0;
+		int ClusMaxStrip = -1;
+		double ClusT = 0;
+		double ClusTOT = 0;
+		//Micro TPC
+		//double tot_ampl = 0;
+		//double pos_TPC = 0;
+		for(int j = cluster_list[i].first;j<((cluster_list[i].second)+1);j++){
+			StripInfo current_strip = allChannels[MGv2_Detector::StripToChannel_a[j]];
+			double effective_ampl = current_strip.MaxAmpl/count(global_used_channel.begin(),global_used_channel.end(),MGv2_Detector::StripToChannel_a[j]);
+			ClusPos = (ClusPos*ClusAmpl + j*effective_ampl)/(ClusAmpl + effective_ampl);
+			ClusAmpl += effective_ampl;
+
+			//Micro TPC
+			/*
+			for(int k=0;k<Tomography::Nsample;k++){
+				if(!(current_strip.signal_sample[k])) continue;
+				double current_tot_ampl = strip_ampl[MGv2_Detector::StripToChannel_a[j]][k]/count(global_used_channel.begin(),global_used_channel.end(),MGv2_Detector::StripToChannel_a[j]);
+				pos_TPC = (pos_TPC*tot_ampl + j*current_tot_ampl)/(tot_ampl + current_tot_ampl);
+				tot_ampl += current_tot_ampl;
+			}
+			*/
+			// --
+
+			if(effective_ampl>ClusMaxStripAmpl){
+				ClusMaxStripAmpl = effective_ampl;
+				ClusMaxSample = current_strip.MaxSample;
+				ClusT = current_strip.Time;
+				ClusMaxStrip = j;
+				//ClusTOT[i] = current_strip.TOT;
+			}
+			if(current_strip.TOT>ClusTOT) ClusTOT = current_strip.TOT;
+			SRFgraph->SetPoint(graph_point_n,j,effective_ampl);
+			SRFgraph->SetPointError(graph_point_n,0.5*MGv2_Detector::StripPitch,detector->get_RMS(MGv2_Detector::StripToChannel_a[j]));
+			graph_point_n++;
+		}
+
+		if(graph_point_n>2 && use_srf){
+			for(int iPoint=0;iPoint<graph_point_n;iPoint++){
+				double x_current = -1;
+				double y_current = -1;
+				SRFgraph->GetPoint(iPoint,x_current,y_current);
+				y_current /= ClusMaxStripAmpl;
+				//y_current = strip_ampl[MGv2_Detector::StripToChannel_a[static_cast<int>(x_current)]][static_cast<int>(ClusMaxSample)]/ClusMaxStripAmpl;
+				SRFgraph->SetPoint(iPoint,x_current,y_current);
+				SRFgraph->SetPointError(iPoint,MGv2_Detector::StripPitch,(SRFgraph->GetEY())[iPoint]/ClusMaxStripAmpl);
+			}
+			SRFfit->SetParameter(0,ClusPos);
+			SRFfit->SetParLimits(0,ClusPos-0.5*ClusSize,ClusPos+0.5*ClusSize);
+			SRFfit->SetParameter(1,0.25*ClusSize);
+			SRFfit->SetParLimits(1,0,ClusSize);
+			SRFgraph->Fit(SRFfit,"QN");
+			/*
+			if(detector.get_n_in_tree() == 0 && i == 0){
+				TCanvas * cSRF = new TCanvas();
+				TLine * posLine = new TLine(ClusPos[i],0,ClusPos[i],1);
+				posLine->SetLineStyle(2);
+				posLine->SetLineColor(4);
+				cSRF->cd();
+				SRFgraph->Draw("AP");
+				SRFfit->Draw("same");
+				posLine->Draw();
+				cSRF->Modified();
+				cSRF->Update();
+				cout << graph_point_n << " " << SRFfit->GetChisquare() << endl;
+				gROOT->GetApplication()->Run(true);
+				delete posLine;
+				delete cSRF;
+			}
+			*/
+			ClusPos = SRFfit->GetParameter(0);
+			//ClusSize = SRFfit->GetParameter(1);
+		}
+		delete SRFfit; delete SRFgraph;
+		clusters.push_back(new MGv2_Cluster(detector,i,ClusPos,ClusSize,ClusAmpl,ClusMaxSample,ClusMaxStripAmpl,ClusTOT,ClusT,ClusMaxStrip));
+		//clusters.push_back(MGv2_Cluster(&detector,i,pos_TPC,ClusSize,ClusAmpl,ClusMaxSample,ClusMaxStripAmpl,ClusTOT,ClusT,ClusMaxStrip));
+	}
+}
+void MGv2_Event::HoughCluster(){
+	for(vector<Cluster*>::iterator clus_it = clusters.begin();clus_it != clusters.end();++clus_it){
+		delete *clus_it;
+	}
+	clusters.clear();
+	//first loop : find channels with signal and store them with their caracteristics
+	double sigma = Tomography::sigma;
+	int SampleMin = Tomography::SampleMin;
+	int SampleMax = Tomography::SampleMax;
+	int TOTCut = Tomography::TOTCut;
+	int p = 61;
+	int n = 1024;
+	map<int,bool> channelOverThreshold;
+	map<int,StripInfo> allChannels;
+	for(int i=0;i<p;i++){
+		StripInfo current_strip;
+		current_strip.MaxAmpl = 0;
+		current_strip.MaxSample = 0;
+		current_strip.TOT = 0;
+		current_strip.Time = 0;
+		for(int j=SampleMin;j<SampleMax;j++){
+			if(strip_ampl[i][j]>current_strip.MaxAmpl){
+				current_strip.MaxAmpl = strip_ampl[i][j];
+				current_strip.MaxSample = j;
+				if(j>0 && j<31){
+					double a = 0.5*strip_ampl[i][j+1] - 2*strip_ampl[i][j] + strip_ampl[i][j-1];
+					double b = strip_ampl[i][j] - strip_ampl[i][j-1] - a*((2*j)-1);
+					current_strip.Time = -0.5*b/a;
+				}
+				else current_strip.Time = 0;
+			}
+			if(strip_ampl[i][j]>sigma*(detector->get_RMS(i))) current_strip.TOT++;
+		}
+		if(current_strip.TOT>TOTCut) channelOverThreshold.insert(pair<int,bool>(i,true));
+		allChannels.insert(pair<int,StripInfo>(i,current_strip));
+	}
+	//second loop : group the channels in clusters
+	vector<pair<int,int> > cluster_list;
+	int k = 0;
+	while(k<n){
+		if(channelOverThreshold.count(MGv2_Detector::StripToChannel_a[k])>0){
+			pair<int,int> current_cluster(k,k);
+			for(int j=k+1;j<n;j++){
+				if(channelOverThreshold.count(MGv2_Detector::StripToChannel_a[j])>0){
+					current_cluster.second = j;
+				}
+				else break;
+			}
+			if((1 + current_cluster.second - current_cluster.first) > (dynamic_cast<MGv2_Detector*>(detector)->get_ClusSizeCut_Min())) cluster_list.push_back(current_cluster);
+			k = current_cluster.second+1;
+		}
+		else k++;
+	}
+	k=0;
+	if(cluster_list.empty()){
+		while(k<n){
+			if(channelOverThreshold.count(MGv2_Detector::StripToChannel_a[k])>0){
+				pair<int,int> current_cluster(k,k);
+				for(int j=k+1;j<n;j++){
+					if(channelOverThreshold.count(MGv2_Detector::StripToChannel_a[j])>0){
+						current_cluster.second = j;
+					}
+					else break;
+				}
+				cluster_list.push_back(current_cluster);
+				k = current_cluster.second+1;
+			}
+			else k++;
+		}
+	}
+	//third loop : store the clusters and their caracteristics
+	//NClus = cluster_list.size();
+	for(unsigned int i=0;i<cluster_list.size();i++){
+		TF1 * SRFfit = new TF1("SRFfit",dynamic_cast<MGv2_Detector*>(detector),&MGv2_Detector::SRF_fit,0,1037,2,"MGv2_Detector","SRF_fit");
+		TGraphErrors * SRFgraph = new TGraphErrors();
+		int graph_point_n = 0;
+		double ClusSize = 1 + cluster_list[i].second - cluster_list[i].first;
+		double ClusPos = 0;
+		double ClusAmpl = 0;
+		double ClusMaxStripAmpl = 0;
+		double ClusMaxSample = 0;
+		int ClusMaxStrip = -1;
+		double ClusT = 0;
+		double ClusTOT = 0;
+		for(int j = cluster_list[i].first;j<((cluster_list[i].second)+1);j++){
+			StripInfo current_strip = allChannels[MGv2_Detector::StripToChannel_a[j]];
+			double effective_ampl = current_strip.MaxAmpl;
+			ClusPos = (ClusPos*ClusAmpl + j*effective_ampl)/(ClusAmpl + effective_ampl);
+			ClusAmpl += effective_ampl;
+			if(effective_ampl>ClusMaxStripAmpl){
+				ClusMaxStripAmpl = effective_ampl;
+				ClusMaxSample = current_strip.MaxSample;
+				ClusT = current_strip.Time;
+				ClusMaxStrip = j;
+				//ClusTOT[i] = current_strip.TOT;
+			}
+			if(current_strip.TOT>ClusTOT) ClusTOT = current_strip.TOT;
+			SRFgraph->SetPoint(graph_point_n,j,effective_ampl);
+			SRFgraph->SetPointError(graph_point_n,0.5*MGv2_Detector::StripPitch,detector->get_RMS(MGv2_Detector::StripToChannel_a[j]));
+			graph_point_n++;
+		}
+
+		if(graph_point_n>2 && use_srf){
+			for(int iPoint=0;iPoint<graph_point_n;iPoint++){
+				double x_current = -1;
+				double y_current = -1;
+				SRFgraph->GetPoint(iPoint,x_current,y_current);
+				y_current /= ClusMaxStripAmpl;
+				//y_current = strip_ampl[MGv2_Detector::StripToChannel_a[static_cast<int>(x_current)]][static_cast<int>(ClusMaxSample)]/ClusMaxStripAmpl;
+				SRFgraph->SetPoint(iPoint,x_current,y_current);
+				SRFgraph->SetPointError(iPoint,MGv2_Detector::StripPitch,(SRFgraph->GetEY())[iPoint]/ClusMaxStripAmpl);
+			}
+			SRFfit->SetParameter(0,ClusPos);
+			SRFfit->SetParLimits(0,ClusPos-0.5*ClusSize,ClusPos+0.5*ClusSize);
+			SRFfit->SetParameter(1,0.25*ClusSize);
+			SRFfit->SetParLimits(1,0,ClusSize);
+			SRFgraph->Fit(SRFfit,"QN");
+			/*
+			if(detector.get_n_in_tree() == 0 && i == 0){
+				TCanvas * cSRF = new TCanvas();
+				TLine * posLine = new TLine(ClusPos[i],0,ClusPos[i],1);
+				posLine->SetLineStyle(2);
+				posLine->SetLineColor(4);
+				cSRF->cd();
+				SRFgraph->Draw("AP");
+				SRFfit->Draw("same");
+				posLine->Draw();
+				cSRF->Modified();
+				cSRF->Update();
+				cout << graph_point_n << " " << SRFfit->GetChisquare() << endl;
+				gROOT->GetApplication()->Run(true);
+				delete posLine;
+				delete cSRF;
+			}
+			*/
+			ClusPos = SRFfit->GetParameter(0);
+			ClusSize = SRFfit->GetParameter(1);
+		}
+		delete SRFfit; delete SRFgraph;
+		clusters.push_back(new MGv2_Cluster(detector,i,ClusPos,ClusSize,ClusAmpl,ClusMaxSample,ClusMaxStripAmpl,ClusTOT,ClusT,ClusMaxStrip));
+	}
+}
+void MGv2_Event::set_strip_ampl(vector<vector<double> > strip_ampl_){
+	if(strip_ampl_.size()!=MGv2_Detector::Nchannel){
+		cout << "problem in size" << endl;
+		return;
+	}
+	strip_ampl = strip_ampl_;
+}
+TH1D * MGv2_Event::get_ampl_hist() const{
+	ostringstream name;
+	name << "ampl_MGv2_det_" << detector->get_n_in_tree() << "_evn_" << evn;
+	TH1D * histo = new TH1D(name.str().c_str(),name.str().c_str(),1037,-MGv2_Detector::size/2.,MGv2_Detector::size/2.);
+	vector<pair<int,int> > cluster_edges;
+	for(vector<Cluster*>::const_iterator it=clusters.begin();it!=clusters.end();++it){
+		cluster_edges.push_back(pair<int,int>(FloorNint((*it)->get_pos()-(*it)->get_size()),CeilNint((*it)->get_pos()+(*it)->get_size())));
+	}
+	vector<bool> is_used(1024,false);
+	for(vector<pair<int,int> >::iterator it = cluster_edges.begin();it!=cluster_edges.end();++it){
+		if(it->first<0) it->first = 0;
+		if(it->second<0) it->second = 0;
+		if(it->first>1036) it->first = 1036;
+		if(it->second>1036) it->second = 1036;
+		for(int strip=it->first;strip<=it->second;strip++){
+			if(is_used[strip]) continue;
+			int channel = MGv2_Detector::StripToChannel_a[strip];
+			histo->Fill(strip*MGv2_Detector::StripPitch - MGv2_Detector::size/2.,*max_element(strip_ampl[channel].begin(),strip_ampl[channel].end()));
+			is_used[strip] = true;
+		}
+	}
+	return histo;
+}
+Event * MGv2_Event::Clone() const{
+	return new MGv2_Event(*this);
+}
+MGv2_Event::~MGv2_Event(){
+
+}
+
 CosmicBenchEvent::CosmicBenchEvent(){
 	rayPairs.clear();
 	for(unsigned int i=0;i<events.size();i++){
@@ -1164,7 +1592,7 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 			for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
 				if(Abs(map_it->first - (*event_it)->get_z())<min_dist) min_dist = Abs(map_it->first - (*event_it)->get_z());
 			}
-			if(!ampl_hists_Y.insert(pair<double,TH1D*>((*event_it)->get_z(),dynamic_cast<MG_Event*>(*event_it)->get_ampl_hist())).second){
+			if(!ampl_hists_Y.insert(pair<double,TH1D*>((*event_it)->get_z(),(*event_it)->get_ampl_hist())).second){
 				cout << "problem in events" << endl;
 				return;
 			}

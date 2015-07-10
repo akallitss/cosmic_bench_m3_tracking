@@ -28,7 +28,8 @@ namespace Tomography{
 	enum det_type{
 		unknown_det,
 		CM,
-		MG
+		MG,
+		MGv2
 	};
 	enum strip_type{
 		unknown_strip = 10,

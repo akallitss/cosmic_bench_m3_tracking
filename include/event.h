@@ -21,9 +21,11 @@ class Cluster;
 class CM_Cluster;
 class CM_Demux_Cluster;
 class MG_Cluster;
+class MGv2_Cluster;
 class Detector;
 class CM_Detector;
 class MG_Detector;
+class MGv2_Detector;
 class CosmicBench;
 class Tanalyse_R;
 class Analyse;
@@ -108,6 +110,23 @@ class MG_Event: public Event{
 		MG_Event(const MG_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, bool use_srf_ = false);
 		void set_strip_ampl(vector<vector<double> > strip_ampl_);
 		~MG_Event();
+		void MultiCluster();
+		void HoughCluster();
+		TH1D * get_ampl_hist() const;
+		Event * Clone() const;
+	protected:
+		bool use_srf;
+};
+
+class MGv2_Event: public Event{
+	public:
+		MGv2_Event();
+		MGv2_Event(const MGv2_Event& other);
+		MGv2_Event& operator=(const MGv2_Event& other);
+		MGv2_Event(Tanalyse_R * treeObject,const MGv2_Detector * const det, long entry = -1, bool use_srf_ = false);
+		MGv2_Event(const MGv2_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, bool use_srf_ = false);
+		void set_strip_ampl(vector<vector<double> > strip_ampl_);
+		~MGv2_Event();
 		void MultiCluster();
 		void HoughCluster();
 		TH1D * get_ampl_hist() const;

@@ -46,6 +46,19 @@ Tanalyse_W::~Tanalyse_W()
       delete MG_ClusMaxStripAmpl;
       delete MG_StripMaxAmpl;
    }
+   if(det_N[Tomography::MGv2]>0){
+      delete MGv2_NClus;
+      delete MGv2_Spark;
+      delete MGv2_ClusAmpl;
+      delete MGv2_ClusSize;
+      delete MGv2_ClusPos;
+      delete MGv2_ClusTOT;
+      delete MGv2_ClusT;
+      delete MGv2_ClusMaxStrip;
+      delete MGv2_ClusMaxSample;
+      delete MGv2_ClusMaxStripAmpl;
+      delete MGv2_StripMaxAmpl;
+   }
    //delete T;
    delete saveFile;
 }
@@ -114,6 +127,66 @@ void Tanalyse_W::Init()
       char leefMG_ClusMaxStrip[100];
       sprintf(leefMG_ClusMaxStrip,"MG_ClusMaxStri[%d][%d]/I",det_N[Tomography::MG],MG_MaxNClus);
       T->Branch("MG_ClusMaxStrip", MG_ClusMaxStrip, leefMG_ClusMaxStrip);
+   }
+
+   if(det_N[Tomography::MGv2]>0){
+      MGv2_NClus = new int[det_N[Tomography::MGv2]];
+      MGv2_Spark = new int[det_N[Tomography::MGv2]];
+      MGv2_ClusAmpl = new Double_t[det_N[Tomography::MGv2]][300];
+      MGv2_ClusSize = new Double_t[det_N[Tomography::MGv2]][300];
+      MGv2_ClusPos = new Double_t[det_N[Tomography::MGv2]][300];
+      MGv2_ClusMaxStripAmpl = new Double_t[det_N[Tomography::MGv2]][300];
+      MGv2_ClusMaxStrip = new Int_t[det_N[Tomography::MGv2]][300];
+      MGv2_ClusMaxSample = new Double_t[det_N[Tomography::MGv2]][300];
+      MGv2_ClusTOT = new Double_t[det_N[Tomography::MGv2]][300];
+      MGv2_ClusT = new Double_t[det_N[Tomography::MGv2]][300];
+      MGv2_StripMaxAmpl = new Double_t[det_N[Tomography::MGv2]][MGv2_Detector::Nchannel];
+
+      int MGv2_MaxNClus = 300;
+
+      char leefMGv2NClus[100];
+      sprintf(leefMGv2NClus,"MGv2_NClus[%d]/I",det_N[Tomography::MGv2]);
+      T->Branch("MGv2_NClus", MGv2_NClus, leefMGv2NClus);
+
+      char leefMGv2_Spark[100];
+      sprintf(leefMGv2_Spark,"MGv2_Spark[%d]/I",det_N[Tomography::MGv2]);
+      T->Branch("MGv2_Spark", MGv2_Spark, leefMGv2_Spark);
+
+      char leefMGv2_ClusAmpl[100];
+      sprintf(leefMGv2_ClusAmpl,"MGv2_ClusAmpl[%d][%d]/D",det_N[Tomography::MGv2],MGv2_MaxNClus);
+      T->Branch("MGv2_ClusAmpl", MGv2_ClusAmpl, leefMGv2_ClusAmpl);
+
+      char leefMGv2_ClusSize[100];
+      sprintf(leefMGv2_ClusSize,"MGv2_ClusSize[%d][%d]/D",det_N[Tomography::MGv2],MGv2_MaxNClus);
+      T->Branch("MGv2_ClusSize", MGv2_ClusSize, leefMGv2_ClusSize);
+
+      char leefMGv2_ClusPos[100];
+      sprintf(leefMGv2_ClusPos,"MGv2_ClusPos[%d][%d]/D",det_N[Tomography::MGv2],MGv2_MaxNClus);
+      T->Branch("MGv2_ClusPos", MGv2_ClusPos, leefMGv2_ClusPos);
+
+      char leefMGv2_ClusMaxStripAmpl[100];
+      sprintf(leefMGv2_ClusMaxStripAmpl,"MGv2_ClusMaxStripAmpl[%d][%d]/D",det_N[Tomography::MGv2],MGv2_MaxNClus);
+      T->Branch("MGv2_ClusMaxStripAmpl", MGv2_ClusMaxStripAmpl, leefMGv2_ClusMaxStripAmpl);
+
+      char leefMGv2_ClusMaxSample[100];
+      sprintf(leefMGv2_ClusMaxSample,"MGv2_ClusMaxSample[%d][%d]/D",det_N[Tomography::MGv2],MGv2_MaxNClus);
+      T->Branch("MGv2_ClusMaxSample", MGv2_ClusMaxSample, leefMGv2_ClusMaxSample);
+
+      char leefMGv2_ClusTOT[100];
+      sprintf(leefMGv2_ClusTOT,"MGv2_ClusTOT[%d][%d]/D",det_N[Tomography::MGv2],MGv2_MaxNClus);
+      T->Branch("MGv2_ClusTOT", MGv2_ClusTOT, leefMGv2_ClusTOT);
+
+      char leefMGv2_ClusT[100];
+      sprintf(leefMGv2_ClusT,"MGv2_ClusT[%d][%d]/D",det_N[Tomography::MGv2],MGv2_MaxNClus);
+      T->Branch("MGv2_ClusT", MGv2_ClusT, leefMGv2_ClusT);
+
+      char leefMGv2_StripMaxAmpl[100];
+      sprintf(leefMGv2_StripMaxAmpl,"MGv2_StripMaxAmpl[%d][%d]/D",det_N[Tomography::MGv2],61);
+      T->Branch("MGv2_StripMaxAmpl", MGv2_StripMaxAmpl, leefMGv2_StripMaxAmpl);
+
+      char leefMGv2_ClusMaxStrip[100];
+      sprintf(leefMGv2_ClusMaxStrip,"MGv2_ClusMaxStri[%d][%d]/I",det_N[Tomography::MGv2],MGv2_MaxNClus);
+      T->Branch("MGv2_ClusMaxStrip", MGv2_ClusMaxStrip, leefMGv2_ClusMaxStrip);
    }
 
    if(det_N[Tomography::CM]>0){
@@ -223,6 +296,43 @@ void Tanalyse_W::fillTree(int evn_, double evttime_, map<Tomography::det_type,ve
                MG_ClusMaxStripAmpl[i][j] = 0;
                MG_ClusMaxStrip[i][j] = 0;
             }
+            for(vector<Cluster*>::iterator clus_it=current_clusters.begin();clus_it!=current_clusters.end();++clus_it){
+               delete *clus_it;
+            }
+         }
+      }
+      if(type_it->first == Tomography::MGv2){
+         for(vector<Event*>::iterator event_it=(type_it->second).begin();event_it!=(type_it->second).end();++event_it){
+            int i = (*event_it)->get_n_in_tree();
+            MGv2_NClus[i] = (*event_it)->get_NClus();
+            vector<Cluster*> current_clusters = (*event_it)->get_clusters();
+            if(current_clusters.size()!=static_cast<unsigned int>(MGv2_NClus[i])){
+               cout << "problem in cluster number" << endl;
+               return;
+            }
+            for(int j=0;j<MGv2_NClus[i];j++){
+               MGv2_ClusAmpl[i][j] = current_clusters[j]->get_ampl();
+               MGv2_ClusT[i][j] = current_clusters[j]->get_t();
+               MGv2_ClusTOT[i][j] = current_clusters[j]->get_TOT();
+               MGv2_ClusPos[i][j] = current_clusters[j]->get_pos();
+               MGv2_ClusSize[i][j] = current_clusters[j]->get_size();
+               MGv2_ClusMaxSample[i][j] = current_clusters[j]->get_maxSample();
+               MGv2_ClusMaxStripAmpl[i][j] = current_clusters[j]->get_maxStripAmpl();
+               MGv2_ClusMaxStrip[i][j] = current_clusters[j]->get_maxStrip();
+            }
+            for(int j=MGv2_NClus[i];j<300;j++){
+               MGv2_ClusAmpl[i][j] = 0;
+               MGv2_ClusT[i][j] = 0;
+               MGv2_ClusTOT[i][j] = 0;
+               MGv2_ClusPos[i][j] = 0;
+               MGv2_ClusSize[i][j] = -1;
+               MGv2_ClusMaxSample[i][j] = 0;
+               MGv2_ClusMaxStripAmpl[i][j] = 0;
+               MGv2_ClusMaxStrip[i][j] = 0;
+            }
+            for(vector<Cluster*>::iterator clus_it=current_clusters.begin();clus_it!=current_clusters.end();++clus_it){
+               delete *clus_it;
+            }
          }
       }
       if(type_it->first == Tomography::CM){
@@ -253,6 +363,9 @@ void Tanalyse_W::fillTree(int evn_, double evttime_, map<Tomography::det_type,ve
                CM_ClusMaxSample[i][j] = 0;
                CM_ClusMaxStripAmpl[i][j] = 0;
                CM_ClusMaxStrip[i][j] = 0;
+            }
+            for(vector<Cluster*>::iterator clus_it=current_clusters.begin();clus_it!=current_clusters.end();++clus_it){
+               delete *clus_it;
             }
          }
       }

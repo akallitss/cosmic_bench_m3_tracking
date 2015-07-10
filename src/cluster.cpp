@@ -500,3 +500,89 @@ double MG_Cluster::get_z() const{
 	else real_z += (pos_mm*(Cos(angle_z)*Sin(angle_x)*Cos(angle_y) + Sin(angle_z)*Sin(angle_y)) + perp_pos_mm*Cos(angle_x)*Sin(angle_y))/(Cos(angle_z)*Cos(angle_y) + Sin(angle_z)*Sin(angle_x)*Sin(angle_y));
 	return real_z;
 }
+
+MGv2_Cluster::MGv2_Cluster(): Cluster(){
+	type = Tomography::MGv2;
+}
+MGv2_Cluster::MGv2_Cluster(const MGv2_Cluster& other): Cluster(other){
+	type = Tomography::MGv2;
+}
+MGv2_Cluster& MGv2_Cluster::operator=(const MGv2_Cluster& other){
+	Cluster::operator=(other);
+	type = Tomography::MGv2;
+	return *this;
+}
+MGv2_Cluster::MGv2_Cluster(Tanalyse_R * treeObject,int number_,const Detector * const det, long entry): Cluster(treeObject,number_,det,entry){
+	if(det->get_type() != Tomography::MGv2){
+		*this = MGv2_Cluster();
+		return;
+	}
+	if(entry>-1){
+		treeObject->LoadTree(entry);
+		treeObject->GetEntry(entry);
+	}
+	ampl = treeObject->MGv2_ClusAmpl[n_in_tree][number];
+	size = treeObject->MGv2_ClusSize[n_in_tree][number];
+	pos = treeObject->MGv2_ClusPos[n_in_tree][number];
+	maxStripAmpl = treeObject->MGv2_ClusMaxStripAmpl[n_in_tree][number];
+	maxSample = treeObject->MGv2_ClusMaxSample[n_in_tree][number];
+	TOT = treeObject->MGv2_ClusTOT[n_in_tree][number];
+	t = treeObject->MGv2_ClusT[n_in_tree][number];
+	maxStrip = treeObject->MGv2_ClusMaxStrip[n_in_tree][number];
+	type = Tomography::MGv2;
+}
+MGv2_Cluster::MGv2_Cluster(const Detector * const det, int number_, double pos_, double size_, double ampl_, double maxSample_, double maxStripAmpl_, double TOT_, double t_, int maxStrip_): Cluster(det, number_, pos_, size_, ampl_, maxSample_, maxStripAmpl_, TOT_, t_, maxStrip_){
+	if(det->get_type() != Tomography::MGv2){
+		*this = MGv2_Cluster();
+		return;
+	}
+	type = Tomography::MGv2;
+}
+Cluster * MGv2_Cluster::Clone() const{
+	return new MGv2_Cluster(*this);
+}
+MGv2_Cluster::~MGv2_Cluster(){
+	
+}
+double MGv2_Cluster::get_pos_mm() const{
+	double pos_mm = 0;
+	if(direction){
+		pos_mm = pos*MGv2_Detector::StripPitch;
+	}
+	else{
+		pos_mm = (1036-pos)*MGv2_Detector::StripPitch;
+	}
+	pos_mm -= MGv2_Detector::size/2.;
+	if(is_X) pos_mm = (pos_mm*Cos(angle_y)/Cos(angle_z)) - perp_pos_mm*Tan(angle_z);
+	else pos_mm = (pos_mm*Cos(angle_x) + perp_pos_mm*(Sin(angle_z) - Cos(angle_z)*Sin(angle_x)*Tan(angle_y)))/(Cos(angle_z) + Sin(angle_z)*Sin(angle_x)*Tan(angle_y));
+	pos_mm += offset;
+	return pos_mm;
+}
+double MGv2_Cluster::correct_strip_nb(int strip_nb) const{
+	double pos_mm = 0;
+	if(direction){
+		pos_mm = strip_nb*MGv2_Detector::StripPitch;
+	}
+	else{
+		pos_mm = (1036-strip_nb)*MGv2_Detector::StripPitch;
+	}
+	pos_mm -= MGv2_Detector::size/2.;
+	if(is_X) pos_mm = (pos_mm*Cos(angle_y)/Cos(angle_z)) - perp_pos_mm*Tan(angle_z);
+	else pos_mm = (pos_mm*Cos(angle_x) + perp_pos_mm*(Sin(angle_z) - Cos(angle_z)*Sin(angle_x)*Tan(angle_y)))/(Cos(angle_z) + Sin(angle_z)*Sin(angle_x)*Tan(angle_y));
+	pos_mm += offset;
+	return pos_mm;
+}
+double MGv2_Cluster::get_z() const{
+	double real_z = z;
+	double pos_mm = 0;
+	if(direction){
+		pos_mm = pos*MGv2_Detector::StripPitch;
+	}
+	else{
+		pos_mm = (1036-pos)*MGv2_Detector::StripPitch;
+	}
+	pos_mm -= MGv2_Detector::size/2.;
+	if(is_X) real_z += (pos_mm)*((Sin(angle_y)/Cos(angle_x)) - Tan(angle_x)*Tan(angle_z)*Cos(angle_y)) + (perp_pos_mm)*(Tan(angle_x)/Cos(angle_z));
+	else real_z += (pos_mm*(Cos(angle_z)*Sin(angle_x)*Cos(angle_y) + Sin(angle_z)*Sin(angle_y)) + perp_pos_mm*Cos(angle_x)*Sin(angle_y))/(Cos(angle_z)*Cos(angle_y) + Sin(angle_z)*Sin(angle_x)*Sin(angle_y));
+	return real_z;
+}
