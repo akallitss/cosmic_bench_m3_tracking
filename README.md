@@ -1,14 +1,14 @@
-#Utiliser le soft
+1. Utiliser le soft
 
 * Datareader :
 
-Datareader <config_file> {ped,data,analyse}
+`Datareader <config_file> {ped,data,analyse}`
 
 * Multicluster
 
-Multicluster <config_file> {multicluster,SoB,dispersion,display,hough}
+`Multicluster <config_file> {multicluster,SoB,dispersion,display,hough}`
 
-#Etendre le soft :
+2. Etendre le soft :
 
 Ajouter un détecteur :
 
