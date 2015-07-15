@@ -463,7 +463,7 @@ Detector * MGv2_Detector::build_det(const ptree::value_type& child) const{
 }
 static vector<unsigned int> generate_StripToChannel_MGv2(){
 	int p=61; int n=1037;
-	int MultiplexSeries[]={30,10,15,19,5,20,27,22,11,24,18,12,9,6,3,4,1,16,8,2,23,21,7,25,14,28,17,26,13,29};
+	int MultiplexSeries[]={1,4,3,6,9,12,18,24,11,22,27,20,5,19,15,10,30};//16,8,2,23,21,7,25,14,28,17,26,13,29};
 	vector<unsigned int> Detector(n,0); // strip to channel correspondance
 	for(int i=0;i<(p-1)/2;i++){
 		for(int j=0;j<p;j++){
@@ -483,7 +483,7 @@ vector<unsigned int> MGv2_Detector::ChannelToStrip(unsigned int channel_nb){
 	vector<unsigned int> channel_list;
 	if(channel_nb>=61) return channel_list;
 	int p=61; int n=1037;
-	int MultiplexSeries[]={30,10,15,19,5,20,27,22,11,24,18,12,9,6,3,4,1,16,8,2,23,21,7,25,14,28,17,26,13,29};
+	int MultiplexSeries[]={1,4,3,6,9,12,18,24,11,22,27,20,5,19,15,10,30};//16,8,2,23,21,7,25,14,28,17,26,13,29};
 	unsigned int Detector[n]; // strip to channel correspondance
 	for(int i=0;i<(p-1)/2;i++){
 		for(int j=0;j<p;j++){
@@ -560,12 +560,14 @@ bool MGv2_Detector::is_suitable(Cluster * clus) const{
 	return true;
 }
 int MGv2_Detector::feminos_mapping(int channel) const{
+	// Warning !!!
+	//This part was never tested
 	int tmpchan = channel - 2 - (channel>13) - (channel>24) - (channel>47) - (channel>58);
 	if(tmpchan>15 && tmpchan<48) return tmpchan;
 	else return (tmpchan + 1 - (2*(tmpchan%2)));
 }
 int MGv2_Detector::dream_mapping(int channel) const{
-	return (channel + 1 - (2*(channel%2)));
+	return channel;
 }
 
 
@@ -677,9 +679,11 @@ void CosmicBench::Init(ptree config_tree){
 	for(map<const Tomography::det_type,const Detector* const>::iterator type_it=Tomography::Static_Detector.begin();type_it!=Tomography::Static_Detector.end();++type_it){
 		ostringstream childname;
 		childname << "CosmicBench." << type_it->first;
-		BOOST_FOREACH(const ptree::value_type& child, config_tree.get_child(childname.str())){
-			detectors.push_back(type_it->second->build_det(child));
-			det_n[type_it->first]++;
+		if(config_tree.get_child_optional(childname.str())){
+			BOOST_FOREACH(const ptree::value_type& child, config_tree.get_child(childname.str())){
+				detectors.push_back(type_it->second->build_det(child));
+				det_n[type_it->first]++;
+			}
 		}
 	}
 	map<Tomography::det_type,vector<vector<double> > > RMS = read_pedfile(RMSName,det_n);
