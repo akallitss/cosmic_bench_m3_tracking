@@ -1,5 +1,6 @@
 #include <string>
 #include <iostream>
+#include <csignal>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -17,6 +18,11 @@ using std::flush;
 using boost::property_tree::ptree;
 
 int main(int argc, char ** argv){
+	struct sigaction sigIntHandler;
+	sigIntHandler.sa_handler = Tomography::signal_handler;
+	sigemptyset(&sigIntHandler.sa_mask);
+	sigIntHandler.sa_flags = 0;
+	sigaction(SIGINT, &sigIntHandler, NULL);
 	if(argc<2){
 		cout << "You must indicate a config file which contains the Run caracs" << endl;
 		return 1;
@@ -59,7 +65,7 @@ int main(int argc, char ** argv){
 		long event_nb = 0;
 		int Nevent = 0;
 		double evttime = 0;
-		while(!(blah.is_end())){
+		while((!(blah.is_end())) && Tomography::can_continue){
 			if((event_nb%100) == 0) cout << "\r" << "event processed : " << event_nb << flush;
 			blah.process_event();
 			Nevent = blah.get_event_n();
