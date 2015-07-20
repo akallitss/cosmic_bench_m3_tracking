@@ -853,7 +853,7 @@ void Analyse::Efficacity(){
 	LoadTree(nentries-1);
 	fChain->GetEntry(nentries-1);
 	double maxtime = evttime;
-	int nbins = maxtime/100;
+	int nbins = nentries/100;
 	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
 		if(!((*it)->get_is_ref())){
 			ostringstream name;
@@ -916,8 +916,10 @@ void Analyse::Efficacity(){
 							matching_cluster = kt;
 						}
 					}
-					if(matching_cluster == current_clusters.end()) continue;
-					(*matching_cluster)->set_perp_pos_mm(*jt);
+					if(matching_cluster == current_clusters.end()){
+						MM_eff[name.str()]->Fill(evttime,0);
+						continue;
+					}
 					delete *matching_cluster;
 					current_clusters.erase(matching_cluster);
 					if(residu<chisquare_threshold){
