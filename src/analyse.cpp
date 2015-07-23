@@ -1034,7 +1034,7 @@ TH2D * Analyse::AbsorptionFluxMap(double z, TCanvas * c1, double y_angle){
 	Point norm(0,Sin(y_angle),Cos(y_angle));
 	Plane proj(norm,orig);
 	cout << proj.get_a() << "*x + " << proj.get_b() << "*y + " << proj.get_c() << "*z + " << proj.get_d() << " = 0" << endl;
-	if(z>z_max || z<z_max){
+	if(z>z_max || z<z_min){
 		Line first_line(Point(-Tomography::XY_size/2.,-Tomography::XY_size/2.,z_min),Point(Tomography::XY_size/2.,Tomography::XY_size/2.,z_max));
 		Line second_line(Point(Tomography::XY_size/2.,Tomography::XY_size/2.,z_min),Point(-Tomography::XY_size/2.,-Tomography::XY_size/2.,z_max));
 		Point corner_a = proj.intersection(first_line);
@@ -1126,7 +1126,7 @@ void Analyse::WatToFluxMap(double z,TEllipse el, TCanvas * c1, double y_angle){
 	Point norm(0,Sin(y_angle),Cos(y_angle));
 	Plane proj(norm,orig);
 	cout << proj.get_a() << "*x + " << proj.get_b() << "*y + " << proj.get_c() << "*z + " << proj.get_d() << " = 0" << endl;
-	if(z>z_max || z<z_max){
+	if(z>z_max || z<z_min){
 		Line first_line(Point(-Tomography::XY_size/2.,-Tomography::XY_size/2.,z_min),Point(Tomography::XY_size/2.,Tomography::XY_size/2.,z_max));
 		Line second_line(Point(Tomography::XY_size/2.,Tomography::XY_size/2.,z_min),Point(-Tomography::XY_size/2.,-Tomography::XY_size/2.,z_max));
 		Point corner_a = proj.intersection(first_line);
