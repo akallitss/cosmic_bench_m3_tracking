@@ -733,12 +733,14 @@ void Analyse::Residus_ref_2D(){
 		fChain->GetEntry(jentry);
 		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,-1);
 		vector<Ray> currentRays = currentCBEvent->get_absorption_rays(chisquare_threshold);
+		/*
 		for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
 			if((jt->get_chiSquare_X()+jt->get_chiSquare_Y()) < chisquare_threshold){
 				chisquares->Fill(jt->get_chiSquare_X()+jt->get_chiSquare_Y());
 				ray_clus_n->Fill(jt->get_clus_n());
 			}
 		}
+		*/
 		//eventReconstructed+=currentRays.size();
 		eventSuitable+=currentCBEvent->get_clus_N()*1./(get_det_N_tot());
 		
@@ -761,6 +763,8 @@ void Analyse::Residus_ref_2D(){
 				continue;
 			}
 			eventReconstructed++;
+			chisquares->Fill(jt->get_chiSquare_X()+jt->get_chiSquare_Y());
+			ray_clus_n->Fill(jt->get_clus_n());
 			vector<unsigned int> seen_clus_in_array;
 			for(vector<Event*>::iterator it = nref_event.begin();it!=nref_event.end();++it){
 				vector<Cluster*> current_clusters = (*it)->get_clusters();
