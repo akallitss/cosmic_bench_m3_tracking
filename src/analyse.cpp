@@ -709,6 +709,7 @@ void Analyse::Residus_ref_2D(){
 	}
 
 	c_MM = new TCanvas(name.str().c_str(),name.str().c_str(),1200,1000);
+	c_MM->Divide(2);
 	muon_seen = new TH2D((name.str()+"_seen").c_str(),(name.str()+"_seen").c_str(),nbins_2D,-(1+marge)*Tomography::XY_size/2,(1+marge)*Tomography::XY_size/2,nbins_2D,-(1+marge)*Tomography::XY_size/2,(1+marge)*Tomography::XY_size/2);
 	muon_total = new TH2D((name.str()+"_total").c_str(),(name.str()+"_total").c_str(),nbins_2D,-(1+marge)*Tomography::XY_size/2,(1+marge)*Tomography::XY_size/2,nbins_2D,-(1+marge)*Tomography::XY_size/2,(1+marge)*Tomography::XY_size/2);
 	efficacity_2D = new TH2D((name.str()+"_efficacity").c_str(),(name.str()+"_efficacity").c_str(),nbins_2D,-(1+marge)*Tomography::XY_size/2,(1+marge)*Tomography::XY_size/2,nbins_2D,-(1+marge)*Tomography::XY_size/2,(1+marge)*Tomography::XY_size/2);
@@ -734,7 +735,7 @@ void Analyse::Residus_ref_2D(){
 				ray_clus_n->Fill(jt->get_clus_n());
 			}
 		}
-		eventReconstructed+=currentRays.size();
+		//eventReconstructed+=currentRays.size();
 		eventSuitable+=currentCBEvent->get_clus_N()*1./(get_det_N_tot());
 		
 		vector<Event*> nref_event;
@@ -752,9 +753,10 @@ void Analyse::Residus_ref_2D(){
 			if(jt->get_clus_n()<(det_num-2)){
 				continue;
 			}
-			if((jt->get_chiSquare_X() + jt->get_chiSquare_Y()) > chisquare_threshold/static_cast<double>(det_num-2)){
+			if((jt->get_chiSquare_X() + jt->get_chiSquare_Y()) > chisquare_threshold/* /static_cast<double>(det_num-2)*/){
 				continue;
 			}
+			eventReconstructed++;
 			vector<unsigned int> seen_clus_in_array;
 			for(vector<Event*>::iterator it = nref_event.begin();it!=nref_event.end();++it){
 				vector<Cluster*> current_clusters = (*it)->get_clusters();
@@ -799,8 +801,10 @@ void Analyse::Residus_ref_2D(){
 					efficacity_2D->SetBinContent(binN,binContent);
 				}
 			}
-			c_MM->cd();
+			c_MM->cd(1);
 			efficacity_2D->Draw("COLZ");
+			c_MM->cd(2);
+			muon_total->Draw("COLZ");
 			c_MM->Modified();
 			c_MM->Update();
 			c0->cd(1);
@@ -829,8 +833,10 @@ void Analyse::Residus_ref_2D(){
 		}
 	}
 	efficacity = total_seen/total_passed;
-	c_MM->cd();
+	c_MM->cd(1);
 	efficacity_2D->Draw("COLZ");
+	c_MM->cd(2);
+	muon_total->Draw("COLZ");
 	c_MM->Modified();
 	c_MM->Update();
 	cout << name.str() << " efficacity : " << 100.*efficacity << "%" << endl;
