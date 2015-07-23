@@ -121,12 +121,16 @@ void Analyse::Residus(){
 		fChain->GetEntry(jentry);
 		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,-1);
 		vector<Ray> currentRays = currentCBEvent->get_absorption_rays();
-		eventReconstructed+=currentRays.size();
+		//eventReconstructed+=currentRays.size();
 		eventSuitable+=currentCBEvent->get_clus_N()/(get_det_N_tot());
 		delete currentCBEvent;
 		for(vector<Ray>::iterator it=currentRays.begin();it!=currentRays.end();++it){
 			if(it->get_chiSquare_X()>-1 && it->get_chiSquare_Y()>-1){
 				chiSquareH->Fill(it->get_chiSquare_X()+it->get_chiSquare_Y());
+				eventReconstructed++;
+			}
+			else{
+				continue;
 			}
 			for(vector<Detector*>::iterator jt=detectors.begin();jt!=detectors.end();++jt){
 				double residu = it->get_residu(*jt);
@@ -750,10 +754,10 @@ void Analyse::Residus_ref_2D(){
 		}
 		delete currentCBEvent;
 		for(vector<Ray>::iterator jt=currentRays.begin();jt!=currentRays.end();++jt){
-			if(jt->get_clus_n()<(det_num-2)){
+			if(jt->get_clus_n()<(det_num-4)){
 				continue;
 			}
-			if((jt->get_chiSquare_X() + jt->get_chiSquare_Y()) > chisquare_threshold/* /static_cast<double>(det_num-2)*/){
+			if((jt->get_chiSquare_X() + jt->get_chiSquare_Y()) > 2.){
 				continue;
 			}
 			eventReconstructed++;
@@ -1397,12 +1401,13 @@ void Analyse::AbsorptionFluxMapNorm(double z,TH2D * background, int nbins, TCanv
 		fChain->GetEntry(jentry);
 		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,-1);
 		vector<Ray> currentRays = currentCBEvent->get_absorption_rays();
-		eventReconstructed+=currentRays.size();
+		//eventReconstructed+=currentRays.size();
 		eventSuitable+=currentCBEvent->get_clus_N()/(get_det_N_tot());
 		delete currentCBEvent;
 		for(vector<Ray>::iterator it=currentRays.begin();it!=currentRays.end();++it){
 			if(it->get_chiSquare_X()>-1 && it->get_chiSquare_Y()>-1){
 				fluxMapZ->Fill(it->eval_X(z),it->eval_Y(z));
+				eventReconstructed++;
 			}
 		}
 		if(jentry%500 == 0) cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << eventSuitable << "|" << setw(20) << jentry << flush;
