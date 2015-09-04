@@ -404,7 +404,7 @@ void MG_Event::MultiCluster(){
 				current_strip.MaxAmpl = strip_ampl[i][j];
 				current_strip.MaxSample = j;
 				// time calculation with maximum
-				
+				/*
 				if(j>0 && j<31){
 					double a = (0.5*strip_ampl[i][j+1]) - strip_ampl[i][j] + (0.5*strip_ampl[i][j-1]);
 					//double b = strip_ampl[i][j] - strip_ampl[i][j-1] - a*((2*j)-1);
@@ -412,7 +412,7 @@ void MG_Event::MultiCluster(){
 					current_strip.Time = -0.5*b/a;
 				}
 				else current_strip.Time = 0;
-				
+				*/
 				// --
 			}
 			if(strip_ampl[i][j]>(sigma*(detector->get_RMS(i)))){
@@ -422,24 +422,31 @@ void MG_Event::MultiCluster(){
 			else current_strip.signal_sample[j] = false;
 		}
 		// time calculation with rising edge
-		/*
+		
 		if(current_strip.TOT>2){
 			int k=current_strip.MaxSample;
-			TGraph * rising_edge = new TGraph();
-			while(k>=SampleMin && strip_ampl[i][k]>(sigma*(detector.get_RMS(i)))){
-				rising_edge->SetPoint(current_strip.MaxSample - k,k,strip_ampl[i][k]);
+			double mean_xx = 0;
+			double mean_xy = 0;
+			double mean_x = 0;
+			double mean_y = 0;
+			while(k>=SampleMin && strip_ampl[i][k]>(sigma*(detector->get_RMS(i)))){
+				mean_xx += k*k;
+				mean_x += k;
+				mean_xy += k*strip_ampl[i][k];
+				mean_y += strip_ampl[i][k];
 				k--;
 			}
-			TF1 * rising_fit = new TF1("rising_fit","pol1(0)",k-1,current_strip.MaxSample +1);
-			rising_fit->SetParameters(k,Tomography::ADC_max/(2.*Tomography::Nsample));
-			rising_fit->SetParLimits(0,0,Tomography::Nsample);
-			rising_fit->SetParLimits(1,0,Tomography::ADC_max);
-			rising_edge->Fit(rising_fit,"QN");
-			current_strip.Time = rising_fit->GetParameter(0);
-			delete rising_edge; delete rising_fit;
+			int point_n = current_strip.MaxSample - k;
+			mean_xx /= point_n;
+			mean_xy /= point_n;
+			mean_y /= point_n;
+			mean_x /= point_n;
+			//double slope = (mean_xy - mean_x*mean_y)/(mean_xx - mean_x*mean_x);
+			//double intercept = mean_y - slope*mean_x;
+			current_strip.Time = mean_x - mean_y*(mean_xx - mean_x*mean_x)/(mean_xy - mean_x*mean_y);
 		}
 		else current_strip.Time = 0;
-		*/
+		
 		// --
 		if(current_strip.TOT>TOTCut) channelOverThreshold.insert(pair<int,bool>(i,true));
 		allChannels.insert(pair<int,StripInfo>(i,current_strip));
@@ -606,15 +613,42 @@ void MG_Event::HoughCluster(){
 			if(strip_ampl[i][j]>current_strip.MaxAmpl){
 				current_strip.MaxAmpl = strip_ampl[i][j];
 				current_strip.MaxSample = j;
+				/*
 				if(j>0 && j<31){
 					double a = 0.5*strip_ampl[i][j+1] - 2*strip_ampl[i][j] + strip_ampl[i][j-1];
 					double b = strip_ampl[i][j] - strip_ampl[i][j-1] - a*((2*j)-1);
 					current_strip.Time = -0.5*b/a;
 				}
 				else current_strip.Time = 0;
+				*/
 			}
 			if(strip_ampl[i][j]>sigma*(detector->get_RMS(i))) current_strip.TOT++;
 		}
+
+		if(current_strip.TOT>2){
+			int k=current_strip.MaxSample;
+			double mean_xx = 0;
+			double mean_xy = 0;
+			double mean_x = 0;
+			double mean_y = 0;
+			while(k>=SampleMin && strip_ampl[i][k]>(sigma*(detector->get_RMS(i)))){
+				mean_xx += k*k;
+				mean_x += k;
+				mean_xy += k*strip_ampl[i][k];
+				mean_y += strip_ampl[i][k];
+				k--;
+			}
+			int point_n = current_strip.MaxSample - k;
+			mean_xx /= point_n;
+			mean_xy /= point_n;
+			mean_y /= point_n;
+			mean_x /= point_n;
+			//double slope = (mean_xy - mean_x*mean_y)/(mean_xx - mean_x*mean_x);
+			//double intercept = mean_y - slope*mean_x;
+			current_strip.Time = mean_x - mean_y*(mean_xx - mean_x*mean_x)/(mean_xy - mean_x*mean_y);
+		}
+		else current_strip.Time = 0;
+
 		if(current_strip.TOT>TOTCut) channelOverThreshold.insert(pair<int,bool>(i,true));
 		allChannels.insert(pair<int,StripInfo>(i,current_strip));
 	}
@@ -832,7 +866,7 @@ void MGv2_Event::MultiCluster(){
 				current_strip.MaxAmpl = strip_ampl[i][j];
 				current_strip.MaxSample = j;
 				// time calculation with maximum
-				
+				/*
 				if(j>0 && j<31){
 					double a = (0.5*strip_ampl[i][j+1]) - strip_ampl[i][j] + (0.5*strip_ampl[i][j-1]);
 					//double b = strip_ampl[i][j] - strip_ampl[i][j-1] - a*((2*j)-1);
@@ -840,7 +874,7 @@ void MGv2_Event::MultiCluster(){
 					current_strip.Time = -0.5*b/a;
 				}
 				else current_strip.Time = 0;
-				
+				*/
 				// --
 			}
 			if(strip_ampl[i][j]>(sigma*(detector->get_RMS(i)))){
@@ -850,24 +884,31 @@ void MGv2_Event::MultiCluster(){
 			else current_strip.signal_sample[j] = false;
 		}
 		// time calculation with rising edge
-		/*
+		
 		if(current_strip.TOT>2){
 			int k=current_strip.MaxSample;
-			TGraph * rising_edge = new TGraph();
-			while(k>=SampleMin && strip_ampl[i][k]>(sigma*(detector.get_RMS(i)))){
-				rising_edge->SetPoint(current_strip.MaxSample - k,k,strip_ampl[i][k]);
+			double mean_xx = 0;
+			double mean_xy = 0;
+			double mean_x = 0;
+			double mean_y = 0;
+			while(k>=SampleMin && strip_ampl[i][k]>(sigma*(detector->get_RMS(i)))){
+				mean_xx += k*k;
+				mean_x += k;
+				mean_xy += k*strip_ampl[i][k];
+				mean_y += strip_ampl[i][k];
 				k--;
 			}
-			TF1 * rising_fit = new TF1("rising_fit","pol1(0)",k-1,current_strip.MaxSample +1);
-			rising_fit->SetParameters(k,Tomography::ADC_max/(2.*Tomography::Nsample));
-			rising_fit->SetParLimits(0,0,Tomography::Nsample);
-			rising_fit->SetParLimits(1,0,Tomography::ADC_max);
-			rising_edge->Fit(rising_fit,"QN");
-			current_strip.Time = rising_fit->GetParameter(0);
-			delete rising_edge; delete rising_fit;
+			int point_n = current_strip.MaxSample - k;
+			mean_xx /= point_n;
+			mean_xy /= point_n;
+			mean_y /= point_n;
+			mean_x /= point_n;
+			//double slope = (mean_xy - mean_x*mean_y)/(mean_xx - mean_x*mean_x);
+			//double intercept = mean_y - slope*mean_x;
+			current_strip.Time = mean_x - mean_y*(mean_xx - mean_x*mean_x)/(mean_xy - mean_x*mean_y);
 		}
 		else current_strip.Time = 0;
-		*/
+		
 		// --
 		if(current_strip.TOT>TOTCut) channelOverThreshold.insert(pair<int,bool>(i,true));
 		allChannels.insert(pair<int,StripInfo>(i,current_strip));
@@ -1034,15 +1075,42 @@ void MGv2_Event::HoughCluster(){
 			if(strip_ampl[i][j]>current_strip.MaxAmpl){
 				current_strip.MaxAmpl = strip_ampl[i][j];
 				current_strip.MaxSample = j;
+				/*
 				if(j>0 && j<31){
 					double a = 0.5*strip_ampl[i][j+1] - 2*strip_ampl[i][j] + strip_ampl[i][j-1];
 					double b = strip_ampl[i][j] - strip_ampl[i][j-1] - a*((2*j)-1);
 					current_strip.Time = -0.5*b/a;
 				}
 				else current_strip.Time = 0;
+				*/
 			}
 			if(strip_ampl[i][j]>sigma*(detector->get_RMS(i))) current_strip.TOT++;
 		}
+
+		if(current_strip.TOT>2){
+			int k=current_strip.MaxSample;
+			double mean_xx = 0;
+			double mean_xy = 0;
+			double mean_x = 0;
+			double mean_y = 0;
+			while(k>=SampleMin && strip_ampl[i][k]>(sigma*(detector->get_RMS(i)))){
+				mean_xx += k*k;
+				mean_x += k;
+				mean_xy += k*strip_ampl[i][k];
+				mean_y += strip_ampl[i][k];
+				k--;
+			}
+			int point_n = current_strip.MaxSample - k;
+			mean_xx /= point_n;
+			mean_xy /= point_n;
+			mean_y /= point_n;
+			mean_x /= point_n;
+			//double slope = (mean_xy - mean_x*mean_y)/(mean_xx - mean_x*mean_x);
+			//double intercept = mean_y - slope*mean_x;
+			current_strip.Time = mean_x - mean_y*(mean_xx - mean_x*mean_x)/(mean_xy - mean_x*mean_y);
+		}
+		else current_strip.Time = 0;
+
 		if(current_strip.TOT>TOTCut) channelOverThreshold.insert(pair<int,bool>(i,true));
 		allChannels.insert(pair<int,StripInfo>(i,current_strip));
 	}
@@ -1298,7 +1366,7 @@ void CosmicBenchEvent::createPairs(){
 				if(z<min_z) min_z = z;
 				currentClusters[is_up][is_X][z].push_back((*jt)->Clone());
 				sizes[is_up][is_X][z]++;
-				delete *it;
+				delete *jt;
 			}
 		}
 	}
@@ -1357,7 +1425,7 @@ void CosmicBenchEvent::createPairs(){
 
 	//cout << Max(Max(suitableRays[true][true].size(),suitableRays[true][false].size()),Max(suitableRays[false][true].size(),suitableRays[false][false].size())) << endl;
 	int min_size = Min(Min(suitableRays[true][true].size(),suitableRays[true][false].size()),Min(suitableRays[false][true].size(),suitableRays[false][false].size()));
-
+	
 	while(min_size>0){
 		double bestDoca = 50;//numeric_limits<double>::max();
 		vector<Ray_2D>::iterator best_it = suitableRays[true][true].end();
@@ -1372,8 +1440,8 @@ void CosmicBenchEvent::createPairs(){
 						double currentDoca = currentRayPair.get_doca();
 						Point currentPoCA = currentRayPair.get_PoCA();
 						if(currentPoCA.get_Z()>max_z || currentPoCA.get_Z()<min_z) continue;
-						if(currentPoCA.get_X()>600 || currentPoCA.get_X()<-100) continue;
-						if(currentPoCA.get_Y()>600 || currentPoCA.get_Y()<-100) continue;
+						if(currentPoCA.get_X()>6.*Tomography::XY_size/10. || currentPoCA.get_X()<-6.*Tomography::XY_size/10.) continue;
+						if(currentPoCA.get_Y()>6.*Tomography::XY_size/10. || currentPoCA.get_Y()<-6.*Tomography::XY_size/10.) continue;
 						
 						if(currentDoca<bestDoca){
 							bestDoca = currentDoca;
