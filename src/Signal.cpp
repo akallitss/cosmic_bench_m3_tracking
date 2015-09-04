@@ -485,9 +485,11 @@ void Signal::EventDisplay(int evn_min, int evn_max){
 	TCanvas * cDisplay = new TCanvas("cDisplay","cDisplay",800,600);
 	cDisplay->Divide(column_nb,2);
 	map<pair<Tomography::det_type,int>,vector<TGraph*> > signal_shape;
+	map<pair<Tomography::det_type,int>,vector<TF1*> > rising_fit;
 	for(vector<Detector*>::const_iterator det_it = detectors.begin();det_it!=detectors.end();++det_it){
 		for(int i=0;i<(*det_it)->get_Nchannel();i++){
 			signal_shape[pair<Tomography::det_type,int>((*det_it)->get_type(),(*det_it)->get_n_in_tree())].push_back(new TGraph());
+			rising_fit[pair<Tomography::det_type,int>((*det_it)->get_type(),(*det_it)->get_n_in_tree())].push_back(new TF1("rising_fit","pol1(0)",0,Tomography::Nsample));
 		}
 	}
 	long nentries = Min(fChain->GetEntriesFast(),static_cast<Long64_t>(evn_max));
@@ -500,16 +502,46 @@ void Signal::EventDisplay(int evn_min, int evn_max){
 			vector<vector<double> > current_ampl = get_ampl((*det_it)->get_type(),(*det_it)->get_n_in_tree());
 			pair<Tomography::det_type,int> current_key((*det_it)->get_type(),(*det_it)->get_n_in_tree());
 			for(int j=0;j<(*det_it)->get_Nchannel();j++){
+				double max_ampl = -Tomography::ADC_max;
+				double sample_max = -1;
 				for(int k=0;k<Tomography::Nsample;k++){
 					signal_shape[current_key][j]->SetPoint(k,k,current_ampl[j][k]);
+					if(current_ampl[j][k]>max_ampl){
+						max_ampl = current_ampl[j][k];
+						sample_max = k;
+					}
 				}
+
+				int k = sample_max;
+				double mean_xx = 0;
+				double mean_xy = 0;
+				double mean_x = 0;
+				double mean_y = 0;
+				while(k>=Tomography::SampleMin && current_ampl[j][k]>(Tomography::sigma*(*det_it)->get_RMS(j))){
+					mean_xx += k*k;
+					mean_x += k;
+					mean_xy += k*current_ampl[j][k];
+					mean_y += current_ampl[j][k];
+					k--;
+				}
+				int point_n = sample_max - k;
+				mean_xx /= point_n;
+				mean_xy /= point_n;
+				mean_y /= point_n;
+				mean_x /= point_n;
+				double slope = (mean_xy - mean_x*mean_y)/(mean_xx - mean_x*mean_x);
+				rising_fit[current_key][j]->SetParameters(mean_y - slope*mean_x,slope);
 				cDisplay->cd(det_id);
 				if(j==0){
 					signal_shape[current_key][j]->GetHistogram()->SetMinimum(-100);
 					signal_shape[current_key][j]->GetHistogram()->SetMaximum(1200);
 					signal_shape[current_key][j]->Draw("AL");
+					if(point_n>2) rising_fit[current_key][j]->Draw("same");
 				}
-				else signal_shape[current_key][j]->Draw("L");
+				else{
+					signal_shape[current_key][j]->Draw("L");
+					if(point_n>2) rising_fit[current_key][j]->Draw("same");
+				}
 			}
 			det_id++;
 		}
