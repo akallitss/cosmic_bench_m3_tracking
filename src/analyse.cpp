@@ -1562,6 +1562,8 @@ void Analyse::StoreRayPairs(string outFileName){
 	outTree->Branch("Y_Down", &Y_Down, "Y_Down/D");
 	outTree->Branch("theta_X_Down", &theta_X_Down, "theta_X_Down/D");
 	outTree->Branch("theta_Y_Down", &theta_Y_Down, "theta_Y_Down/D");
+	outTree->Branch("Z_Up", &z_Up, "Z_Up/D");
+	outTree->Branch("Z_Down", &z_Down, "Z_Down/D");
 
 	if (fChain == 0) return;
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
