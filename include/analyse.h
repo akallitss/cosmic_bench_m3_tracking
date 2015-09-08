@@ -1,17 +1,20 @@
 #ifndef analyse_h
 #define analyse_h
+
 #include "Tanalyse_R.h"
 #include "detector.h"
-#include <TTree.h>
-#include <string>
-#include <TH2D.h>
-#include <TCanvas.h>
-#include <TFile.h>
+
 #include <TEllipse.h>
+
+#include <string>
 #include <boost/property_tree/ptree.hpp>
 
 using std::string;
 using boost::property_tree::ptree;
+
+class TCanvas;
+class TH2D;
+class TFile;
 
 class Analyse: public Tanalyse_R, public CosmicBench{
 	public:

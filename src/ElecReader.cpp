@@ -1,12 +1,12 @@
 #ifndef elecreader_cpp
 #define elecreader_cpp
 #include "ElecReader.h"
+#include "dataline.h"
 #include <sstream>
 #include <iomanip>
 #include <iostream>
-#include "dataline.h"
-#include "TMath.h"
 #include <stdint.h>
+#include "TMath.h"
 
 using std::ostringstream;
 using std::setw;

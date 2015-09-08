@@ -1,6 +1,8 @@
 #define Tanalyse_W_cxx
 #include "Tanalyse_W.h"
 #include <iostream>
+#include "event.h"
+#include "cluster.h"
 
 using std::cout;
 using std::endl;

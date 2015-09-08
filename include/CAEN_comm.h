@@ -1,3 +1,5 @@
+#ifndef CAEN_comm_h
+#define CAEN_comm_h
 #include <string>
 #include <map>
 #include <vector>
@@ -65,3 +67,5 @@ class CAEN_Comm{
 		int handle;
 		map<int,Board_spec> boards;
 };
+
+#endif

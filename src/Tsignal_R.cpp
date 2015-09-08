@@ -1,13 +1,12 @@
 #define Tsignal_R_cxx
 #include "Tsignal_R.h"
+
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCanvas.h>
-#include <vector>
-
-using std::vector;
 
 #include <iostream>
+
 using std::cout;
 using std::endl;
 

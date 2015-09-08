@@ -1,23 +1,25 @@
 #define ray_cpp
 #include "ray.h"
-#include <vector>
 #include "cluster.h"
 #include "detector.h"
-#include <limits>
-#include <TGraph.h>
-#include <TF1.h>
-#include <TMath.h>
-#include <iostream>
-#include <string>
-#include <TCanvas.h>
 #include "point.h"
 #include "tomography.h"
 
+#include <limits>
+#include <iostream>
+#include <string>
+
+#include <TCanvas.h>
+#include <TGraph.h>
+#include <TF1.h>
+#include <TMath.h>
+
+
 using std::cout;
 using std::endl;
-using std::vector;
 using std::numeric_limits;
 using std::string;
+
 using TMath::Cos;
 using TMath::Sin;
 using TMath::Sqrt;

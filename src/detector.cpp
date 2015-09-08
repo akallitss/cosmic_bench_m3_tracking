@@ -1,15 +1,15 @@
 #define detector_cpp
 #include "detector.h"
 #include "Tanalyse_R.h"
+#include "event.h"
+#include "cluster.h"
 
-#include <string>
-#include <vector>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <utility>
 
 //Boost
-#include <boost/property_tree/ptree.hpp>
 #include <boost/foreach.hpp>
 
 #include <TMath.h>
@@ -18,9 +18,7 @@ using std::cout;
 using std::endl;
 using std::ifstream;
 using std::ostringstream;
-
-//boost
-using boost::property_tree::ptree;
+using std::pair;
 
 using TMath::Exp;
 using TMath::Log;

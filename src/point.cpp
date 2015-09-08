@@ -1,3 +1,4 @@
+#define point_cpp
 #include "point.h"
 #include <TMath.h>
 #include <limits>

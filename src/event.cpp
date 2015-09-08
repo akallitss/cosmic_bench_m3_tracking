@@ -4,11 +4,7 @@
 #include "Tanalyse_R.h"
 #include "detector.h"
 #include "cluster.h"
-#include "ray.h"
 
-#include <string>
-#include <map>
-#include <vector>
 #include <limits>
 #include <iostream>
 #include <utility>
@@ -26,9 +22,6 @@
 #include <TText.h>
 
 using std::pair;
-using std::string;
-using std::map;
-using std::vector;
 using std::numeric_limits;
 using std::cout;
 using std::endl;

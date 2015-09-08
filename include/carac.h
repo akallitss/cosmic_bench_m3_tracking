@@ -1,13 +1,13 @@
 #ifndef carac_h
 #define carac_h
 #include "Tanalyse_R.h"
-#include <TFile.h>
 #include <boost/property_tree/ptree.hpp>
 #include <string>
 
 using std::string;
-
 using boost::property_tree::ptree;
+
+class TFile;
 
 class Carac: public Tanalyse_R{
 	public:

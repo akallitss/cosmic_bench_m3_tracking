@@ -1,7 +1,7 @@
 #define carac_cpp
 #include "carac.h"
 #include <iostream>
-#include <string>
+//#include <string>
 #include <iomanip>
 #include <ostream>
 #include <map>
@@ -13,6 +13,7 @@
 #include "ray.h"
 #include "event.h"
 
+#include <TFile.h>
 #include <TCanvas.h>
 #include <TH2D.h>
 #include <TH1D.h>
@@ -22,7 +23,7 @@
 #include <TStyle.h>
 #include <TMath.h>
 
-#include <boost/property_tree/json_parser.hpp>
+//#include <boost/property_tree/json_parser.hpp>
 
 using std::cout;
 using std::endl;

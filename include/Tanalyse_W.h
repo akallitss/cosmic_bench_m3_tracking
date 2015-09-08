@@ -1,10 +1,9 @@
 #ifndef Tanalyse_W_h
 #define Tanalyse_W_h
 
-//#include <TROOT.h>
 #include <TTree.h>
 #include <TFile.h>
-#include "event.h"
+
 #include <string>
 #include <vector>
 #include <map>
@@ -15,9 +14,7 @@
 using std::string;
 using std::vector;
 
-class MG_Event;
-class MGv2_Event;
-class CM_Event;
+class Event;
 
 class Tanalyse_W{
    public:

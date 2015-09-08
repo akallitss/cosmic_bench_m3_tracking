@@ -1,7 +1,7 @@
+#define tomography_cpp
 #include "tomography.h"
-//#include "datareader.h"
 #include "detector.h"
-#include <map>
+
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -11,10 +11,8 @@
 #include <TROOT.h>
 #include <TCanvas.h>
 
-#include <boost/property_tree/ptree.hpp>
 #include <boost/foreach.hpp>
 
-using std::map;
 using std::cout;
 using std::endl;
 using std::ostringstream;
@@ -23,7 +21,6 @@ using std::setfill;
 using std::string;
 using std::pair;
 
-using boost::property_tree::ptree;
 
 bool Tomography::can_continue = true;
 bool Tomography::is_batch = gROOT->IsBatch();
@@ -118,6 +115,7 @@ static map<const Tomography::det_type,const Detector* const> Static_Detector_bui
 	return_map.insert(pair<const Tomography::det_type,const Detector* const>(Tomography::MGv2,new MGv2_Detector()));
 	return return_map;
 }
+
 map<const Tomography::det_type,const Detector* const> Tomography::Static_Detector = Static_Detector_build();
 /*
 void Tomography::process_elec_files(ptree config_tree){

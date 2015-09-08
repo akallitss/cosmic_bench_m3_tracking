@@ -5,11 +5,10 @@
 #include <map>
 
 #include "tomography.h"
-#include "cluster.h"
-#include "event.h"
 
 //Boost
 #include <boost/property_tree/ptree.hpp>
+
 using boost::property_tree::ptree;
 
 using std::string;

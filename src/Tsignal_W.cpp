@@ -1,14 +1,13 @@
 #define Tsignal_W_cxx
 #include "Tsignal_W.h"
+
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCanvas.h>
-#include <vector>
-
-using std::vector;
 
 #include <iostream>
 #include <sstream>
+
 using std::cout;
 using std::endl;
 using std::ostringstream;

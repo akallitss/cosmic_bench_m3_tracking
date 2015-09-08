@@ -1,15 +1,12 @@
-#include <string>
-#include <vector>
-#include <map>
+#define CAEN_comm_cpp
+#include "CAEN_comm.h"
+
 #include <utility>
 #include <iostream>
 #include <iomanip>
 
 #include <cstring>
 
-using std::string;
-using std::vector;
-using std::map;
 using std::cout;
 using std::endl;
 using std::setw;
@@ -18,7 +15,6 @@ using std::showpos;
 using std::noshowpos;
 
 #include <CAENHVWrapper.h>
-#include "CAEN_comm.h"
 
 string CAEN_Ch::get_Param_name(Param param){
 	switch(param){

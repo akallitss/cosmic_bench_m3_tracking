@@ -8,11 +8,11 @@
 #ifndef Tsignal_R_h
 #define Tsignal_R_h
 
-//#include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
 #include <vector>
 #include <map>
+
 #include "tomography.h"
 #include "detector.h"
 

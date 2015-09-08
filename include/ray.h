@@ -2,8 +2,7 @@
 #define ray_h
 #include <vector>
 #include <ostream>
-#include "cluster.h"
-#include "detector.h"
+
 #include "point.h"
 
 using std::vector;

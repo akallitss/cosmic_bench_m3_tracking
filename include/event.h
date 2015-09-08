@@ -3,25 +3,15 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "cluster.h"
+
 #include "ray.h"
-#include "detector.h"
-//#include "analyse.h"
-#include <TH1D.h>
-#include <TCanvas.h>
 #include "tomography.h"
 
 using std::string;
 using std::vector;
 using std::map;
 
-class Ray;
-class RayPair;
 class Cluster;
-class CM_Cluster;
-class CM_Demux_Cluster;
-class MG_Cluster;
-class MGv2_Cluster;
 class Detector;
 class CM_Detector;
 class MG_Detector;
@@ -29,6 +19,9 @@ class MGv2_Detector;
 class CosmicBench;
 class Tanalyse_R;
 class Analyse;
+
+class TH1D;
+class TCanvas;
 
 class Event{
 	friend class Analyse;

@@ -1,15 +1,14 @@
 #define cluster_cpp
 #include "cluster.h"
-#include <string>
 #include "Tanalyse_R.h"
 #include "detector.h"
-#include "ray.h"
+
 #include <TMath.h>
 #include <iostream>
 
 using std::cout;
 using std::endl;
-using std::string;
+
 using TMath::Min;
 using TMath::Tan;
 using TMath::Cos;

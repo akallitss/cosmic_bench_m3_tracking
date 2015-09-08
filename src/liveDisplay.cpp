@@ -2,11 +2,8 @@
 
 #include "liveDisplay.h"
 #include "datareader.h"
-#include "detector.h"
 #include "event.h"
 
-#include <string>
-#include <sys/inotify.h>
 #include <unistd.h>
 #include <fstream>
 #include <sstream>
@@ -24,7 +21,6 @@
 #include <TStyle.h>
 #include <TPaveText.h>
 
-using std::string;
 using std::ifstream;
 using std::ostringstream;
 using std::setw;

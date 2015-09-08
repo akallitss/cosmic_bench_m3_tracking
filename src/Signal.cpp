@@ -6,13 +6,11 @@
 #include "datareader.h"
 #include "point.h"
 #include "Tray.h"
-#include "detector.h"
+#include "cluster.h"
 
 #include <fstream>
-#include <string>
 #include <iostream>
 #include <iomanip>
-#include <map>
 #include <utility>
 #include <sstream>
 #include <limits>
@@ -23,6 +21,7 @@
 #include <TGraph.h>
 #include <TGraphErrors.h>
 #include <TProfile.h>
+#include <TFile.h>
 #include <TH1D.h>
 #include <TROOT.h>
 #include <TSystem.h>
@@ -33,16 +32,13 @@
 #include <TF1.h>
 
 //Boost
-#include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/foreach.hpp>
 
 using std::ifstream;
-using std::string;
 using std::cout;
 using std::endl;
 using std::flush;
-using std::map;
 using std::pair;
 using std::ostringstream;
 using std::setw;
@@ -55,9 +51,6 @@ using TMath::Sqrt;
 using TMath::ATan;
 using TMath::Abs;
 using TMath::Pi;
-
-//boost
-using boost::property_tree::ptree;
 
 Signal::Signal(string configFilePath){
 	ptree config_tree;

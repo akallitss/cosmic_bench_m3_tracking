@@ -1,10 +1,10 @@
 #define datareader_cpp
 #include "datareader.h"
-#include "tomography.h"
 #include "detector.h"
+#include "ElecReader.h"
+#include "Tsignal_W.h"
+
 #include <iostream>
-#include <map>
-#include <vector>
 #include <sstream>
 #include <fstream>
 
@@ -13,21 +13,16 @@
 #include <TH1F.h>
 #include <TMath.h>
 
-#include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/foreach.hpp>
 
 using std::cout;
 using std::endl;
 using std::flush;
-using std::map;
-using std::vector;
 using std::ostringstream;
 using std::ofstream;
 
 using TMath::Min;
-
-using boost::property_tree::ptree;
 
 DataReader::DataReader(){
 	reader = NULL;

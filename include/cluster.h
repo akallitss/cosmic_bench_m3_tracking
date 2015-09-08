@@ -1,23 +1,13 @@
 #ifndef cluster_h
 #define cluster_h
 #include <string>
-#include "cluster.h"
-#include "detector.h"
 #include "tomography.h"
 #include "ray.h"
 
 using std::string;
 
-class Cluster;
-class CM_Cluster;
-class CM_Demux_Cluster;
-class MG_Cluster;
 class Detector;
-class CM_Detector;
-class MG_Detector;
-class CosmicBench;
 class Tanalyse_R;
-class Ray;
 
 class Cluster{
 	public:

@@ -1,14 +1,13 @@
 #define analyse_cpp
 //my class
 #include "analyse.h"
-#include "Tanalyse_R.h"
-#include "detector.h"
 #include "ray.h"
 #include "event.h"
 #include "Tsignal_R.h"
 #include "tomography.h"
 #include "acceptanceFunction.h"
 #include "Tray.h"
+#include "cluster.h"
 //ROOT
 #include <TTree.h>
 #include <TFile.h>
@@ -29,7 +28,6 @@
 #include <TFitResult.h>
 #include <TLine.h>
 //Boost
-#include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/foreach.hpp>
 //std
@@ -38,12 +36,10 @@
 #include <iostream>
 #include <vector>
 #include <limits>
-#include <string>
 #include <algorithm>
 #include <utility>
 
 //std
-using std::string;
 using std::cout;
 using std::endl;
 using std::flush;
@@ -55,8 +51,6 @@ using std::max_element;
 using std::left;
 using std::right;
 using std::pair;
-//boost
-using boost::property_tree::ptree;
 //tmath
 using TMath::Sqrt;
 using TMath::ATan;

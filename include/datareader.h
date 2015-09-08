@@ -1,8 +1,6 @@
 #ifndef datareader_h
 #define datareader_h
-#include "ElecReader.h"
 #include "tomography.h"
-#include "Tsignal_W.h"
 #include <vector>
 #include <map>
 #include <string>
@@ -13,6 +11,9 @@ using std::map;
 using std::string;
 
 using boost::property_tree::ptree;
+
+class Tsignal_W;
+class ElecReader;
 
 class DataReader{
 	public:

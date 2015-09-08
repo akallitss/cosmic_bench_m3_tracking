@@ -1,7 +1,6 @@
 #ifndef Trays_h
 #define Trays_h
 
-//#include <TROOT.h>
 #include <TTree.h>
 #include <TFile.h>
 #include "ray.h"
@@ -10,8 +9,6 @@
 
 using std::string;
 using std::vector;
-
-class Ray;
 
 class Tray{
    public:

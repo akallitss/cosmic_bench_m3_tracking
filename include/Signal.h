@@ -4,9 +4,6 @@
 #include "detector.h"
 #include "tomography.h"
 
-#include <TProfile.h>
-#include <TFile.h>
-
 #include <string>
 #include <map>
 
@@ -16,6 +13,9 @@ using std::string;
 using std::map;
 
 using boost::property_tree::ptree;
+
+class TProfile;
+class TFile;
 
 class Signal: public Tsignal_R, public CosmicBench{
 	public:
