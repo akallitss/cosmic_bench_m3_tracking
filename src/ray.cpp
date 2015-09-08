@@ -119,7 +119,10 @@ void Ray_2D::process(){
 	//TF1 * line = new TF1("line","[0] + [1]*x",minZ-10,maxZ+10);
 	double maxSlope = Tomography::XY_size/(maxZ-minZ);
 	line->SetParameters(0,0);
-	line->SetParLimits(0,-(Tomography::XY_size/2.)-(maxSlope*minZ),(Tomography::XY_size/2.)+maxSlope*minZ);
+	
+	if(minZ>0) line->SetParLimits(0,-(Tomography::XY_size/2.)-(maxSlope*minZ),(Tomography::XY_size/2.)+maxSlope*minZ);
+	else if(maxZ<0) line->SetParLimits(0,-(Tomography::XY_size/2.)+(maxSlope*maxZ),(Tomography::XY_size/2.)-maxSlope*maxZ);
+	else line->SetParLimits(0,-(Tomography::XY_size/2.),Tomography::XY_size/2.);
 	line->SetParLimits(1,-maxSlope,maxSlope);
 	pos->Fit(line,"QN");
 	chiSquare = line->GetChisquare();
