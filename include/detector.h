@@ -238,12 +238,14 @@ class CosmicBench{
 		int get_det_N(Tomography::det_type det_t) const;
 		map<Tomography::det_type,unsigned short> get_det_N() const;
 		int get_det_N_tot() const;
+		int get_non_ref_N() const;
 		Detector * get_detector(unsigned int i) const;
 		static map<Tomography::det_type,vector<vector<double> > > read_pedfile(string filename, map<Tomography::det_type,unsigned short> det_n_);
 	protected:
 		void Init(ptree config_tree);
 		vector<Detector*> detectors;
 		map<Tomography::det_type,unsigned short> det_n;
+		unsigned short non_ref_n;
 };
 
 bool operator==(Detector const &det1, Detector const &det2);

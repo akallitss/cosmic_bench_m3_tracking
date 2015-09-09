@@ -159,10 +159,11 @@ void Carac::Residus_ref(){
 	map<string,TH1D*> ray_slope;
 	map<string,TH1D*> ray_phi;
 	int color_n = 1;
-	for(map<pair<Tomography::det_type,int>,pair<Tomography::det_type,int> >::iterator det_it = perp_pairs.begin();det_it!=perp_pairs.end();++det_it){
+	map<string,CosmicBench*> all_CB;
+	for(map<pair<Tomography::det_type,int>,pair<Tomography::det_type,int> >::iterator pair_it = perp_pairs.begin();pair_it!=perp_pairs.end();++pair_it){
 		ostringstream name_compl;
-		name_compl << (det_it->first).first << "_" << (det_it->first).second;
-		if((det_it->second).second > -1) name_compl << "_" << (det_it->second).first << "_" << (det_it->second).second;
+		name_compl << (pair_it->first).first << "_" << (pair_it->first).second;
+		if((pair_it->second).second > -1) name_compl << "_" << (pair_it->second).first << "_" << (pair_it->second).second;
 		chisquares[name_compl.str()] = new TH1D(("chiSquares_" + name_compl.str()).c_str(),("chiSquares_" + name_compl.str()).c_str(),nbins,0,chisquare_threshold);
 		chisquares[name_compl.str()]->SetLineColor(color_n);
 		ray_clus_n[name_compl.str()] = new TH1D(("clus_n_" + name_compl.str()).c_str(),("clus_n_" + name_compl.str()).c_str(),temp_CB.get_det_N_tot() + 1,0,temp_CB.get_det_N_tot() + 1);
@@ -172,6 +173,24 @@ void Carac::Residus_ref(){
 		ray_phi[name_compl.str()] = new TH1D(("phi_" + name_compl.str()).c_str(),("phi_" + name_compl.str()).c_str(),100,-Pi(),Pi());
 		ray_phi[name_compl.str()]->SetLineColor(color_n);
 		color_n++;
+		for(map<const Tomography::det_type,const Detector* const>::const_iterator type_it = Tomography::Static_Detector.begin();type_it!=Tomography::Static_Detector.end();++type_it){
+			ostringstream tree_child;
+			tree_child << "CosmicBench." << type_it->first;
+			if(config_tree.get_child_optional(tree_child.str().c_str())){
+				for(ptree::iterator tree_it = config_tree.get_child(tree_child.str().c_str()).begin(); tree_it != config_tree.get_child(tree_child.str().c_str()).end(); tree_it++){
+					Detector * current_det = (type_it->second)->build_det(*tree_it);
+					if(type_it->first == (pair_it->first).first && current_det->get_n_in_tree() == (pair_it->first).second){
+						tree_it->second.put<bool>("is_ref",false);
+					}
+					else if((pair_it->second).second > -1 && type_it->first == (pair_it->second).first && current_det->get_n_in_tree() == (pair_it->second).second){
+						tree_it->second.put<bool>("is_ref",false);
+					}
+					else tree_it->second.put<bool>("is_ref",true);
+					delete current_det;
+				}
+			}
+		}
+		all_CB[name_compl.str()] = new CosmicBench(config_tree);
 	}
 	if (fChain == 0) return;
 	cout << setw(20) << "total processed" << endl;
@@ -179,41 +198,19 @@ void Carac::Residus_ref(){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
-		for(map<pair<Tomography::det_type,int>,pair<Tomography::det_type,int> >::iterator pair_it = perp_pairs.begin();pair_it!=perp_pairs.end();++pair_it){
-			ostringstream name_compl;
-			name_compl << (pair_it->first).first << "_" << (pair_it->first).second;
-			if((pair_it->second).second > -1) name_compl << "_" << (pair_it->second).first << "_" << (pair_it->second).second;
-			int non_ref_n = 0;
-			for(map<const Tomography::det_type,const Detector* const>::const_iterator type_it = Tomography::Static_Detector.begin();type_it!=Tomography::Static_Detector.end();++type_it){
-				ostringstream tree_child;
-				tree_child << "CosmicBench." << type_it->first;
-				for(ptree::iterator tree_it = config_tree.get_child(tree_child.str().c_str()).begin(); tree_it != config_tree.get_child(tree_child.str().c_str()).end(); tree_it++){
-					Detector * current_det = (type_it->second)->build_det(*tree_it);
-					if(type_it->first == (pair_it->first).first && current_det->get_n_in_tree() == (pair_it->first).second){
-						tree_it->second.put<bool>("is_ref",false);
-						non_ref_n++;
-					}
-					else if((pair_it->second).second > -1 && type_it->first == (pair_it->second).first && current_det->get_n_in_tree() == (pair_it->second).second){
-						tree_it->second.put<bool>("is_ref",false);
-						non_ref_n++;
-					}
-					else tree_it->second.put<bool>("is_ref",true);
-					delete current_det;
-				}
-			}
-			CosmicBench * current_CB = new CosmicBench(config_tree);
-			CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(current_CB,this,-1);
+		for(map<string,CosmicBench*>::iterator CB_it=all_CB.begin();CB_it!=all_CB.end();++CB_it){
+			CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(CB_it->second,this,-1);
 			vector<Ray> currentRays = currentCBEvent->get_absorption_rays(chisquare_threshold);
 			vector<Ray>::iterator ray_it = currentRays.begin();
 			while(ray_it!= currentRays.end()){
 				if(ray_it->get_chiSquare_X()>-1 && ray_it->get_chiSquare_Y()>-1 && ((ray_it->get_chiSquare_X()+ray_it->get_chiSquare_Y())/ray_it->get_clus_n())<chisquare_threshold){
-					chisquares[name_compl.str()]->Fill(ray_it->get_chiSquare_X()+ray_it->get_chiSquare_Y());
-					ray_clus_n[name_compl.str()]->Fill(ray_it->get_clus_n());
+					chisquares[CB_it->first]->Fill(ray_it->get_chiSquare_X()+ray_it->get_chiSquare_Y());
+					ray_clus_n[CB_it->first]->Fill(ray_it->get_clus_n());
 					double slope = Sqrt((ray_it->get_slope_Y()*ray_it->get_slope_Y()) + (ray_it->get_slope_X()*ray_it->get_slope_X()));
-					ray_slope[name_compl.str()]->Fill(ATan(slope));
+					ray_slope[CB_it->first]->Fill(ATan(slope));
 					double phi = 2*ATan((ray_it->get_slope_Y())/(slope + ray_it->get_slope_X()));
 					if(ray_it->get_slope_X()==0 && ray_it->get_slope_Y()<0) phi = Pi();
-					ray_phi[name_compl.str()]->Fill(phi);
+					ray_phi[CB_it->first]->Fill(phi);
 					++ray_it;
 				}
 				else ray_it = currentRays.erase(ray_it);
@@ -229,8 +226,8 @@ void Carac::Residus_ref(){
 						//unsigned int clus_in_nref_dir = (nref_is_X[name.str()]) ? jt->get_clus_x_n() : jt->get_clus_y_n();
 						//if(clus_in_nref_dir<det_in_nref_dir[name.str()]) continue;
 						//if(chiSquare_in_nref_dir > chisquare_threshold/static_cast<double>(clus_in_nref_dir)) continue;
-						if((jt->get_chiSquare_X() + jt->get_chiSquare_Y()) > chisquare_threshold/static_cast<double>(non_ref_n)) continue;
-						if(jt->get_clus_n()<static_cast<unsigned int>(current_CB->get_det_N_tot()-non_ref_n)) continue;
+						if((jt->get_chiSquare_X() + jt->get_chiSquare_Y()) > chisquare_threshold/static_cast<double>(CB_it->second->get_non_ref_N())) continue;
+						if(jt->get_clus_n()<static_cast<unsigned int>(CB_it->second->get_det_N_tot()-CB_it->second->get_non_ref_N())) continue;
 						double residu = numeric_limits<double>::max();
 						vector<Cluster*>::iterator matching_cluster = current_clusters.end();
 						for(vector<Cluster*>::iterator kt = current_clusters.begin();kt!=current_clusters.end();++kt){
@@ -281,7 +278,7 @@ void Carac::Residus_ref(){
 					}
 				}
 			}
-			delete current_CB; delete currentCBEvent;
+			delete currentCBEvent;
 		}
 		if(jentry%500 == 0) cout << "\r" << setw(20) << jentry << flush;
 		if(jentry%5000 == 0 && Tomography::live_graphic_display){
@@ -424,6 +421,7 @@ void Carac::Residus_ref(){
 		ray_slope[name_compl.str()]->Draw(option.c_str());
 		c0->cd(4);
 		ray_phi[name_compl.str()]->Draw(option.c_str());
+		delete all_CB[name_compl.str()];
 	}
 	c0->Modified();
 	c0->Update();

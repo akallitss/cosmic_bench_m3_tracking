@@ -31,6 +31,10 @@ int main(int argc, char ** argv){
 	argvR[0] = argv[0];
 	TRint * theApp;
 	if(!Tomography::is_batch) theApp = new TRint("Rint",&argcR,argvR,0,0,true);
+	sigIntHandler.sa_handler = Tomography::signal_handler;
+	sigemptyset(&sigIntHandler.sa_mask);
+	sigIntHandler.sa_flags = 0;
+	sigaction(SIGINT, &sigIntHandler, NULL);
 	Carac * blah = new Carac(config_file.str());//"/home/irfulx176/mnt/sbouteil/Documents/deviation/config.cfg");
 	string residus = "residus";
 	if(argv[2] == residus){

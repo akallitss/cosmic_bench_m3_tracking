@@ -41,8 +41,10 @@ int main(int argc, char ** argv){
 	//string EtA = "EtA";
 	string display = "display";
 	string dispersion = "dispersion";
+	bool is_interactive = true;
 	if(argv[2] == multicluster){
 		blah->MultiCluster();
+		is_interactive = false;
 	}
 	/*
 	else if(argv[2] == EtA){
@@ -73,7 +75,7 @@ int main(int argc, char ** argv){
 	}
 	if(Tomography::is_batch) Tomography::save_canvases();
 	else {
-		theApp->Run(true);
+		if(is_interactive) theApp->Run(true);
 		delete theApp;
 	}
 	delete blah;

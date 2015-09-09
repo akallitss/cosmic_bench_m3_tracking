@@ -577,6 +577,7 @@ CosmicBench::CosmicBench(){
 	}
 	detectors.clear();
 	det_n.clear();
+	non_ref_n = 0;
 }
 CosmicBench::CosmicBench(const CosmicBench& other){
 	for(unsigned int i=0;i<detectors.size();i++){
@@ -587,6 +588,7 @@ CosmicBench::CosmicBench(const CosmicBench& other){
 	for(vector<Detector*>::const_iterator it = other.detectors.begin();it!=other.detectors.end();++it){
 		detectors.push_back((*it)->Clone());
 	}
+	non_ref_n = other.non_ref_n;
 }
 CosmicBench& CosmicBench::operator=(const CosmicBench& other){
 	for(unsigned int i=0;i<detectors.size();i++){
@@ -597,6 +599,7 @@ CosmicBench& CosmicBench::operator=(const CosmicBench& other){
 	for(vector<Detector*>::const_iterator it = other.detectors.begin();it!=other.detectors.end();++it){
 		detectors.push_back((*it)->Clone());
 	}
+	non_ref_n = other.non_ref_n;
 	return *this;
 }
 CosmicBench::~CosmicBench(){
@@ -676,12 +679,14 @@ void CosmicBench::Init(ptree config_tree){
 	in.close();
 	*/
 	detectors.clear();
+	non_ref_n = 0;
 	for(map<const Tomography::det_type,const Detector* const>::iterator type_it=Tomography::Static_Detector.begin();type_it!=Tomography::Static_Detector.end();++type_it){
 		ostringstream childname;
 		childname << "CosmicBench." << type_it->first;
 		if(config_tree.get_child_optional(childname.str())){
 			BOOST_FOREACH(const ptree::value_type& child, config_tree.get_child(childname.str())){
 				detectors.push_back(type_it->second->build_det(child));
+				if(!((detectors.back())->get_is_ref())) non_ref_n++;
 				det_n[type_it->first]++;
 			}
 		}
@@ -734,4 +739,7 @@ int CosmicBench::get_det_N_tot() const{
 }
 Detector * CosmicBench::get_detector(unsigned int i) const{
 	return detectors[i];
+}
+int CosmicBench::get_non_ref_N() const{
+	return non_ref_n;
 }
