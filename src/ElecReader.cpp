@@ -182,7 +182,7 @@ void DreamElecReader::read_next_event(){
 		for(map<int,FeuData>::iterator evn_it = feu_data.begin();evn_it!=feu_data.end();++evn_it){
 			if(is_sync[evn_it->first]) continue;
 			read_next_event_file(evn_it->first);
-			while((evn_it->second).Nevent < 0){
+			while((evn_it->second).Nevent < 0 && !is_end_feu(evn_it->first)){
 				seek_next_EOE(evn_it->first);
 				read_next_event_file(evn_it->first);
 			}
