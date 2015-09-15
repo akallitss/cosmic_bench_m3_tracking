@@ -417,20 +417,34 @@ void MG_Event::MultiCluster(){
 		}
 		// time calculation with rising edge
 		
-		if(current_strip.TOT>2){
-			int k=current_strip.MaxSample;
-			double mean_xx = 0;
-			double mean_xy = 0;
-			double mean_x = 0;
-			double mean_y = 0;
-			while(k>=SampleMin && strip_ampl[i][k]>(sigma*(detector->get_RMS(i)))){
-				mean_xx += k*k;
-				mean_x += k;
-				mean_xy += k*strip_ampl[i][k];
-				mean_y += strip_ampl[i][k];
-				k--;
-			}
-			int point_n = current_strip.MaxSample - k;
+		int k=current_strip.MaxSample;
+		double mean_xx = 0;
+		double mean_xy = 0;
+		double mean_x = 0;
+		double mean_y = 0;
+		/*
+		while(k>=SampleMin && strip_ampl[i][k]>(sigma*(detector->get_RMS(i)))){
+			mean_xx += k*k;
+			mean_x += k;
+			mean_xy += k*strip_ampl[i][k];
+			mean_y += strip_ampl[i][k];
+			k--;
+		}
+		*/
+		while(k>=SampleMin && strip_ampl[i][k]>(sigma*(detector->get_RMS(i)))){
+			k--;
+		}
+		k++;
+		int point_n = 0;
+		while(point_n<4 && strip_ampl[i][k]<current_strip.MaxAmpl){
+			mean_xx += k*k;
+			mean_x += k;
+			mean_xy += k*strip_ampl[i][k];
+			mean_y += strip_ampl[i][k];
+			k++;
+			point_n++;
+		}
+		if(point_n>0){
 			mean_xx /= point_n;
 			mean_xy /= point_n;
 			mean_y /= point_n;
@@ -439,7 +453,7 @@ void MG_Event::MultiCluster(){
 			//double intercept = mean_y - slope*mean_x;
 			current_strip.Time = mean_x - mean_y*(mean_xx - mean_x*mean_x)/(mean_xy - mean_x*mean_y);
 		}
-		else current_strip.Time = 0;
+		else current_strip.Time = k;
 		
 		// --
 		if(current_strip.TOT>TOTCut) channelOverThreshold.insert(pair<int,bool>(i,true));
@@ -498,9 +512,13 @@ void MG_Event::MultiCluster(){
 	//third loop : store the clusters and their caracteristics
 	//NClus = cluster_list.size();
 	for(unsigned int i=0;i<cluster_list.size();i++){
-		TF1 * SRFfit = new TF1("SRFfit",dynamic_cast<MG_Detector*>(detector),&MG_Detector::SRF_fit,0,1024,2,"MG_Detector","SRF_fit");
-		TGraphErrors * SRFgraph = new TGraphErrors();
+		TF1 * SRFfit;
+		TGraphErrors * SRFgraph;
 		int graph_point_n = 0;
+		if(use_srf){
+			SRFfit = new TF1("SRFfit",dynamic_cast<MG_Detector*>(detector),&MG_Detector::SRF_fit,0,1024,2,"MG_Detector","SRF_fit");
+			SRFgraph = new TGraphErrors();
+		}
 		double ClusSize = 1 + cluster_list[i].second - cluster_list[i].first;
 		double ClusPos = 0;
 		double ClusAmpl = 0;
@@ -510,8 +528,13 @@ void MG_Event::MultiCluster(){
 		double ClusT = 0;
 		double ClusTOT = 0;
 		//Micro TPC
-		//double tot_ampl = 0;
-		//double pos_TPC = 0;
+		
+		vector<double> pos_TPC(Tomography::Nsample,0);
+		vector<double> ampl_TPC(Tomography::Nsample,0);
+		vector<bool> used_sample_TPC(Tomography::Nsample,false);
+		double first_time = numeric_limits<double>::max();
+
+		//--
 		for(int j = cluster_list[i].first;j<((cluster_list[i].second)+1);j++){
 			StripInfo current_strip = allChannels[MG_Detector::StripToChannel_a[j]];
 			double effective_ampl = current_strip.MaxAmpl/count(global_used_channel.begin(),global_used_channel.end(),MG_Detector::StripToChannel_a[j]);
@@ -519,14 +542,17 @@ void MG_Event::MultiCluster(){
 			ClusAmpl += effective_ampl;
 
 			//Micro TPC
-			/*
+			
+			if(current_strip.Time < first_time && current_strip.TOT>0) first_time = current_strip.Time;
+
 			for(int k=0;k<Tomography::Nsample;k++){
 				if(!(current_strip.signal_sample[k])) continue;
-				double current_tot_ampl = strip_ampl[MG_Detector::StripToChannel_a[j]][k]/count(global_used_channel.begin(),global_used_channel.end(),MG_Detector::StripToChannel_a[j]);
-				pos_TPC = (pos_TPC*tot_ampl + j*current_tot_ampl)/(tot_ampl + current_tot_ampl);
-				tot_ampl += current_tot_ampl;
+				double current_ampl = strip_ampl[MG_Detector::StripToChannel_a[j]][k];
+				pos_TPC[k] = (pos_TPC[k]*ampl_TPC[k] + j*current_ampl)/(ampl_TPC[k]+current_ampl);
+				ampl_TPC[k] += current_ampl;
+				used_sample_TPC[k] = true;
 			}
-			*/
+			
 			// --
 
 			if(effective_ampl>ClusMaxStripAmpl){
@@ -537,9 +563,36 @@ void MG_Event::MultiCluster(){
 				//ClusTOT[i] = current_strip.TOT;
 			}
 			if(current_strip.TOT>ClusTOT) ClusTOT = current_strip.TOT;
-			SRFgraph->SetPoint(graph_point_n,j,effective_ampl);
-			SRFgraph->SetPointError(graph_point_n,0.5*MG_Detector::StripPitch,detector->get_RMS(MG_Detector::StripToChannel_a[j]));
-			graph_point_n++;
+			if(use_srf){
+				SRFgraph->SetPoint(graph_point_n,j,effective_ampl);
+				SRFgraph->SetPointError(graph_point_n,0.5*MG_Detector::StripPitch,detector->get_RMS(MG_Detector::StripToChannel_a[j]));
+				graph_point_n++;
+			}
+		}
+
+		double mean_xx = 0;
+		double mean_xy = 0;
+		double mean_x = 0;
+		double mean_y = 0;
+		unsigned short used_sample = 0;
+		for(int k=0;k<Tomography::Nsample;k++){
+			if(used_sample_TPC[k]){
+				mean_xx += k*k;
+				mean_x += k;
+				mean_xy += k*pos_TPC[k];
+				mean_y += pos_TPC[k];
+				used_sample++;
+			}
+		}
+		if(used_sample>0){
+			mean_xx /= used_sample;
+			mean_xy /= used_sample;
+			mean_y /= used_sample;
+			mean_x /= used_sample;
+			//double slope = (mean_xy - mean_x*mean_y)/(mean_xx - mean_x*mean_x);
+			//double intercept = mean_y - slope*mean_x;
+			ClusPos = mean_y + (first_time - mean_x)*(mean_xy - mean_x*mean_y)/(mean_xx - mean_x*mean_x);
+			ClusT = first_time;
 		}
 
 		if(graph_point_n>2 && use_srf){
@@ -578,7 +631,9 @@ void MG_Event::MultiCluster(){
 			ClusPos = SRFfit->GetParameter(0);
 			//ClusSize = SRFfit->GetParameter(1);
 		}
-		delete SRFfit; delete SRFgraph;
+		if(use_srf){
+			delete SRFfit; delete SRFgraph;
+		}
 		clusters.push_back(new MG_Cluster(detector,i,ClusPos,ClusSize,ClusAmpl,ClusMaxSample,ClusMaxStripAmpl,ClusTOT,ClusT,ClusMaxStrip));
 		//clusters.push_back(MG_Cluster(&detector,i,pos_TPC,ClusSize,ClusAmpl,ClusMaxSample,ClusMaxStripAmpl,ClusTOT,ClusT,ClusMaxStrip));
 	}
