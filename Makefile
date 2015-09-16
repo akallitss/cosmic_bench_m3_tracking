@@ -61,10 +61,10 @@ exec: echo_things tracking_b absorptionMap_b MultiCluster_b DataReader_b AutoAli
 todo: live
 
 echo_things:
-	@echo "$(GREEN)Building with flags:$(NC) $(CXXFLAGS)"
+	@echo -e "$(GREEN)Building with flags:$(NC) $(CXXFLAGS)"
 
 $(ODIR)/%.o: $(SDIR)/%.cpp
-	@echo "$(GREEN)Building $@$(NC)"
+	@echo -e "$(GREEN)Building $@$(NC)"
 	@$(CXX) -o $@ $(CXXFLAGS) -c $<
 
 DataReader: echo_things DataReader_b
@@ -86,39 +86,39 @@ wrapper: echo_things wrapper_b
 carac_all: echo_things carac_all_b
 
 DataReader_b: $(DataReader_obj)
-	@echo "$(GREEN)Building $@$(NC)"
+	@echo -e "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o DataReader $(LDFLAGS)
 
 absorptionMap_b: $(absorptionMap_obj)
-	@echo "$(GREEN)Building $@$(NC)"
+	@echo -e "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o absorptionMap $(LDFLAGS)
 
 tracking_b: $(tracking_obj)
-	@echo "$(GREEN)Building $@$(NC)"
+	@echo -e "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o tracking $(LDFLAGS)
 
 MultiCluster_b: $(MultiCluster_obj)
-	@echo "$(GREEN)Building $@$(NC)"
+	@echo -e "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o MultiCluster $(LDFLAGS)
 
 live_b: $(live_obj)
-	@echo "$(GREEN)Building $@$(NC)"
+	@echo -e "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o live $(LDFLAGS)
 
 AutoAlign_b: $(AutoAlign_obj)
-	@echo "$(GREEN)Building $@$(NC)"
+	@echo -e "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o AutoAlign $(LDFLAGS)
 
 HV_Monitor_b: $(HV_Monitor_obj)
-	@echo "$(GREEN)Building $@$(NC)"
+	@echo -e "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o HV_Monitor $(LDFLAGS) -lcaenhvwrapper
 
 wrapper_b: $(wrapper_obj)
-	@echo "$(GREEN)Building $@$(NC)"
+	@echo -e "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o wrapper $(LDFLAGS)
 
 carac_all_b: $(carac_all_obj)
-	@echo "$(GREEN)Building $@$(NC)"
+	@echo -e "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o carac_all $(LDFLAGS)
 
 msg:
