@@ -21,6 +21,8 @@ GREEN=\033[0;32m
 # No Color
 NC=\033[0m
 
+ECHO=/bin/echo -e
+
 DataReader_obj_tmp = NewDataReader.o datareader.o ElecReader.o Tsignal_W.o dataline.o tomography.o Tanalyse_W.o event.o detector.o ray.o cluster.o point.o
 DataReader_obj = $(patsubst %, $(ODIR)/%, $(DataReader_obj_tmp))
 
@@ -61,10 +63,10 @@ exec: echo_things tracking_b absorptionMap_b MultiCluster_b DataReader_b AutoAli
 todo: live
 
 echo_things:
-	@echo -e "$(GREEN)Building with flags:$(NC) $(CXXFLAGS)"
+	@$(ECHO) "$(GREEN)Building with flags:$(NC) $(CXXFLAGS)"
 
 $(ODIR)/%.o: $(SDIR)/%.cpp
-	@echo -e "$(GREEN)Building $@$(NC)"
+	@$(ECHO) "$(GREEN)Building $@$(NC)"
 	@$(CXX) -o $@ $(CXXFLAGS) -c $<
 
 DataReader: echo_things DataReader_b
@@ -86,43 +88,43 @@ wrapper: echo_things wrapper_b
 carac_all: echo_things carac_all_b
 
 DataReader_b: $(DataReader_obj)
-	@echo -e "$(GREEN)Building $@$(NC)"
+	@$(ECHO) "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o DataReader $(LDFLAGS)
 
 absorptionMap_b: $(absorptionMap_obj)
-	@echo -e "$(GREEN)Building $@$(NC)"
+	@$(ECHO) "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o absorptionMap $(LDFLAGS)
 
 tracking_b: $(tracking_obj)
-	@echo -e "$(GREEN)Building $@$(NC)"
+	@$(ECHO) "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o tracking $(LDFLAGS)
 
 MultiCluster_b: $(MultiCluster_obj)
-	@echo -e "$(GREEN)Building $@$(NC)"
+	@$(ECHO) "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o MultiCluster $(LDFLAGS)
 
 live_b: $(live_obj)
-	@echo -e "$(GREEN)Building $@$(NC)"
+	@$(ECHO) "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o live $(LDFLAGS)
 
 AutoAlign_b: $(AutoAlign_obj)
-	@echo -e "$(GREEN)Building $@$(NC)"
+	@$(ECHO) "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o AutoAlign $(LDFLAGS)
 
 HV_Monitor_b: $(HV_Monitor_obj)
-	@echo -e "$(GREEN)Building $@$(NC)"
+	@$(ECHO) "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o HV_Monitor $(LDFLAGS) -lcaenhvwrapper
 
 wrapper_b: $(wrapper_obj)
-	@echo -e "$(GREEN)Building $@$(NC)"
+	@$(ECHO) "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o wrapper $(LDFLAGS)
 
 carac_all_b: $(carac_all_obj)
-	@echo -e "$(GREEN)Building $@$(NC)"
+	@$(ECHO) "$(GREEN)Building $@$(NC)"
 	@$(LD) $^ -o carac_all $(LDFLAGS)
 
 msg:
-	@echo "Warning : you have to select the module you want to compile : tracking, carac_all, absorptionMap, MultiCluster, testCapa, DataReader, AutoAlign, HV_Monitor, wrapper or all"
+	@$(ECHO) "Warning : you have to select the module you want to compile : tracking, carac_all, absorptionMap, MultiCluster, testCapa, DataReader, AutoAlign, HV_Monitor, wrapper or all"
 
 .PHONY: clean cleanall default all exec todo
 
