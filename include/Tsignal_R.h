@@ -65,6 +65,8 @@ public :
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
    vector<vector<double> > get_ampl(Tomography::det_type type_, unsigned short det_n_);
+   vector<vector<double> > get_ampl_ped(Tomography::det_type type_, unsigned short det_n_);
+   vector<vector<double> > get_ampl_raw(Tomography::det_type type_, unsigned short det_n_);
 
 };
 
