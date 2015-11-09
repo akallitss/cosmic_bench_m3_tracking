@@ -63,12 +63,13 @@ int main(int argc, char ** argv){
 		blah->HoughTracking(event_nb);
 	}
 	else if(argv[2] == display){
-		if(argc<4){
-			cout << "you must indicate an event number" << endl;
+		if(argc<5){
+			cout << "you must indicate a start and stop event number" << endl;
 			return 1;
 		}
-		int event_nb = atoi(argv[3]);
-		blah->EventDisplay(0,event_nb);
+		int event_nb_start = atoi(argv[3]);
+		int event_nb_stop = atoi(argv[4]);
+		blah->EventDisplay(event_nb_start,event_nb_stop);
 	}
 	else if(argv[2] == dispersion){
 		blah->SignalDispersion();
