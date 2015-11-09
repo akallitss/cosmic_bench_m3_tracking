@@ -17,7 +17,8 @@ GLIBS         = $(ROOTGLIBS) -L/usr/X11R6/lib -lXpm -lX11 -lm -ldl -rdynamic -lp
 LDFLAGS       =  $(GLIBS)
 
 #Colors
-GREEN=\033[0;32m
+GREEN=\033[1;32m
+RED=\033[1;31m
 # No Color
 NC=\033[0m
 
@@ -51,7 +52,7 @@ carac_all_obj_tmp = carac_all.o carac.o Tanalyse_R.o event.o ray.o cluster.o det
 carac_all_obj = $(patsubst %, $(ODIR)/%, $(carac_all_obj_tmp))
 
 $(shell mkdir -p $(ODIR))
-
+$(shell echo blah)
 #------------------------------------------------------------------------------
 
 default: msg
@@ -65,7 +66,7 @@ todo: live
 echo_things:
 	@$(ECHO) "$(GREEN)Building with flags:$(NC) $(CXXFLAGS)"
 
-$(ODIR)/%.o: $(SDIR)/%.cpp echo_things
+$(ODIR)/%.o: $(SDIR)/%.cpp
 	@$(ECHO) "$(GREEN)Building $@$(NC)"
 	@$(CXX) -o $@ $(CXXFLAGS) -c $<
 
@@ -106,7 +107,7 @@ carac_all: $(carac_all_obj)
 	@$(LD) $^ -o carac_all $(LDFLAGS)
 
 msg:
-	@$(ECHO) "Warning : you have to select the module you want to compile : tracking, carac_all, absorptionMap, MultiCluster, testCapa, DataReader, AutoAlign, HV_Monitor, wrapper or all"
+	@$(ECHO) "$(RED)Warning !$(NC) You have to select the module you want to compile : tracking, carac_all, absorptionMap, MultiCluster, testCapa, DataReader, AutoAlign, HV_Monitor, wrapper or all"
 
 .PHONY: clean cleanall default all exec todo
 
