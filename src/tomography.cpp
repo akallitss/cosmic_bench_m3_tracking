@@ -146,10 +146,12 @@ Tomography::Tomography(ptree config_tree_){
 	if(gROOT->IsBatch()) is_batch = true;
 	else is_batch = config_tree.get<bool>("batch");
 	if(!is_batch){
+		cout << "Starting Graphic Mode" << endl;
 		live_graphic_display = config_tree.get<bool>("live_graphic_display");
 		root_interpreter = new TRint("Rint",0,0,0,0,true);
 	}
 	else{
+		cout << "Starting Batch Mode" << endl;
 		gROOT->SetBatch(true);
 		live_graphic_display = false;
 		root_interpreter = 0;
