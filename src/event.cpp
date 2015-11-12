@@ -1474,8 +1474,8 @@ void CosmicBenchEvent::createPairs(){
 	double chiSquare_threshold = numeric_limits<double>::max();
 	map<bool, map<bool, map<double,vector<Cluster*> > > > currentClusters;
 	map<bool, map<bool, map<double,int> > > sizes;
-	double max_z = numeric_limits<double>::min();
-	double min_z = numeric_limits<double>::max();
+	double max_z = numeric_limits<double>::max();
+	double min_z = numeric_limits<double>::min();
 	for(vector<Event*>::iterator it=events.begin();it!=events.end();++it){
 		double z;
 		bool is_up;
@@ -1486,8 +1486,8 @@ void CosmicBenchEvent::createPairs(){
 				z = (*jt)->get_z();
 				is_X = (*jt)->get_is_X();
 				is_up = (*jt)->get_is_up();
-				if(z>max_z) max_z = z;
-				if(z<min_z) min_z = z;
+				if(is_up && z<max_z) max_z = z;
+				if((!is_up) && z>min_z) min_z = z;
 				currentClusters[is_up][is_X][z].push_back((*jt)->Clone());
 				sizes[is_up][is_X][z]++;
 				delete *jt;
@@ -1542,9 +1542,9 @@ void CosmicBenchEvent::createPairs(){
 							currentRayPair.process();
 							double currentDoca = currentRayPair.get_doca();
 							Point currentPoCA = currentRayPair.get_PoCA();
-							if(currentPoCA.get_Z()>max_z || currentPoCA.get_Z()<min_z) continue;
-							if(currentPoCA.get_X()>6.*Tomography::get_instance()->get_XY_size()/10. || currentPoCA.get_X()<-6.*Tomography::get_instance()->get_XY_size()/10.) continue;
-							if(currentPoCA.get_Y()>6.*Tomography::get_instance()->get_XY_size()/10. || currentPoCA.get_Y()<-6.*Tomography::get_instance()->get_XY_size()/10.) continue;
+							if(currentPoCA.get_Z()>(max_z+10) || currentPoCA.get_Z()<(min_z-10)) continue;
+							if(currentPoCA.get_X()>10.*Tomography::get_instance()->get_XY_size()/10. || currentPoCA.get_X()<-10.*Tomography::get_instance()->get_XY_size()/10.) continue;
+							if(currentPoCA.get_Y()>10.*Tomography::get_instance()->get_XY_size()/10. || currentPoCA.get_Y()<-10.*Tomography::get_instance()->get_XY_size()/10.) continue;
 							if(currentDoca<bestDoca){
 								bestDoca = currentDoca;
 								bestRay = currentRayPair;
