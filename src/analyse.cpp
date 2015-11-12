@@ -1563,8 +1563,8 @@ void Analyse::StoreRayPairs(string outFileName){
 	double z_Up = get_z_Up();
 	double z_Down = get_z_Down();
 
-	TCanvas * c1 = new TCanvas("thetaUp","thetaUp");
-	TCanvas * c2 = new TCanvas("thetaDown","thetaDown");
+	TCanvas * c1 = new TCanvas();
+	c1->Divide(2,2);
 	TH1D * thetaXUp = new TH1D("thetaXUp","thetaXUp",50,-2,2);
 	thetaXUp->SetLineColor(2);
 	TH1D * thetaYUp = new TH1D("thetaYUp","thetaYUp",50,-2,2);
@@ -1574,11 +1574,15 @@ void Analyse::StoreRayPairs(string outFileName){
 	TH1D * thetaYDown = new TH1D("thetaYDown","thetaYDown",50,-2,2);
 	thetaYDown->SetLineColor(4);
 
-	TCanvas * c4 = new TCanvas("correlation","correlation");
 	TH2D * XY_correlation = new TH2D("correlation","correlation",70,-6*Tomography::get_instance()->get_XY_size()/10.,6*Tomography::get_instance()->get_XY_size()/10.,70,-6*Tomography::get_instance()->get_XY_size()/10.,6*Tomography::get_instance()->get_XY_size()/10.);
 
-	TCanvas * c3 = new TCanvas("docas","docas");
 	TH1D * doca = new TH1D("doca","doca",100,0,Tomography::get_instance()->get_XY_size());
+
+	TCanvas * c2 = new TCanvas();
+	c2->Divide(3);
+	TH1D * pocaX = new TH1D("pocaX","pocaX",100,-Tomography::get_instance()->get_XY_size(),Tomography::get_instance()->get_XY_size());
+	TH1D * pocaY = new TH1D("pocaY","pocaY",100,-Tomography::get_instance()->get_XY_size(),Tomography::get_instance()->get_XY_size());
+	TH1D * pocaZ = new TH1D("pocaZ","pocaZ",100,z_Down - (z_Up-z_Down),z_Up + (z_Up-z_Down));
 
 	long eventReconstructed = 0;
 	long eventSuitable = 0;
@@ -1643,54 +1647,61 @@ void Analyse::StoreRayPairs(string outFileName){
 			theta_Y_Down = currentRayPair.get_theta_y_down();
 			Point PoCA = currentRayPair.get_PoCA();
 			if(PoCA.get_Z()>600 && PoCA.get_Z()<800) XY_correlation->Fill(PoCA.get_X(),PoCA.get_Y());
+			pocaX->Fill(PoCA.get_X());
+			pocaY->Fill(PoCA.get_Y());
+			pocaZ->Fill(PoCA.get_Z());
 			outTree->Fill();
 
 		}
 		delete currentCBEvent;
 		/*if(jentry%500 == 0)*/ cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << eventSuitable << "|" << setw(20) << jentry << flush;
 		if(jentry%5000 == 0 && Tomography::get_instance()->get_live_graphic_display()){
-			c1->cd();
+			c1->cd(1);
 			thetaXUp->Draw();
 			thetaYUp->Draw("SAME");
-			c1->Modified();
-			c1->Update();
-			c2->cd();
+			c1->cd(2);
 			thetaXDown->Draw();
 			thetaYDown->Draw("SAME");
+			c1->cd(3);
+			doca->Draw();
+			c1->cd(4);
+			XY_correlation->Draw("COLZ");
+			c1->Modified();
+			c1->Update();
+			c2->cd(1);
+			pocaX->Draw();
+			c2->cd(2);
+			pocaY->Draw();
+			c2->cd(3);
+			pocaZ->Draw();
 			c2->Modified();
 			c2->Update();
-			c3->cd();
-			doca->Draw();
-			c3->Modified();
-			c3->Update();
-			c4->cd();
-			XY_correlation->Draw("COLZ");
-			c4->Modified();
-			c4->Update();
 		}
 	}
 	cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << eventSuitable << "|" << setw(20) << nentries << endl;
 	outFile->cd();
 	outTree->Write();
 	outFile->Close();
-	c1->cd();
+	c1->cd(1);
 	thetaXUp->Draw();
 	thetaYUp->Draw("SAME");
-	c1->Modified();
-	c1->Update();
-	c2->cd();
+	c1->cd(2);
 	thetaXDown->Draw();
 	thetaYDown->Draw("SAME");
+	c1->cd(3);
+	doca->Draw();
+	c1->cd(4);
+	XY_correlation->Draw("COLZ");
+	c1->Modified();
+	c1->Update();
+	c2->cd(1);
+	pocaX->Draw();
+	c2->cd(2);
+	pocaY->Draw();
+	c2->cd(3);
+	pocaZ->Draw();
 	c2->Modified();
 	c2->Update();
-	c3->cd();
-	doca->Draw();
-	c3->Modified();
-	c3->Update();
-	c4->cd();
-	XY_correlation->Draw("COLZ");
-	c4->Modified();
-	c4->Update();
 }
 
 /*void Analyse::MultiGenDebug(int i){
