@@ -63,10 +63,10 @@ index 4860075..09302c0 100644
 \ No newline at end of file
 +#endif
 diff --git a/include/tomography.h b/include/tomography.h
-index be8f595..c05d11a 100644
+index a197f83..cb7b8f9 100644
 --- a/include/tomography.h
 +++ b/include/tomography.h
-@@ -52,10 +52,10 @@ class Tomography{
+@@ -52,11 +52,11 @@ class Tomography{
  		};
  		static elec_type str_to_elec(string str);
  
@@ -74,14 +74,16 @@ index be8f595..c05d11a 100644
 -		static const int Nchannel = 64;
 -		static const int Nasic_FEU = 8;
 -		static const int Nasic_Feminos = 4;
+-		static const int Max_Nsample = 512;
 +		static constexpr const double ADC_max = 4096;
 +		static constexpr const int Nchannel = 64;
 +		static constexpr const int Nasic_FEU = 8;
 +		static constexpr const int Nasic_Feminos = 4;
++		static constexpr const int Max_Nsample = 512;
  		static const string DreamExt;
  		static const string FeminosExt;
  		//TODO : make this map const
-@@ -171,4 +171,4 @@ namespace Tomography{
+@@ -172,4 +172,4 @@ namespace Tomography{
  	//void process_elec_files(ptree config_tree);
  }
  */
