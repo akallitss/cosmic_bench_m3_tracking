@@ -402,14 +402,50 @@ void DataReader::do_ped_CMN_sub_event(){
 		}
 	}
 }
+template<typename S, typename T>
+map<Tomography::det_type,vector<vector<vector<S> > > > DataReader::do_ped_CMN_sub_event(map<Tomography::det_type,vector<vector<vector<T> > > > data_in, map<Tomography::det_type,vector<vector<float> > > ped_in){
+	map<Tomography::det_type,vector<vector<vector<S> > > > data_out;
+	for(typename map<Tomography::det_type,vector<vector<vector<T> > > >::iterator it = data_in.begin();it!=data_in.end();++it){
+		data_out[it->first] = vector<vector<vector<S> > >((it->second).size(),vector<vector<S> >(Tomography::Static_Detector[it->first]->get_Nchannel(),vector<S>(Tomography::get_instance()->get_Nsample(),0)));
+		vector<vector<float> >::iterator ped_jt = ped_in[it->first].begin();
+		typename vector<vector<vector<S> > >::iterator out_it = data_out[it->first].begin();
+		for(typename vector<vector<vector<T> > >::iterator jt = (it->second).begin();jt!=(it->second).end();++jt){
+			for(int k=0;k<Tomography::get_instance()->get_Nsample();k++){
+				for(int det_div=0;det_div<(Tomography::Static_Detector[it->first]->get_CMN_div());det_div++){
+					int strip_nb = (Tomography::Static_Detector[it->first]->get_Nchannel())/(Tomography::Static_Detector[it->first]->get_CMN_div()) + (Tomography::Static_Detector[it->first]->get_Nchannel())%(Tomography::Static_Detector[it->first]->get_CMN_div());
+					int strip_offset = det_div*strip_nb;
+					vector<float> current_sample(strip_nb,0);
+					for(int j=0;(j<strip_nb && (j+strip_offset)<(Tomography::Static_Detector[it->first]->get_Nchannel()));j++){
+						current_sample[j] = (*jt)[j+strip_offset][k] - (*ped_jt)[j+strip_offset];
+					}
+					sort(current_sample.begin(),current_sample.end());
+					float median = current_sample[strip_nb/2];
+					for(int j=0;(j<strip_nb && (j+strip_offset)<(Tomography::Static_Detector[it->first]->get_Nchannel()));j++){
+						(*out_it)[j+strip_offset][k] = (*jt)[j+strip_offset][k] - median - (*ped_jt)[j+strip_offset];
+					}
+				}
+			}
+			++ped_jt;
+			++out_it;
+		}
+	}
+	return data_out;
+}
+template map<Tomography::det_type,vector<vector<vector<float> > > > DataReader::do_ped_CMN_sub_event(map<Tomography::det_type,vector<vector<vector<float> > > > data_in, map<Tomography::det_type,vector<vector<float> > > ped_in);
+template map<Tomography::det_type,vector<vector<vector<double> > > > DataReader::do_ped_CMN_sub_event(map<Tomography::det_type,vector<vector<vector<float> > > > data_in, map<Tomography::det_type,vector<vector<float> > > ped_in);
+template map<Tomography::det_type,vector<vector<vector<float> > > > DataReader::do_ped_CMN_sub_event(map<Tomography::det_type,vector<vector<vector<double> > > > data_in, map<Tomography::det_type,vector<vector<float> > > ped_in);
+template map<Tomography::det_type,vector<vector<vector<double> > > > DataReader::do_ped_CMN_sub_event(map<Tomography::det_type,vector<vector<vector<double> > > > data_in, map<Tomography::det_type,vector<vector<float> > > ped_in);
 long DataReader::get_event_n(){
 	return Nevent;
 }
 double DataReader::get_evttime(){
 	return evttime;
 }
-map<Tomography::det_type,vector<vector<vector<float> > > > DataReader::get_data(){
+map<Tomography::det_type,vector<vector<vector<float> > > > DataReader::get_data() const{
 	return StripAmpl;
+}
+map<Tomography::det_type,vector<vector<float> > > DataReader::get_Ped() const{
+	return Ped;
 }
 bool DataReader::is_end(){
 	return (reader->is_end());

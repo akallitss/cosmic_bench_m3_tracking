@@ -10,12 +10,150 @@
 #include "event.h"
 #include "tomography.h"
 
+#include <pthread.h>
+#include <queue>
+#include <iomanip>
+
 using std::string;
 using std::cout;
 using std::endl;
 using std::flush;
+using std::setw;
 
 using boost::property_tree::ptree;
+
+using std::queue;
+
+void * reader_thread(void *);
+void * ped_thread(void *);
+void * multicluster_thread(void *);
+void * writer_thread(void *);
+
+struct event_raw_data{
+	int Nevent;
+	double evttime;
+	map<Tomography::det_type,vector<vector<vector<float> > > > strip_data;
+};
+struct event_ped_data{
+	int Nevent;
+	double evttime;
+	map<Tomography::det_type,vector<vector<vector<double> > > > strip_data;
+};
+struct event_object_data{
+	map<Tomography::det_type,vector<Event*> > event_data;
+	int Nevent;
+	double evttime;
+};
+bool reader_active = true;
+bool ped_active = true;
+bool multicluster_active = true;
+bool writer_active = true;
+int event_read = 0;
+int event_corr = 0;
+int event_demux = 0;
+int event_written = 0;
+pthread_attr_t reader_attr;
+DataReader blah;
+int total_det;
+map<Tomography::det_type,vector<vector<float> > > current_ped;
+queue<event_raw_data> event_raw_data_queue;
+pthread_mutex_t event_raw_data_mutex;
+queue<event_ped_data> event_ped_data_queue;
+pthread_mutex_t event_ped_data_mutex;
+queue<event_object_data> event_objects_queue;
+pthread_mutex_t event_objects_mutex;
+CosmicBench * bench;
+Tanalyse_W * analysisFile;
+void * reader_thread(void *){
+	reader_active = true;
+	while((!(blah.is_end())) && Tomography::get_instance()->get_can_continue()){
+		blah.process_event();
+		struct event_raw_data current_data;
+		current_data.Nevent = blah.get_event_n();
+		current_data.evttime = blah.get_evttime();
+		current_data.strip_data = blah.get_data();
+		pthread_mutex_lock(&event_raw_data_mutex);
+		event_raw_data_queue.push(current_data);
+		pthread_mutex_unlock(&event_raw_data_mutex);
+		event_read++;
+		while(event_raw_data_queue.size()>1000){
+
+		}
+	}
+	reader_active = false;
+}
+void * ped_thread(void *){
+	ped_active = true;
+	while(reader_active && Tomography::get_instance()->get_can_continue()){
+		while(!event_raw_data_queue.empty()){
+			struct event_ped_data current_ped_data;
+			struct event_raw_data current_raw_data;
+			pthread_mutex_lock(&event_raw_data_mutex);
+			current_raw_data = event_raw_data_queue.front();
+			event_raw_data_queue.pop();
+			pthread_mutex_unlock(&event_raw_data_mutex);
+			current_ped_data.Nevent = current_raw_data.Nevent;
+			current_ped_data.evttime = current_raw_data.evttime;
+			current_ped_data.strip_data = DataReader::do_ped_CMN_sub_event<double,float>(current_raw_data.strip_data,current_ped);
+			pthread_mutex_lock(&event_ped_data_mutex);
+			event_ped_data_queue.push(current_ped_data);
+			pthread_mutex_unlock(&event_ped_data_mutex);
+			event_corr++;
+			while(event_ped_data_queue.size()>1000){
+				
+			}
+		}
+	}
+	ped_active = false;
+}
+void * multicluster_thread(void *){
+	multicluster_active = true;
+	while(ped_active && Tomography::get_instance()->get_can_continue()){
+		while(!event_ped_data_queue.empty()){
+			struct event_ped_data current_ped_data;
+			pthread_mutex_lock(&event_ped_data_mutex);
+			current_ped_data = event_ped_data_queue.front();
+			event_ped_data_queue.pop();
+			pthread_mutex_unlock(&event_ped_data_mutex);
+			struct event_object_data current_object_data;
+			current_object_data.Nevent = current_ped_data.Nevent;
+			current_object_data.evttime = current_ped_data.evttime;
+			for(int i=0;i<total_det;i++){
+				Detector * det = bench->get_detector(i);
+				current_object_data.event_data[det->get_type()].push_back(det->build_event(current_ped_data.strip_data[det->get_type()][det->get_n_in_tree()],current_ped_data.Nevent));
+				(current_object_data.event_data[det->get_type()].back())->MultiCluster();
+			}
+			pthread_mutex_lock(&event_objects_mutex);
+			event_objects_queue.push(current_object_data);
+			pthread_mutex_unlock(&event_objects_mutex);
+			event_demux++;
+			while(event_objects_queue.size()>1000){
+				
+			}
+		}
+	}
+	multicluster_active = false;
+}
+void * writer_thread(void *){
+	writer_active = true;
+	while(multicluster_active && Tomography::get_instance()->get_can_continue()){
+		while(!event_objects_queue.empty()){
+			struct event_object_data current_object_data;
+			pthread_mutex_lock(&event_objects_mutex);
+			current_object_data = event_objects_queue.front();
+			event_objects_queue.pop();
+			pthread_mutex_unlock(&event_objects_mutex);
+			analysisFile->fillTree(current_object_data.Nevent,current_object_data.evttime,current_object_data.event_data);
+			for(map<Tomography::det_type,vector<Event*> >::iterator type_it = current_object_data.event_data.begin();type_it!=current_object_data.event_data.end();++type_it){
+				for(vector<Event*>::iterator ev_it = (type_it->second).begin();ev_it!=(type_it->second).end();++ev_it){
+					delete *ev_it;
+				}
+			}
+			event_written++;
+		}
+	}
+	writer_active = false;
+}
 
 int main(int argc, char ** argv){
 	if(argc<2){
@@ -44,7 +182,7 @@ int main(int argc, char ** argv){
 	read_json(config_file, config_tree);
 	Tomography::Init(config_tree);
 	if(operation != analysis){
-		DataReader blah(config_tree,true);
+		blah = DataReader(config_tree,true);
 		blah.process();
 		if(operation == ped_run) blah.compute_ped();
 		blah.read_ped();
@@ -53,49 +191,81 @@ int main(int argc, char ** argv){
 		if(operation == ped_run) blah.compute_RMSPed();
 	}
 	else{
-		CosmicBench * bench = new CosmicBench(config_tree);
-		Tanalyse_W * analysisFile = new Tanalyse_W(config_tree.get<string>("Tree"),bench->get_det_N());
-		DataReader blah(config_tree,false);
+		bench = new CosmicBench(config_tree);
+		analysisFile = new Tanalyse_W(config_tree.get<string>("Tree"),bench->get_det_N());
+		blah = DataReader(config_tree,false);
 		blah.read_ped();
-		int total_det = bench->get_det_N_tot();
-		long event_nb = 0;
-		int Nevent = 0;
-		double evttime = 0;
-		while((!(blah.is_end())) && Tomography::get_instance()->get_can_continue()){
-			if((event_nb%100) == 0) cout << "\r" << "event processed : " << event_nb << flush;
-			blah.process_event();
-			Nevent = blah.get_event_n();
-			evttime = blah.get_evttime();
-			blah.do_ped_CMN_sub_event();
-			map<Tomography::det_type,vector<vector<vector<float> > > > current_data = blah.get_data();
-			map<Tomography::det_type,vector<vector<vector<double> > > > current_data_d;
-			for(map<Tomography::det_type,vector<vector<vector<float> > > >::iterator type_it = current_data.begin();type_it!=current_data.end();++type_it){
-				current_data_d[type_it->first] = vector<vector<vector<double> > >((type_it->second).size());
-				for(unsigned int i=0;i<(type_it->second).size();i++){
-					current_data_d[type_it->first][i] = vector<vector<double> >((type_it->second)[i].size());
-					for(unsigned int j=0;j<(type_it->second)[i].size();j++){
-						current_data_d[type_it->first][i][j] = vector<double>((type_it->second)[i][j].size());
-						for(unsigned int k=0;k<(type_it->second)[i][j].size();k++){
-							current_data_d[type_it->first][i][j][k] = (type_it->second)[i][j][k];
-						}
-					}
-				}
-			}
-			map<Tomography::det_type,vector<Event*> > events;
-			for(int i=0;i<total_det;i++){
-				Detector * det = bench->get_detector(i);
-				events[det->get_type()].push_back(det->build_event(current_data_d[det->get_type()][det->get_n_in_tree()],event_nb));
-				(events[det->get_type()].back())->MultiCluster();
-			}
-			analysisFile->fillTree(Nevent,evttime,events);
-			for(map<Tomography::det_type,vector<Event*> >::iterator type_it = events.begin();type_it!=events.end();++type_it){
-				for(vector<Event*>::iterator ev_it = (type_it->second).begin();ev_it!=(type_it->second).end();++ev_it){
-					delete *ev_it;
-				}
-			}
-			event_nb++;
+		current_ped = blah.get_Ped();
+		total_det = bench->get_det_N_tot();
+		//long event_nb = 0;
+		//int Nevent = 0;
+		//double evttime = 0;
+		pthread_mutex_init(&event_raw_data_mutex, NULL);
+		pthread_mutex_init(&event_ped_data_mutex, NULL);
+		pthread_mutex_init(&event_objects_mutex, NULL);
+		
+		pthread_attr_init(&reader_attr);
+		pthread_attr_setdetachstate(&reader_attr, PTHREAD_CREATE_JOINABLE);
+		pthread_t reader_id;
+		pthread_t ped_id;
+		pthread_t multicluster_id;
+		pthread_t writer_id;
+		
+		bool thread_launched = true;
+		int result = pthread_create(&reader_id,NULL, reader_thread, NULL);
+		if(result == 0 && thread_launched){
+			result = pthread_create(&ped_id,NULL, ped_thread, NULL);
 		}
-		cout << "\r" << "event processed : " << event_nb << endl;
+		else{
+			thread_launched = false;
+			cout << "cannot create reader thread" << endl;
+		}
+		if(result == 0 && thread_launched){
+			result = pthread_create(&multicluster_id,NULL, multicluster_thread, NULL);
+		}
+		else{
+			thread_launched = false;
+			cout << "cannot create ped correcter thread" << endl;
+		}
+		if(result == 0 && thread_launched){
+			result = pthread_create(&writer_id,NULL, writer_thread, NULL);
+		}
+		else{
+			thread_launched = false;
+			cout << "cannot create multicluster thread" << endl;
+		}
+		if(result !=0 && thread_launched){
+			thread_launched = false;
+			cout << "cannot create writer thread" << endl;
+		}
+		
+		pthread_attr_destroy(&reader_attr);
+		if(thread_launched){
+			cout <<  setw(20) << "event read" << "|" << setw(20) << "event corr" << "|" << setw(20) << "event demux" << "|" << setw(20) << "event written" << endl;
+			while(reader_active || ped_active || multicluster_active || writer_active){
+				cout << "\r" << setw(20) << event_read << "|" << setw(20) << event_corr << "|" << setw(20) << event_demux << "|" << setw(20) << event_written << flush;
+				sleep(1);
+			}
+			cout << "\r" << setw(20) << event_read << "|" << setw(20) << event_corr << "|" << setw(20) << event_demux << "|" << setw(20) << event_written << endl;
+			void * status;
+			result = pthread_join(reader_id,&status);
+			if(result !=0){
+				cout << "cannot join reader thread" << endl;
+			}
+			result = pthread_join(ped_id,&status);
+			if(result !=0){
+				cout << "cannot join ped correcter thread" << endl;
+			}
+			result = pthread_join(multicluster_id,&status);
+			if(result !=0){
+				cout << "cannot join multicluster thread" << endl;
+			}
+			result = pthread_join(writer_id,&status);
+			if(result !=0){
+				cout << "cannot join writer thread" << endl;
+			}
+		}
+		pthread_exit(NULL);
 		analysisFile->Write();
 		analysisFile->CloseFile();
 		delete analysisFile;
