@@ -53,7 +53,7 @@ int event_corr = 0;
 int event_demux = 0;
 int event_written = 0;
 pthread_attr_t reader_attr;
-DataReader blah;
+DataReader * blah;
 int total_det;
 map<Tomography::det_type,vector<vector<float> > > current_ped;
 queue<event_raw_data> event_raw_data_queue;
@@ -66,17 +66,17 @@ CosmicBench * bench;
 Tanalyse_W * analysisFile;
 void * reader_thread(void *){
 	reader_active = true;
-	while((!(blah.is_end())) && Tomography::get_instance()->get_can_continue()){
-		blah.process_event();
+	while((!(blah->is_end())) && Tomography::get_instance()->get_can_continue()){
+		blah->process_event();
 		struct event_raw_data current_data;
-		current_data.Nevent = blah.get_event_n();
-		current_data.evttime = blah.get_evttime();
-		current_data.strip_data = blah.get_data();
+		current_data.Nevent = blah->get_event_n();
+		current_data.evttime = blah->get_evttime();
+		current_data.strip_data = blah->get_data();
 		pthread_mutex_lock(&event_raw_data_mutex);
 		event_raw_data_queue.push(current_data);
 		pthread_mutex_unlock(&event_raw_data_mutex);
 		event_read++;
-		while(event_raw_data_queue.size()>1000){
+		while(event_raw_data_queue.size()>5000){
 
 		}
 	}
@@ -99,7 +99,7 @@ void * ped_thread(void *){
 			event_ped_data_queue.push(current_ped_data);
 			pthread_mutex_unlock(&event_ped_data_mutex);
 			event_corr++;
-			while(event_ped_data_queue.size()>1000){
+			while(event_ped_data_queue.size()>5000){
 				
 			}
 		}
@@ -127,7 +127,7 @@ void * multicluster_thread(void *){
 			event_objects_queue.push(current_object_data);
 			pthread_mutex_unlock(&event_objects_mutex);
 			event_demux++;
-			while(event_objects_queue.size()>1000){
+			while(event_objects_queue.size()>5000){
 				
 			}
 		}
@@ -182,20 +182,21 @@ int main(int argc, char ** argv){
 	read_json(config_file, config_tree);
 	Tomography::Init(config_tree);
 	if(operation != analysis){
-		blah = DataReader(config_tree,true);
-		blah.process();
-		if(operation == ped_run) blah.compute_ped();
-		blah.read_ped();
-		blah.do_ped_sub();
-		blah.do_common_noise_sub();
-		if(operation == ped_run) blah.compute_RMSPed();
+		blah = new DataReader(config_tree,true);
+		blah->process();
+		if(operation == ped_run) blah->compute_ped();
+		blah->read_ped();
+		blah->do_ped_sub();
+		blah->do_common_noise_sub();
+		if(operation == ped_run) blah->compute_RMSPed();
+		delete blah;
 	}
 	else{
 		bench = new CosmicBench(config_tree);
 		analysisFile = new Tanalyse_W(config_tree.get<string>("Tree"),bench->get_det_N());
-		blah = DataReader(config_tree,false);
-		blah.read_ped();
-		current_ped = blah.get_Ped();
+		blah = new DataReader(config_tree,false);
+		blah->read_ped();
+		current_ped = blah->get_Ped();
 		total_det = bench->get_det_N_tot();
 		//long event_nb = 0;
 		//int Nevent = 0;
@@ -241,12 +242,12 @@ int main(int argc, char ** argv){
 		
 		pthread_attr_destroy(&reader_attr);
 		if(thread_launched){
-			cout <<  setw(20) << "event read" << "|" << setw(20) << "event corr" << "|" << setw(20) << "event demux" << "|" << setw(20) << "event written" << endl;
+			cout << setw(15) << "event read" << "|" << setw(15) << "queue for corr" << "|" << setw(15) << "event corr" << "|" << setw(15) << "queue for demux" << "|" << setw(15) << "event demux" << "|" << setw(15) << "queue for write" << "|" << setw(15) << "event written" << endl;
 			while(reader_active || ped_active || multicluster_active || writer_active){
-				cout << "\r" << setw(20) << event_read << "|" << setw(20) << event_corr << "|" << setw(20) << event_demux << "|" << setw(20) << event_written << flush;
-				sleep(1);
+				cout << "\r" << setw(15) << event_read << "|" << setw(15) << event_corr << "|" << setw(15) << event_demux << "|" << setw(15) << event_written << flush;
+				usleep(100000);
 			}
-			cout << "\r" << setw(20) << event_read << "|" << setw(20) << event_corr << "|" << setw(20) << event_demux << "|" << setw(20) << event_written << endl;
+			cout << "\r" << setw(15) << event_read << "|" << setw(15) << event_corr << "|" << setw(15) << event_demux << "|" << setw(15) << event_written << endl;
 			void * status;
 			result = pthread_join(reader_id,&status);
 			if(result !=0){
@@ -265,9 +266,9 @@ int main(int argc, char ** argv){
 				cout << "cannot join writer thread" << endl;
 			}
 		}
-		pthread_exit(NULL);
 		analysisFile->Write();
 		analysisFile->CloseFile();
+		delete blah;
 		delete analysisFile;
 		delete bench;
 	}
