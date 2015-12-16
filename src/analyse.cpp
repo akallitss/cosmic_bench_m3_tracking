@@ -182,6 +182,7 @@ void Analyse::Residus_ref(){
 	map<string,TH2D*> muon_seen;
 	map<string,TH2D*> muon_total;
 	map<string,TH2D*> efficacity_2D;
+	map<string,TH2D*> ampl_h;
 	map<string,TGraph*> correlation;
 	map<string,TProfile*> angle_alignment;
 	map<string,TF1*> angle_z_fit;
@@ -222,6 +223,7 @@ void Analyse::Residus_ref(){
 			muon_seen[name.str()] = new TH2D((name.str()+"_seen").c_str(),(name.str()+"_seen").c_str(),nbins_2D,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2,nbins_2D,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2);
 			muon_total[name.str()] = new TH2D((name.str()+"_total").c_str(),(name.str()+"_total").c_str(),nbins_2D,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2,nbins_2D,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2);
 			efficacity_2D[name.str()] = new TH2D((name.str()+"_efficacity").c_str(),(name.str()+"_efficacity").c_str(),nbins_2D,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2,nbins_2D,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2);
+			ampl_h[name.str()] = new TH2D((name.str()+"_ampl_mean").c_str(),(name.str()+"_ampl_mean").c_str(),nbins_2D,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2,nbins_2D,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2);
 			efficacity_2D[name.str()]->SetStats(false);
 			correlation[name.str()] = new TGraph();
 			angle_alignment[name.str()] = new TProfile((name.str()+"_resVSperpPos").c_str(),(name.str()+"_resVSperpPos").c_str(),500,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2,-5,5);
@@ -234,7 +236,7 @@ void Analyse::Residus_ref(){
 			resVSsize[name.str()] = new TProfile((name.str()+"_resVSsize").c_str(),(name.str()+"_resVSsize").c_str(),50,0,50,-5,5);
 			absResVSampl[name.str()] = new TProfile((name.str()+"_absResVSampl").c_str(),(name.str()+"_absResVSampl").c_str(),500,-100,10000,0,5);
 			absResVStime[name.str()] = new TProfile((name.str()+"_absResVStime").c_str(),(name.str()+"_absResVStime").c_str(),38,-2,34,0,5);
-			absResVSabsAngle[name.str()] = new TProfile((name.str()+"_absResVSangle").c_str(),(name.str()+"_absResVSabsAngle").c_str(),50,0,0.6,0,5);
+			//absResVSabsAngle[name.str()] = new TProfile((name.str()+"_absResVSabsAngle").c_str(),(name.str()+"_absResVSabsAngle").c_str(),50,0,0.6,0,5);
 			absResVStot[name.str()] = new TProfile((name.str()+"_absResVStot").c_str(),(name.str()+"_absResVStot").c_str(),26,0,25,0,5);
 			absResVSsize[name.str()] = new TProfile((name.str()+"_absResVSsize").c_str(),(name.str()+"_absResVSsize").c_str(),50,0,50,0,5);
 			point_nb[name.str()] = 0;
@@ -339,7 +341,7 @@ void Analyse::Residus_ref(){
 						angle_alignment[name.str()]->Fill(jt->eval_Y((*it)->get_z()),residu);
 						resVSpos[name.str()]->Fill(jt->eval_X((*it)->get_z()),residu);
 						resVSangle[name.str()]->Fill(jt->get_slope_X(),residu);
-						absResVSabsAngle[name.str()]->Fill(Abs(jt->get_slope_X()),Abs(residu));
+						//absResVSabsAngle[name.str()]->Fill(Abs(jt->get_slope_X()),Abs(residu));
 						resVSanglePerp[name.str()]->Fill(jt->get_slope_Y(),residu);
 					}
 					else{
@@ -347,7 +349,7 @@ void Analyse::Residus_ref(){
 						angle_alignment[name.str()]->Fill(jt->eval_X((*it)->get_z()),residu);
 						resVSpos[name.str()]->Fill(jt->eval_Y((*it)->get_z()),residu);
 						resVSangle[name.str()]->Fill(jt->get_slope_Y(),residu);
-						absResVSabsAngle[name.str()]->Fill(Abs(jt->get_slope_Y()),Abs(residu));
+						//absResVSabsAngle[name.str()]->Fill(Abs(jt->get_slope_Y()),Abs(residu));
 						resVSanglePerp[name.str()]->Fill(jt->get_slope_X(),residu);
 					}
 					point_nb[name.str()]++;
@@ -360,11 +362,12 @@ void Analyse::Residus_ref(){
 					absResVSampl[name.str()]->Fill((*matching_cluster)->get_ampl(),Abs(residu));
 					absResVStot[name.str()]->Fill((*matching_cluster)->get_TOT(),Abs(residu));
 					absResVSsize[name.str()]->Fill((*matching_cluster)->get_size(),Abs(residu));
-					delete *matching_cluster;
-					current_clusters.erase(matching_cluster);
 					if(residu<chisquare_threshold){
 						muon_seen[name.str()]->Fill(jt->eval_X((*it)->get_z()),jt->eval_Y((*it)->get_z()));
+						ampl_h[name.str()]->Fill(jt->eval_X((*it)->get_z()),jt->eval_Y((*it)->get_z()),(*matching_cluster)->get_ampl());
 					}
+					delete *matching_cluster;
+					current_clusters.erase(matching_cluster);
 				}
 				for(vector<Cluster*>::iterator kt = current_clusters.begin();kt!=current_clusters.end();++kt){
 					delete *kt;
@@ -414,7 +417,8 @@ void Analyse::Residus_ref(){
 				it->second->cd(15);
 				absResVStot[it->first]->Draw();
 				it->second->cd(16);
-				absResVSabsAngle[it->first]->Draw();
+				//absResVSabsAngle[it->first]->Draw();
+				ampl_h[it->first]->Draw("COLZ");
 				it->second->Modified();
 				it->second->Update();
 			}
@@ -448,6 +452,7 @@ void Analyse::Residus_ref(){
 				double binContent = 0;
 				if(muon_total[it->first]->GetBinContent(binN) > 0) binContent = (muon_seen[it->first]->GetBinContent(binN))/(muon_total[it->first]->GetBinContent(binN));
 				efficacity_2D[it->first]->SetBinContent(binN,binContent);
+				ampl_h[it->first]->SetBinContent(binN,(ampl_h[it->first]->GetBinContent(binN))/(muon_seen[it->first]->GetBinContent(binN)));
 				double pos_X = muon_total[it->first]->GetXaxis()->GetBinCenter(i);
 				double pos_Y = muon_total[it->first]->GetYaxis()->GetBinCenter(j);
 				if(pos_X<=2*Tomography::get_instance()->get_XY_size()/5. && pos_X>=-2*Tomography::get_instance()->get_XY_size()/5. && pos_Y<=2*Tomography::get_instance()->get_XY_size()/5. && pos_Y>=-2*Tomography::get_instance()->get_XY_size()/5.){
@@ -491,7 +496,8 @@ void Analyse::Residus_ref(){
 		it->second->cd(15);
 		absResVStot[it->first]->Draw();
 		it->second->cd(16);
-		absResVSabsAngle[it->first]->Draw();
+		//absResVSabsAngle[it->first]->Draw();
+		ampl_h[it->first]->Draw("COLZ");
 		it->second->Modified();
 		it->second->Update();
 		cout << it->first << " efficacity : " << 100.*efficacity[it->first] << "%" << endl;
