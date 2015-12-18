@@ -438,6 +438,9 @@ template map<Tomography::det_type,vector<vector<vector<double> > > > DataReader:
 long DataReader::get_event_n() const{
 	return Nevent;
 }
+long DataReader::get_max_event() const{
+	return max_event;
+}
 double DataReader::get_evttime() const{
 	return evttime;
 }

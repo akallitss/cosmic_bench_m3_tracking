@@ -5,11 +5,11 @@
 #include "Tanalyse_R.h"
 #include "detector.h"
 
-Read_Analyse_Task::Read_Analyse_Task(Tanalyse_R * reader_, const CosmicBench * const detectors_): Input_Task(){
+Read_Analyse_Task::Read_Analyse_Task(long max_event_, Tanalyse_R * reader_, const CosmicBench * const detectors_): Input_Task(max_event_){
 	detectors = detectors_;
 	reader = reader_;
 }
-Read_Analyse_Task::Read_Analyse_Task(Tanalyse_R * reader_, const CosmicBench * const detectors_, Task * next_task_): Input_Task(next_task_){
+Read_Analyse_Task::Read_Analyse_Task(long max_event_, Tanalyse_R * reader_, const CosmicBench * const detectors_, Task * next_task_): Input_Task(max_event_, next_task_){
 	detectors = detectors_;
 	reader = reader_;
 }
@@ -36,5 +36,8 @@ bool Read_Analyse_Task::do_task(){
 	return has_read;
 }
 bool Read_Analyse_Task::can_exec(){
-	return (detectors!=NULL && reader!=NULL);
+	if(reader==NULL) return false;
+	if(detectors==NULL) return false;
+	if(max_event<0) return true;
+	return (reader->fChain->GetEntriesFast() < max_event);
 }

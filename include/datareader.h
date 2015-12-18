@@ -33,6 +33,7 @@ class DataReader{
 		void do_common_noise_sub_event();
 		void do_ped_CMN_sub_event();
 		long get_event_n() const;
+		long get_max_event() const;
 		double get_evttime() const;
 		bool is_end() const;
 		map<Tomography::det_type,vector<vector<vector<float> > > > get_data() const;

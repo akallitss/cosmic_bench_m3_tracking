@@ -11,9 +11,16 @@
 #include "Tsignal_W.h"
 #include "Tanalyse_W.h"
 
+#include <TObject.h>
+#include <TCanvas.h>
+
 #include <vector>
+#include <iostream>
 
 using std::vector;
+using std::cout;
+using std::endl;
+using std::flush;
 
 Task::Task(){
 	next_task = NULL;
@@ -61,13 +68,15 @@ IO_Task::~IO_Task(){
 	pthread_mutex_destroy(&IO_mutex);
 }
 
-Input_Task::Input_Task(){
+Input_Task::Input_Task(long max_event_){
 	pthread_mutex_init(&IO_mutex, NULL);
 	next_task = NULL;
+	max_event = max_event_;
 }
-Input_Task::Input_Task(Task * next_task_){
+Input_Task::Input_Task(long max_event_, Task * next_task_){
 	pthread_mutex_init(&IO_mutex, NULL);
 	next_task = next_task_;
+	max_event = max_event_;
 }
 Input_Task::~Input_Task(){
 	pthread_mutex_destroy(&IO_mutex);
@@ -178,4 +187,72 @@ void * Reader_Thread::run(){
 }
 void Reader_Thread::pre_stop(){
 	working = false;
+}
+
+Display_Thread::Display_Thread(): Thread(){
+
+}
+Display_Thread::Display_Thread(string log_file_name): Thread(), ostringstream(){
+	log_file.open(log_file_name.c_str());
+}
+Display_Thread::~Display_Thread(){
+	if(log_file.is_open() && log_file.good()){
+		log_file.flush();
+		log_file.close();
+	}
+	cout << endl;
+}
+bool Display_Thread::is_working() const{
+	return working;
+}
+void Display_Thread::register_canvas(TCanvas * new_canvas, unsigned short canvas_div_n){
+	for(vector<canvas_info>::iterator it=canvas_list.begin();it!=canvas_list.end();++it){
+		if(new_canvas->GetName() == it->addr->GetName()){
+			cout << "canvas \"" << new_canvas->GetName() << "\" already registered !" << endl;
+			return;
+		}
+	}
+	struct canvas_info next_canvas;
+	next_canvas.addr = new_canvas;
+	next_canvas.div_n = canvas_div_n;
+	canvas_list.push_back(next_canvas);
+}
+void Display_Thread::register_plot(TObject * new_plot, string canvas_name, string draw_opt, unsigned short canvas_div){
+	for(vector<canvas_info>::iterator it=canvas_list.begin();it!=canvas_list.end();++it){
+		if((canvas_name == it->addr->GetName()) && (canvas_div <= it->div_n)){
+			struct plot_info next_plot;
+			next_plot.plot = new_plot;
+			next_plot.div = canvas_div;
+			next_plot.draw_opt = draw_opt;
+			(it->plots).push_back(next_plot);
+			return;
+		}
+	}
+}
+void * Display_Thread::run(){
+	unsigned int delay = 0;
+	string buffer;
+	while(working){
+		buffer = str();
+		str("");
+		cout << buffer;
+		cout.flush();
+		if(log_file.is_open() && log_file.good()){
+			log_file << buffer;
+			log_file.flush();
+		}
+		if(delay>300){
+			for(vector<canvas_info>::iterator it=canvas_list.begin();it!=canvas_list.end();++it){
+				for(vector<plot_info>::iterator jt = (it->plots).begin();jt!=(it->plots).end();++jt){
+					it->addr->cd(jt->div);
+					jt->plot->DrawClone((jt->draw_opt).c_str());
+				}
+				it->addr->Modified();
+				it->addr->Update();
+			}
+		}
+		usleep(10000);
+		delay++;
+	}
+	return 0;
 }

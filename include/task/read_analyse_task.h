@@ -8,8 +8,8 @@ class CosmicBench;
 
 class Read_Analyse_Task: public Input_Task{
 	public:
-		Read_Analyse_Task(Tanalyse_R * reader_, const CosmicBench * const detectors_);
-		Read_Analyse_Task(Tanalyse_R * reader_, const CosmicBench * const detectors_, Task * next_task_);
+		Read_Analyse_Task(long max_event_, Tanalyse_R * reader_, const CosmicBench * const detectors_);
+		Read_Analyse_Task(long max_event_, Tanalyse_R * reader_, const CosmicBench * const detectors_, Task * next_task_);
 		~Read_Analyse_Task();
 		bool do_task();
 		bool can_exec();

@@ -4,11 +4,11 @@
 
 #include "Tsignal_R.h"
 
-Read_Signal_Task::Read_Signal_Task(Tsignal_R * reader_, Tomography::signal_type type_): Input_Task(){
+Read_Signal_Task::Read_Signal_Task(long max_event_, Tsignal_R * reader_, Tomography::signal_type type_): Input_Task(max_event_){
 	reader = reader_;
 	type = type_;
 }
-Read_Signal_Task::Read_Signal_Task(Tsignal_R * reader_, Tomography::signal_type type_,Task * next_task_): Input_Task(next_task_){
+Read_Signal_Task::Read_Signal_Task(long max_event_, Tsignal_R * reader_, Tomography::signal_type type_,Task * next_task_): Input_Task(max_event_, next_task_){
 	reader = reader_;
 	type = type_;
 }
@@ -58,5 +58,8 @@ bool Read_Signal_Task::do_task(){
 	}
 }
 bool Read_Signal_Task::can_exec(){
-	return ((reader!=NULL) && (type!=Tomography::unknown_signal));
+	if(reader==NULL) return false;
+	if(type==Tomography::unknown_signal) return false;
+	if(max_event<0) return true;
+	return (reader->fChain->GetEntriesFast() < max_event);
 }

@@ -6,8 +6,19 @@
 #include <pthread.h>
 
 #include <queue>
+#include <sstream>
+#include <fstream>
+#include <string>
+#include <vector>
 
 using std::queue;
+using std::ostringstream;
+using std::string;
+using std::ofstream;
+using std::vector;
+
+class TCanvas;
+class TObject;
 
 class Task{
 	public:
@@ -42,8 +53,8 @@ class IO_Task: public Task{
 
 class Input_Task{
 	public:
-		Input_Task();
-		Input_Task(Task * next_task_);
+		Input_Task(long max_event_);
+		Input_Task(long max_event_, Task * next_task_);
 		~Input_Task();
 		virtual bool do_task() = 0;
 		virtual bool can_exec() = 0;
@@ -51,6 +62,7 @@ class Input_Task{
 	protected:
 		pthread_mutex_t IO_mutex;
 		Task * next_task;
+		long max_event;
 };
 
 class Thread{
@@ -93,6 +105,50 @@ class Reader_Thread: public Thread{
 		void pre_stop();
 		bool working;
 		Input_Task * current_task;
+};
+
+class Display_Thread: public Thread, public ostringstream{
+	public:
+		Display_Thread();
+		Display_Thread(string log_file_name);
+		~Display_Thread();
+		bool is_working() const;
+		void register_canvas(TCanvas * new_canvas, unsigned short canvas_div_n = 0);
+		void register_plot(TObject * new_plot, string canvas_name, string draw_opt = "", unsigned short canvas_div = 0);
+		//void register_div_hist(TH1 * new_plot_a, TH1 * new_plot_b, string canvas_name, string draw_opt = "", unsigned short canvas_div = 0);
+		//void register_sub_hist(TH1 * new_plot_a, TH1 * new_plot_b, string canvas_name, string draw_opt = "", unsigned short canvas_div = 0);
+	protected:
+		struct plot_info{
+			TObject * plot;
+			unsigned short div;
+			string draw_opt;
+		};
+		/*
+		struct divided_hist{
+			unsigned short div;
+			string draw_opt;
+			TH1 * hist_a;
+			TH1 * hist_b;
+		};
+		struct substracted_hist{
+			unsigned short div;
+			string draw_opt;
+			TH1 * hist_a;
+			TH1 * hist_b;
+		};
+		*/
+		struct canvas_info{
+			TCanvas * addr;
+			unsigned short div_n;
+			vector<plot_info> plots;
+			//vector<divided_hist> div_plots;
+			//vector<substracted_hist> sub_plots;
+		};
+		void * run();
+		bool working;
+		ofstream log_file;
+		vector<canvas_info> canvas_list;
+
 };
 
 

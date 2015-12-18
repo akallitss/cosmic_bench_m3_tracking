@@ -4,10 +4,10 @@
 
 #include "datareader.h"
 
-Read_Elec_Task::Read_Elec_Task(DataReader * reader_): Input_Task(){
+Read_Elec_Task::Read_Elec_Task(DataReader * reader_): Input_Task(reader_->get_max_event()){
 	reader = reader_;
 }
-Read_Elec_Task::Read_Elec_Task(DataReader * reader_, Task * next_task_): Input_Task(next_task_){
+Read_Elec_Task::Read_Elec_Task(DataReader * reader_, Task * next_task_): Input_Task(reader_->get_max_event(), next_task_){
 	reader = reader_;
 }
 Read_Elec_Task::~Read_Elec_Task(){
@@ -29,5 +29,7 @@ bool Read_Elec_Task::do_task(){
 	return has_read;
 }
 bool Read_Elec_Task::can_exec(){
-	return (reader!=NULL);
+	if(reader==NULL) return false;
+	if(max_event<0) return true;
+	return (reader->get_event_n() < max_event);
 }
