@@ -112,6 +112,7 @@ class Display_Thread: public Thread, public ostringstream{
 		Display_Thread();
 		Display_Thread(string log_file_name);
 		~Display_Thread();
+		void set_log_file(string log_file_name);
 		bool is_working() const;
 		void register_canvas(TCanvas * new_canvas, unsigned short canvas_div_n = 0);
 		void register_plot(TObject * new_plot, string canvas_name, string draw_opt = "", unsigned short canvas_div = 0);
@@ -145,11 +146,13 @@ class Display_Thread: public Thread, public ostringstream{
 			//vector<substracted_hist> sub_plots;
 		};
 		void * run();
+		void pre_stop();
 		bool working;
 		ofstream log_file;
 		vector<canvas_info> canvas_list;
+		void display_text();
+		void display_canvas();
 
 };
-
 
 #endif

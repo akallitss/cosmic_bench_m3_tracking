@@ -3,6 +3,7 @@
 #include "task/tracking_task.h"
 
 #include "detector.h"
+#include "event.h"
 
 Tracking_Abs_Task::Tracking_Abs_Task(const CosmicBench * const detectors_): Task(){
 	detectors = detectors_;

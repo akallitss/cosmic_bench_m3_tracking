@@ -15,7 +15,8 @@
 
 #include <boost/property_tree/ptree.hpp>
 
-#include <ray.h>
+#include "ray.h"
+#include "MT_tomography.h"
 
 using std::cout;
 using std::endl;
@@ -31,6 +32,7 @@ using boost::property_tree::ptree;
 class Detector;
 class CosmicBenchEvent;
 class Event;
+class Display_Thread;
 
 template<typename T,typename R>
 ostream& operator<<(ostream& os, const map<T,R>& map_);
@@ -82,6 +84,7 @@ class Tomography{
 		static const string FeminosExt;
 		//TODO : make this map const
 		static map<const Tomography::det_type,const Detector* const> Static_Detector;
+		static Display_Thread TomoCout;
 
 		static Tomography* get_instance();
 		static void Init(ptree config_tree_);

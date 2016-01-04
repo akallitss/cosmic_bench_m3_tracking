@@ -27,28 +27,28 @@ ECHO=/bin/echo -e
 DataReader_obj_tmp = NewDataReader.o datareader.o ElecReader.o Tsignal_W.o dataline.o tomography.o Tanalyse_W.o event.o detector.o ray.o cluster.o point.o MT_tomography.o task/read_elec_task.o task/ped_task.o task/multicluster_task.o task/write_analyse_task.o
 DataReader_obj = $(patsubst %, $(ODIR)/%, $(DataReader_obj_tmp))
 
-absorptionMap_obj_tmp = absorptionMap.o analyse.o Tanalyse_R.o event.o ray.o cluster.o detector.o point.o Tsignal_R.o tomography.o acceptanceFunction.o Tray.o dataline.o
+absorptionMap_obj_tmp = absorptionMap.o analyse.o Tanalyse_R.o event.o ray.o cluster.o detector.o point.o Tsignal_R.o tomography.o acceptanceFunction.o Tray.o dataline.o MT_tomography.o task/read_analyse_task.o task/tracking_task.o
 absorptionMap_obj = $(patsubst %, $(ODIR)/%, $(absorptionMap_obj_tmp))
 
-tracking_obj_tmp = tracking.o analyse.o Tanalyse_R.o event.o ray.o cluster.o detector.o point.o Tsignal_R.o tomography.o acceptanceFunction.o Tray.o dataline.o
+tracking_obj_tmp = tracking.o analyse.o Tanalyse_R.o event.o ray.o cluster.o detector.o point.o Tsignal_R.o tomography.o acceptanceFunction.o Tray.o dataline.o MT_tomography.o task/read_analyse_task.o task/tracking_task.o
 tracking_obj = $(patsubst %, $(ODIR)/%, $(tracking_obj_tmp))
 
-MultiCluster_obj_tmp = MultiCluster.o Signal.o detector.o event.o cluster.o Tanalyse_W.o ray.o point.o Tsignal_R.o tomography.o Tray.o
+MultiCluster_obj_tmp = MultiCluster.o Signal.o detector.o event.o cluster.o Tanalyse_W.o ray.o point.o Tsignal_R.o tomography.o Tray.o MT_tomography.o
 MultiCluster_obj = $(patsubst %, $(ODIR)/%, $(MultiCluster_obj_tmp))
 
-live_obj_tmp = live.o liveDisplay.o datareader.o dataline.o detector.o event.o cluster.o ray.o point.o tomography.o
+live_obj_tmp = live.o liveDisplay.o datareader.o dataline.o detector.o event.o cluster.o ray.o point.o tomography.o MT_tomography.o
 live_obj = $(patsubst %, $(ODIR)/%, $(live_obj_tmp))
 
-AutoAlign_obj_tmp = AutoAlign.o analyse.o Tanalyse_R.o event.o ray.o cluster.o detector.o point.o Tsignal_R.o tomography.o acceptanceFunction.o Tray.o
+AutoAlign_obj_tmp = AutoAlign.o analyse.o Tanalyse_R.o event.o ray.o cluster.o detector.o point.o Tsignal_R.o tomography.o acceptanceFunction.o Tray.o MT_tomography.o task/read_analyse_task.o task/tracking_task.o
 AutoAlign_obj = $(patsubst %, $(ODIR)/%, $(AutoAlign_obj_tmp))
 
 HV_Monitor_obj_tmp = HV_Monitor.o CAEN_comm.o
 HV_Monitor_obj = $(patsubst %, $(ODIR)/%, $(HV_Monitor_obj_tmp))
 
-wrapper_obj_tmp = wrapper.o detector.o event.o cluster.o ray.o point.o datareader.o Tsignal_W.o dataline.o ElecReader.o tomography.o Tray.o
+wrapper_obj_tmp = wrapper.o detector.o event.o cluster.o ray.o point.o datareader.o Tsignal_W.o dataline.o ElecReader.o tomography.o Tray.o MT_tomography.o
 wrapper_obj = $(patsubst %, $(ODIR)/%, $(wrapper_obj_tmp))
 
-carac_all_obj_tmp = carac_all.o carac.o Tanalyse_R.o event.o ray.o cluster.o detector.o point.o tomography.o
+carac_all_obj_tmp = carac_all.o carac.o Tanalyse_R.o event.o ray.o cluster.o detector.o point.o tomography.o MT_tomography.o
 carac_all_obj = $(patsubst %, $(ODIR)/%, $(carac_all_obj_tmp))
 
 $(shell mkdir -p $(ODIR)/task)

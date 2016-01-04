@@ -100,19 +100,22 @@ void * Thread::runThread(void * arg){
 int Thread::start(){
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-	int result = pthread_create(&id,NULL,runThread,this);
-	if(result == 0) running = 1;
-	pthread_attr_destroy(&attr);
-	return result;
+	if(running == 0){
+		int result = pthread_create(&id,NULL,runThread,this);
+		if(result == 0) running = 1;
+		pthread_attr_destroy(&attr);
+		return result;
+	}
+	else return -1;
 }
 void Thread::pre_stop(){
 
 }
 int Thread::stop(){
-	pre_stop();
 	if(running == 0){
 		return -1;
 	}
+	pre_stop();
 	void * status;
 	int result = pthread_join(id,&status);
 	if(result == 0) running = 0;
@@ -190,17 +193,26 @@ void Reader_Thread::pre_stop(){
 }
 
 Display_Thread::Display_Thread(): Thread(){
-
+	start();
 }
 Display_Thread::Display_Thread(string log_file_name): Thread(), ostringstream(){
 	log_file.open(log_file_name.c_str());
+	start();
 }
 Display_Thread::~Display_Thread(){
+	stop();
 	if(log_file.is_open() && log_file.good()){
 		log_file.flush();
 		log_file.close();
 	}
 	cout << endl;
+}
+void Display_Thread::set_log_file(string log_file_name){
+	if(log_file.is_open() && log_file.good()){
+		log_file.flush();
+		log_file.close();
+	}
+	log_file.open(log_file_name.c_str());
 }
 bool Display_Thread::is_working() const{
 	return working;
@@ -229,30 +241,40 @@ void Display_Thread::register_plot(TObject * new_plot, string canvas_name, strin
 		}
 	}
 }
+void Display_Thread::pre_stop(){
+	working = false;
+	display_text();
+	display_canvas();
+}
 void * Display_Thread::run(){
 	unsigned int delay = 0;
-	string buffer;
 	while(working){
-		buffer = str();
-		str("");
-		cout << buffer;
-		cout.flush();
-		if(log_file.is_open() && log_file.good()){
-			log_file << buffer;
-			log_file.flush();
-		}
+		display_text();
 		if(delay>300){
-			for(vector<canvas_info>::iterator it=canvas_list.begin();it!=canvas_list.end();++it){
-				for(vector<plot_info>::iterator jt = (it->plots).begin();jt!=(it->plots).end();++jt){
-					it->addr->cd(jt->div);
-					jt->plot->DrawClone((jt->draw_opt).c_str());
-				}
-				it->addr->Modified();
-				it->addr->Update();
-			}
+			display_canvas();
 		}
 		usleep(10000);
 		delay++;
 	}
 	return 0;
+}
+void Display_Thread::display_text(){
+	string buffer = str();
+	str("");
+	cout << buffer;
+	cout.flush();
+	if(log_file.is_open() && log_file.good()){
+		log_file << buffer;
+		log_file.flush();
+	}
+}
+void Display_Thread::display_canvas(){
+	for(vector<canvas_info>::iterator it=canvas_list.begin();it!=canvas_list.end();++it){
+		for(vector<plot_info>::iterator jt = (it->plots).begin();jt!=(it->plots).end();++jt){
+			it->addr->cd(jt->div);
+			jt->plot->DrawClone((jt->draw_opt).c_str());
+		}
+		it->addr->Modified();
+		it->addr->Update();
+	}
 }

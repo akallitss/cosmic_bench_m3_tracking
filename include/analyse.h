@@ -24,6 +24,7 @@ class Analyse: public Tanalyse_R, public CosmicBench{
 		void Efficacity();
 		void Residus();
 		void Residus_ref();
+		void Residus_ref_MT();
 		double Residus_ref_cost();
 		void Residus_ref_2D();
 		TH2D * AbsorptionFluxMap(double z, TCanvas * c1 = 0, double y_angle = 0);

@@ -51,7 +51,7 @@ int main(int argc, char ** argv){
 	}
 	else if(argv[2] == residus){
 		//blah->Residus();
-		blah->Residus_ref();
+		blah->Residus_ref_MT();
 	}
 	else if(argv[2] == eff2D){
 		blah->Residus_ref_2D();

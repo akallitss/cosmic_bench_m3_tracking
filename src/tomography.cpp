@@ -114,6 +114,7 @@ static map<const Tomography::det_type,const Detector* const> Static_Detector_bui
 }
 
 map<const Tomography::det_type,const Detector* const> Tomography::Static_Detector = Static_Detector_build();
+Display_Thread Tomography::TomoCout;// = Display_Thread();
 
 Tomography::Tomography(){
 	cout << "Warning ! Dummy Tomography instanciated" << endl;
@@ -288,6 +289,7 @@ void Tomography::save_canvases(){
 	if(gROOT->GetListOfCanvases()->GetSize() > 0) write_json(base_name + "config.json",config_tree);
 }
 void Tomography::Run(){
+	TomoCout.stop();
 	if(root_interpreter) root_interpreter->Run(true);
 }
 
