@@ -677,6 +677,10 @@ void Analyse::Residus_ref_MT(){
 	bool has_working_thread = true;
 	unsigned long jentry = 0;
 	while((has_working_thread || !(Tomography::get_instance()->is_ray_data_empty())) && Tomography::get_instance()->get_can_continue()){
+		if(Tomography::get_instance()->is_ray_data_empty()){
+			usleep(1000);
+			continue;
+		}
 		struct ray_data current_rays = Tomography::get_instance()->get_next_ray_data();
 		vector<Ray>::iterator ray_it = current_rays.rays.begin();
 		while(ray_it != current_rays.rays.end()){
