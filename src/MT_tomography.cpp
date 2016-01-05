@@ -193,11 +193,9 @@ void Reader_Thread::pre_stop(){
 }
 
 Display_Thread::Display_Thread(): Thread(){
-	start();
 }
 Display_Thread::Display_Thread(string log_file_name): Thread(), ostringstream(){
 	log_file.open(log_file_name.c_str());
-	start();
 }
 Display_Thread::~Display_Thread(){
 	stop();

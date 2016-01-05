@@ -149,6 +149,7 @@ Tomography::Tomography(){
 	sigemptyset(&sigIntHandler.sa_mask);
 	sigIntHandler.sa_flags = 0;
 	sigaction(SIGINT, &sigIntHandler, NULL);
+	TomoCout.start();
 }
 Tomography::Tomography(ptree config_tree_){
 	cout << "Loading Tomography !" << endl;
@@ -196,6 +197,7 @@ Tomography::Tomography(ptree config_tree_){
 	sigemptyset(&sigIntHandler.sa_mask);
 	sigIntHandler.sa_flags = 0;
 	sigaction(SIGINT, &sigIntHandler, NULL);
+	TomoCout.start();
 }
 Tomography::~Tomography(){
 	save_canvases();

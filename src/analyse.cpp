@@ -784,8 +784,8 @@ void Analyse::Residus_ref_MT(){
 	Tomography::TomoCout << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << eventReconstructed << "\n";
 
 	for(map<string,TCanvas*>::iterator it = c_MM.begin();it!=c_MM.end();++it){
-		Tomography::TomoCout << "\n\n";
-		Tomography::TomoCout << "resolution : " << "\n";
+		cout << "\n\n";
+		cout << "resolution : " << "\n";
 		MM_residus[it->first]->Fit(offset_fit[it->first],"R");
 		double total_seen = 0;
 		double total_passed = 0;
@@ -802,12 +802,12 @@ void Analyse::Residus_ref_MT(){
 			}
 		}
 		efficacity[it->first] = total_seen/total_passed;
-		Tomography::TomoCout << "angle Z : " << "\n";
+		cout << "angle Z : " << "\n";
 		angle_alignment[it->first]->Fit(angle_z_fit[it->first],"R");
-		Tomography::TomoCout << "angle XY : " << "\n";
+		cout << "angle XY : " << "\n";
 		resVSangle[it->first]->Fit(angle_xy_fit[it->first],"R");
-		Tomography::TomoCout << "-b/2a : " << angle_xy_fit[it->first]->GetParameter(1)/(2.*angle_xy_fit[it->first]->GetParameter(2)) << "\n";
-		Tomography::TomoCout << it->first << " efficacity : " << 100.*efficacity[it->first] << "%" << "\n";
+		cout << "-b/2a : " << angle_xy_fit[it->first]->GetParameter(1)/(2.*angle_xy_fit[it->first]->GetParameter(2)) << "\n";
+		cout << it->first << " efficacity : " << 100.*efficacity[it->first] << "%" << endl;
 	}
 }
 double Analyse::Residus_ref_cost(){
