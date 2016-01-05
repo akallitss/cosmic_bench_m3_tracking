@@ -245,6 +245,7 @@ void Display_Thread::pre_stop(){
 	display_canvas();
 }
 void * Display_Thread::run(){
+	working = true;
 	unsigned int delay = 0;
 	while(working){
 		display_text();
