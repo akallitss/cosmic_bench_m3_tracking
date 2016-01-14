@@ -251,6 +251,7 @@ void * Display_Thread::run(){
 		display_text();
 		if(delay>300){
 			display_canvas();
+			delay = 0;
 		}
 		usleep(10000);
 		delay++;

@@ -28,6 +28,12 @@ class FeuData: public RawData{
 		double evttime;
 		ifstream * file;
 		int current_index;
+		int dream_mask;
+};
+struct FeuInfo{
+	int id;
+	int n;
+	bool dream_mask[Tomography::Nasic_FEU];
 };
 
 class FeminosData: public RawData{
@@ -61,7 +67,7 @@ class DreamElecReader: public ElecReader{
 	public:
 		DreamElecReader();
 		~DreamElecReader();
-		DreamElecReader(string base_name_,map<int,int> feu_id_to_n_,int first_index_,int last_index_);
+		DreamElecReader(string base_name_,vector<FeuInfo> feu_info,int first_index_,int last_index_);
 		DreamElecReader(const DreamElecReader& other);
 		DreamElecReader& operator=(const DreamElecReader& other);
 		void read_next_event();

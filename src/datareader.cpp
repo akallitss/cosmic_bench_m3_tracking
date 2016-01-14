@@ -40,6 +40,7 @@ DataReader::DataReader(){
 	Ped.clear();
 	det_N.clear();
 }
+/*
 void DataReader::Init(map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, string PedName_, string RMSName_, string outFileName, long max_event_){
 	det_type_by_asic = det_type_by_asic_;
 	det_n_by_asic = det_n_by_asic_;
@@ -65,6 +66,7 @@ void DataReader::Init(map<int,Tomography::det_type> det_type_by_asic_, map<int,i
 	PedName = PedName_;
 	RMSName = RMSName_;
 }
+
 DataReader::DataReader(map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, string base_name_, map<int,int> feu_id_to_n_, int first_index_, int last_index_, string PedName_, string RMSName_){
 	Init(det_type_by_asic_,det_n_by_asic_,PedName_,RMSName_);
 	DAQtype = Tomography::Dream;
@@ -77,6 +79,7 @@ DataReader::DataReader(map<int,Tomography::det_type> det_type_by_asic_, map<int,
 	reader = new FeminosElecReader(base_name_,fem_id,first_index_,last_index_);
 	mapping = &Feminos_mapping;
 }
+*/
 DataReader::DataReader(ptree config_tree, bool save_to_disk){
 	CosmicBench current_CB(config_tree);
 	det_N.clear();
@@ -99,11 +102,25 @@ DataReader::DataReader(ptree config_tree, bool save_to_disk){
 	}
 	else outTree = NULL;
 	if(DAQtype==Tomography::Dream){
-		map<int,int> feu_id_to_n;
+		vector<FeuInfo> all_feu_info;
 		BOOST_FOREACH(const ptree::value_type& child, config_tree.get_child("FEU")){
-			feu_id_to_n[child.second.get<int>("id")] = child.second.get<int>("n");
+			struct FeuInfo current_feu_info;
+			current_feu_info.id = child.second.get<int>("id");
+			current_feu_info.n = child.second.get<int>("n");
+			for(int i=0;i<Tomography::Nasic_FEU;i++){
+				current_feu_info.dream_mask[i] = false;
+			}
+			BOOST_FOREACH(const ptree::value_type& grand_child, child.second.get_child("dream_mask")){
+				int current_dream = grand_child.second.get_value<int>();
+				if(current_dream<0 || current_dream>(Tomography::Nasic_FEU-1)){
+					cout << "asic number have to be between 0 and " << Tomography::Nasic_FEU-1 << " (" << current_dream << ")" << endl;
+					continue;
+				}
+				current_feu_info.dream_mask[current_dream] = true;
+			}
+			all_feu_info.push_back(current_feu_info);
 		}
-		reader = new DreamElecReader(data_file_basename,feu_id_to_n,first_index,last_index);
+		reader = new DreamElecReader(data_file_basename,all_feu_info,first_index,last_index);
 		mapping = &Dream_mapping;
 	}
 	else if(DAQtype==Tomography::Feminos){

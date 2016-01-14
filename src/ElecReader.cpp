@@ -34,6 +34,7 @@ FeuData::FeuData(): RawData(){
 	evttime = 0;
 	file = NULL;
 	current_index = -1;
+	dream_mask = 0;
 	for(int i=0;i<Tomography::Nasic_FEU;i++){
 		for(int j=0;j<Tomography::Nchannel;j++){
 			data[i][j] = new double[Tomography::get_instance()->get_Nsample()];
@@ -59,6 +60,7 @@ FeuData::FeuData(const FeuData& other): RawData(other){
 	evttime = other.evttime;
 	file = other.file;
 	current_index = other.current_index;
+	dream_mask = other.dream_mask;
 	for(int i=0;i<Tomography::Nasic_FEU;i++){
 		for(int j=0;j<Tomography::Nchannel;j++){
 			data[i][j] = new double[Tomography::get_instance()->get_Nsample()];
@@ -74,6 +76,7 @@ FeuData& FeuData::operator=(const FeuData& other){
 	evttime = other.evttime;
 	file = other.file;
 	current_index = other.current_index;
+	dream_mask = other.dream_mask;
 	for(int i=0;i<Tomography::Nasic_FEU;i++){
 		for(int j=0;j<Tomography::Nchannel;j++){
 			data[i][j] = new double[Tomography::get_instance()->get_Nsample()];
@@ -157,21 +160,22 @@ DreamElecReader::DreamElecReader(): ElecReader(){
 DreamElecReader::~DreamElecReader(){
 	feu_data.clear();
 }
-DreamElecReader::DreamElecReader(string base_name_,map<int,int> feu_id_to_n_,int first_index_,int last_index_): ElecReader(base_name_,first_index_,last_index_){
-	feu_id_to_n = feu_id_to_n_;
-	for(map<int,int>::iterator feu_it=feu_id_to_n.begin();feu_it!=feu_id_to_n.end();++feu_it){
-		feu_data[feu_it->first].Nevent = 1;
-		feu_data[feu_it->first].evttime = 0;
-		feu_data[feu_it->first].current_index = first_index;
+DreamElecReader::DreamElecReader(string base_name_,vector<FeuInfo> feu_info,int first_index_,int last_index_): ElecReader(base_name_,first_index_,last_index_){
+	for(vector<FeuInfo>::iterator feu_it=feu_info.begin();feu_it!=feu_info.end();++feu_it){
+		feu_id_to_n[feu_it->id] = feu_it->n;
+		feu_data[feu_it->id].Nevent = 1;
+		feu_data[feu_it->id].evttime = 0;
 		ostringstream current_name;
-		current_name << base_name << setw(3) << setfill('0') << feu_data[feu_it->first].current_index << "_" << setw(2) << setfill('0') << feu_it->second << "." << Tomography::DreamExt;
-		feu_data[feu_it->first].file = new ifstream(current_name.str().c_str(),ifstream::binary);
-		if((feu_data[feu_it->first].file)->is_open()) cout << "\n" << current_name.str() << " loaded !" << endl;
+		current_name << base_name << setw(3) << setfill('0') << feu_data[feu_it->id].current_index << "_" << setw(2) << setfill('0') << feu_it->n << "." << Tomography::DreamExt;
+		feu_data[feu_it->id].file = new ifstream(current_name.str().c_str(),ifstream::binary);
+		if((feu_data[feu_it->id].file)->is_open()) cout << "\n" << current_name.str() << " loaded !" << endl;
 		else cout << "\ncan't load : " << current_name.str() << endl;
+		feu_data[feu_it->id].dream_mask = 0;
 		for(int i=0;i<Tomography::Nasic_FEU;i++){
+			feu_data[feu_it->id].dream_mask |= (((feu_it->dream_mask)[i]) ? 0x1 : 0x0) << i;
 			for(int j=0;j<Tomography::Nchannel;j++){
 				for(int k=0;k<Tomography::get_instance()->get_Nsample();k++){
-					feu_data[feu_it->first].data[i][j][k] = 0;
+					feu_data[feu_it->id].data[i][j][k] = 0;
 				}
 			}
 		}
@@ -341,9 +345,9 @@ void DreamElecReader::read_next_event_file(int feu_id){
 							break;
 						}
 						ichannel=0;
+						asic_nb |= 0x1 << asicN;
 						asicN=0;
 						DataHeaderLine=0;
-						asic_nb++;
 					}
 				}
 				else if(current_data.is_final_trailer()){
@@ -362,7 +366,7 @@ void DreamElecReader::read_next_event_file(int feu_id){
 						has_bug = true;
 						break;
 					}
-					if(asic_nb!=Tomography::Nasic_FEU){
+					if(asic_nb!=feu_data[feu_id].dream_mask){
 						cout << "Problem in number of asic (" << asic_nb << ")" << endl;
 						has_bug = true;
 						break;
