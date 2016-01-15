@@ -165,6 +165,7 @@ DreamElecReader::DreamElecReader(string base_name_,vector<FeuInfo> feu_info,int 
 		feu_id_to_n[feu_it->id] = feu_it->n;
 		feu_data[feu_it->id].Nevent = 1;
 		feu_data[feu_it->id].evttime = 0;
+		feu_data[feu_it->id].current_index = first_index;
 		ostringstream current_name;
 		current_name << base_name << setw(3) << setfill('0') << feu_data[feu_it->id].current_index << "_" << setw(2) << setfill('0') << feu_it->n << "." << Tomography::DreamExt;
 		feu_data[feu_it->id].file = new ifstream(current_name.str().c_str(),ifstream::binary);
