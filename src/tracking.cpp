@@ -50,8 +50,9 @@ int main(int argc, char ** argv){
 		blah->Efficacity();
 	}
 	else if(argv[2] == residus){
+		blah->Residus_ref();
 		//blah->Residus();
-		blah->Residus_ref_MT();
+		//blah->Residus_ref_MT();
 	}
 	else if(argv[2] == eff2D){
 		blah->Residus_ref_2D();

@@ -532,11 +532,11 @@ void Signal::EventDisplay(int evn_min, int evn_max){
 					signal_shape[current_key][j]->GetHistogram()->SetMinimum(-100);
 					signal_shape[current_key][j]->GetHistogram()->SetMaximum(1200);
 					signal_shape[current_key][j]->Draw("AL");
-					if(point_n>2) rising_fit[current_key][j]->Draw("same");
+					//if(point_n>2) rising_fit[current_key][j]->Draw("same");
 				}
 				else{
 					signal_shape[current_key][j]->Draw("L");
-					if(point_n>2) rising_fit[current_key][j]->Draw("same");
+					//if(point_n>2) rising_fit[current_key][j]->Draw("same");
 				}
 			}
 			det_id++;
