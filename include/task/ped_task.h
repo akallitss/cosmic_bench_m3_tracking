@@ -10,36 +10,37 @@
 using std::vector;
 using std::map;
 
-class Ped_Task: public Task{
+class Ped_Task: public Typed_Task<raw_data>{
 	public:
-		Ped_Task(map<Tomography::det_type,vector<vector<float> > > ped_);
-		Ped_Task(map<Tomography::det_type,vector<vector<float> > > ped_, Task * next_task_);
+		//Ped_Task(map<Tomography::det_type,vector<vector<float> > > ped_);
+		Ped_Task(map<Tomography::det_type,vector<vector<float> > > ped_, Typed_Task<ped_data> * next_task_);
 		~Ped_Task();
 		bool do_task();
-		bool can_exec();
-		void update_task_list();
+		void update_task_list() const;
 	protected:
 		map<Tomography::det_type,vector<vector<float> > > ped;
+		Typed_Task<ped_data> * next_task;
 };
-class Corr_Task: public Task{
+class Corr_Task: public Typed_Task<ped_data>{
 	public:
-		Corr_Task();
-		Corr_Task(Task * next_task_);
+		//Corr_Task();
+		Corr_Task(Typed_Task<corr_data> * next_task_);
 		~Corr_Task();
 		bool do_task();
-		bool can_exec();
-		void update_task_list();
+		void update_task_list() const;
+	protected:
+		Typed_Task<corr_data> * next_task;
 };
-class Ped_Corr_Task: public Task{
+class Ped_Corr_Task: public Typed_Task<raw_data>{
 	public:
-		Ped_Corr_Task(map<Tomography::det_type,vector<vector<float> > > ped_);
-		Ped_Corr_Task(map<Tomography::det_type,vector<vector<float> > > ped_, Task * next_task_);
+		//Ped_Corr_Task(map<Tomography::det_type,vector<vector<float> > > ped_);
+		Ped_Corr_Task(map<Tomography::det_type,vector<vector<float> > > ped_, Typed_Task<corr_data> * next_task_);
 		~Ped_Corr_Task();
-		bool do_task();
-		bool can_exec();
-		void update_task_list();
+		bool do_task();;
+		void update_task_list() const;
 	protected:
 		map<Tomography::det_type,vector<vector<float> > > ped;
+		Typed_Task<corr_data> * next_task;
 };
 
 #endif

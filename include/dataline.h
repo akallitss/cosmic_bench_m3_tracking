@@ -5,6 +5,7 @@
 class DataLineDream{
 	public:
 		DataLineDream();
+		DataLineDream(uint16_t input);
 		~DataLineDream();
 		void ntohs_();
 		bool is_final_trailer() const;

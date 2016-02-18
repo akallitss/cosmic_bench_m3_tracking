@@ -526,6 +526,7 @@ void Analyse::Residus_ref_MT(){
 		if(!((*it)->get_is_ref())) non_ref_n++;
 	}
 	*/
+	Display_Thread * MT_display = Display_Thread::get_instance();
 	gStyle->SetPalette(55,0);
 	gStyle->SetNumberContours(512);
 	map<string,TCanvas*> c_MM;
@@ -570,43 +571,43 @@ void Analyse::Residus_ref_MT(){
 			if((*it)->get_perp_n()>-1) perp_pairs[pair<Tomography::det_type,int>((*it)->get_type(),(*it)->get_n_in_tree())] = pair<Tomography::det_type,int>((*it)->get_perp_type(),(*it)->get_perp_n());
 			c_MM[name.str()] = new TCanvas(name.str().c_str(),name.str().c_str(),1200,1000);
 			c_MM[name.str()]->Divide(4,4);
-			Tomography::TomoCout.register_canvas(c_MM[name.str()], 4*4);
+			MT_display->register_canvas(c_MM[name.str()], 4*4);
 			MM_residus[name.str()] = new TH1D((name.str()+"_residu").c_str(),(name.str()+"_residu").c_str(),nbins,-5,5);
-			Tomography::TomoCout.register_plot(MM_residus[name.str()],name.str(),"",1);
+			MT_display->register_plot(MM_residus[name.str()],name.str(),"",1);
 			muon_seen[name.str()] = new TH2D((name.str()+"_seen").c_str(),(name.str()+"_seen").c_str(),nbins_2D,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2,nbins_2D,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2);
 			muon_total[name.str()] = new TH2D((name.str()+"_total").c_str(),(name.str()+"_total").c_str(),nbins_2D,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2,nbins_2D,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2);
 			efficacity_2D[name.str()] = new TH2D((name.str()+"_efficacity").c_str(),(name.str()+"_efficacity").c_str(),nbins_2D,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2,nbins_2D,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2);
-			Tomography::TomoCout.register_plot(efficacity_2D[name.str()],name.str(),"COLZ",2);
+			MT_display->register_plot(efficacity_2D[name.str()],name.str(),"COLZ",2);
 			ampl_h[name.str()] = new TH2D((name.str()+"_ampl_mean").c_str(),(name.str()+"_ampl_mean").c_str(),nbins_2D,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2,nbins_2D,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2);
-			Tomography::TomoCout.register_plot(ampl_h[name.str()],name.str(),"COLZ",16);
+			MT_display->register_plot(ampl_h[name.str()],name.str(),"COLZ",16);
 			efficacity_2D[name.str()]->SetStats(false);
 			correlation[name.str()] = new TGraph();
-			Tomography::TomoCout.register_plot(correlation[name.str()],name.str(),"AP",3);
+			MT_display->register_plot(correlation[name.str()],name.str(),"AP",3);
 			angle_alignment[name.str()] = new TProfile((name.str()+"_resVSperpPos").c_str(),(name.str()+"_resVSperpPos").c_str(),500,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2,-5,5);
-			Tomography::TomoCout.register_plot(angle_alignment[name.str()],name.str(),"",4);
+			MT_display->register_plot(angle_alignment[name.str()],name.str(),"",4);
 			resVSpos[name.str()] = new TProfile((name.str()+"_resVSpos").c_str(),(name.str()+"_resVSpos").c_str(),500,-(1+marge)*Tomography::get_instance()->get_XY_size()/2,(1+marge)*Tomography::get_instance()->get_XY_size()/2,-5,5);
-			Tomography::TomoCout.register_plot(resVSpos[name.str()],name.str(),"",5);
+			MT_display->register_plot(resVSpos[name.str()],name.str(),"",5);
 			resVSampl[name.str()] = new TProfile((name.str()+"_resVSampl").c_str(),(name.str()+"_resVSampl").c_str(),500,-100,10000,-5,5);
-			Tomography::TomoCout.register_plot(resVSampl[name.str()],name.str(),"",9);
+			MT_display->register_plot(resVSampl[name.str()],name.str(),"",9);
 			resVStime[name.str()] = new TProfile((name.str()+"_resVStime").c_str(),(name.str()+"_resVStime").c_str(),38,-2,34,-5,5);
-			Tomography::TomoCout.register_plot(resVStime[name.str()],name.str(),"",8);
+			MT_display->register_plot(resVStime[name.str()],name.str(),"",8);
 			resVSangle[name.str()] = new TProfile((name.str()+"_resVSangle").c_str(),(name.str()+"_resVSangle").c_str(),50,-0.6,0.6,-5,5);
-			Tomography::TomoCout.register_plot(resVSangle[name.str()],name.str(),"",6);
+			MT_display->register_plot(resVSangle[name.str()],name.str(),"",6);
 			resVSanglePerp[name.str()] = new TProfile((name.str()+"_resVSanglePerp").c_str(),(name.str()+"_resVSanglePerp").c_str(),50,-0.6,0.6,-5,5);
-			Tomography::TomoCout.register_plot(resVSanglePerp[name.str()],name.str(),"",7);
+			MT_display->register_plot(resVSanglePerp[name.str()],name.str(),"",7);
 			resVStot[name.str()] = new TProfile((name.str()+"_resVStot").c_str(),(name.str()+"_resVStot").c_str(),26,0,25,-5,5);
-			Tomography::TomoCout.register_plot(resVStot[name.str()],name.str(),"",10);
+			MT_display->register_plot(resVStot[name.str()],name.str(),"",10);
 			resVSsize[name.str()] = new TProfile((name.str()+"_resVSsize").c_str(),(name.str()+"_resVSsize").c_str(),50,0,50,-5,5);
-			Tomography::TomoCout.register_plot(resVSsize[name.str()],name.str(),"",11);
+			MT_display->register_plot(resVSsize[name.str()],name.str(),"",11);
 			absResVSampl[name.str()] = new TProfile((name.str()+"_absResVSampl").c_str(),(name.str()+"_absResVSampl").c_str(),500,-100,10000,0,5);
-			Tomography::TomoCout.register_plot(absResVSampl[name.str()],name.str(),"",14);
+			MT_display->register_plot(absResVSampl[name.str()],name.str(),"",14);
 			absResVStime[name.str()] = new TProfile((name.str()+"_absResVStime").c_str(),(name.str()+"_absResVStime").c_str(),38,-2,34,0,5);
-			Tomography::TomoCout.register_plot(absResVStime[name.str()],name.str(),"",13);
+			MT_display->register_plot(absResVStime[name.str()],name.str(),"",13);
 			//absResVSabsAngle[name.str()] = new TProfile((name.str()+"_absResVSabsAngle").c_str(),(name.str()+"_absResVSabsAngle").c_str(),50,0,0.6,0,5);
 			absResVStot[name.str()] = new TProfile((name.str()+"_absResVStot").c_str(),(name.str()+"_absResVStot").c_str(),26,0,25,0,5);
-			Tomography::TomoCout.register_plot(absResVStot[name.str()],name.str(),"",15);
+			MT_display->register_plot(absResVStot[name.str()],name.str(),"",15);
 			absResVSsize[name.str()] = new TProfile((name.str()+"_absResVSsize").c_str(),(name.str()+"_absResVSsize").c_str(),50,0,50,0,5);
-			Tomography::TomoCout.register_plot(absResVSsize[name.str()],name.str(),"",12);
+			MT_display->register_plot(absResVSsize[name.str()],name.str(),"",12);
 			point_nb[name.str()] = 0;
 			efficacity[name.str()] = 0;
 			offset_fit[name.str()] = new TF1("offset_fit","[3]*exp(-(x-[0])*(x-[0])/(2*[1]*[1])) + [4]*exp(-(x-[0])*(x-[0])/(2*[2]*[2]))",-5,5);
@@ -644,46 +645,47 @@ void Analyse::Residus_ref_MT(){
 	}
 	TCanvas * c0 = new TCanvas("stats","stats");
 	c0->Divide(2,2);
-	Tomography::TomoCout.register_canvas(c0, 2*2);
+	MT_display->register_canvas(c0, 2*2);
 	TH1D * chisquares = new TH1D("chiSquares","chiSquares",nbins,0,chisquare_threshold);
-	Tomography::TomoCout.register_plot(chisquares,"stats","",2);
+	MT_display->register_plot(chisquares,"stats","",2);
 	TH1D * ray_clus_n = new TH1D("clus_n","clus_n",get_det_N_tot() + 2,0,get_det_N_tot() + 2);
-	Tomography::TomoCout.register_plot(ray_clus_n,"stats","",1);
+	MT_display->register_plot(ray_clus_n,"stats","",1);
 	TH1D * ray_slope = new TH1D("slope","slope",100,0,1);
-	Tomography::TomoCout.register_plot(ray_slope,"stats","",3);
+	MT_display->register_plot(ray_slope,"stats","",3);
 	TH1D * ray_phi = new TH1D("phi","phi",100,-Pi(),Pi());
-	Tomography::TomoCout.register_plot(ray_phi,"stats","",4);
+	MT_display->register_plot(ray_phi,"stats","",4);
 	TH1D * ray_slope_X = new TH1D("slope_X","slope_X",100,0,1);
-	Tomography::TomoCout.register_plot(ray_slope_X,"stats","SAME",3);
+	MT_display->register_plot(ray_slope_X,"stats","SAME",3);
 	TH1D * ray_slope_Y = new TH1D("slope_Y","slope_Y",100,0,1);
-	Tomography::TomoCout.register_plot(ray_slope_Y,"stats","SAME",3);
+	MT_display->register_plot(ray_slope_Y,"stats","SAME",3);
 	ray_slope->SetLineColor(1);
 	ray_slope_X->SetLineColor(2);
 	ray_slope_Y->SetLineColor(3);
 
 
-
-	Input_Task * to_do = new Read_Analyse_Task(-1,this,this, new Tracking_Abs_Task(this));
+	Buffer_Task<ray_data> * ray_list = new Buffer_Task<ray_data>();
+	Input_Task * to_do = new Read_Analyse_Task(-1,this,this, new Tracking_Abs_Task(this, ray_list));
 	vector<Thread*> threads;
 	threads.push_back(new Reader_Thread(to_do));
 	(threads.back())->start();
 	const unsigned short n_thread = Tomography::get_instance()->get_thread_number();
-	Tomography::TomoCout << "1 | " << n_thread << "\n";
+	*MT_display << "1 | " << n_thread << "\n";
 	for(unsigned short i=0;i<n_thread;i++){
 		threads.push_back(new Worker_Thread());
 		(threads.back())->start();
 	}
-	Tomography::TomoCout << Tomography::get_instance()->init_count() << "|" << setw(7) << "tracks\n";
+	MT_display->start_count();
+	//MT_display << Tomography::get_instance()->init_count() << "|" << setw(7) << "tracks\n";
 	bool has_working_thread = true;
 	unsigned long jentry = 0;
-	while((has_working_thread || !(Tomography::get_instance()->is_ray_data_empty())) && Tomography::get_instance()->get_can_continue()){
-		if(Tomography::get_instance()->is_ray_data_empty()){
+	while((has_working_thread || ray_list->can_fetch_data()) && Tomography::get_instance()->get_can_continue()){
+		if(!(ray_list->can_fetch_data())){
 			usleep(1000);
 			continue;
 		}
-		struct ray_data current_rays = Tomography::get_instance()->get_next_ray_data();
-		vector<Ray>::iterator ray_it = current_rays.rays.begin();
-		while(ray_it != current_rays.rays.end()){
+		ray_data * current_rays = ray_list->fetch_data();
+		vector<Ray>::iterator ray_it = (current_rays->rays).begin();
+		while(ray_it != (current_rays->rays).end()){
 			if(ray_it->get_chiSquare_X()>-1 && ray_it->get_chiSquare_Y()>-1 && ((ray_it->get_chiSquare_X()+ray_it->get_chiSquare_Y())/ray_it->get_clus_n())<chisquare_threshold){
 				chisquares->Fill(ray_it->get_chiSquare_X()+ray_it->get_chiSquare_Y());
 				ray_clus_n->Fill(ray_it->get_clus_n());
@@ -696,15 +698,15 @@ void Analyse::Residus_ref_MT(){
 				ray_phi->Fill(phi);
 				++ray_it;
 			}
-			else ray_it = current_rays.rays.erase(ray_it);
+			else ray_it = (current_rays->rays).erase(ray_it);
 		}
-		eventReconstructed+=current_rays.rays.size();
-		for(vector<Event*>::iterator it = (current_rays.CBevent->events).begin();it!=(current_rays.CBevent->events).end();++it){
+		eventReconstructed+=(current_rays->rays).size();
+		for(vector<Event*>::iterator it = (current_rays->CBevent->events).begin();it!=(current_rays->CBevent->events).end();++it){
 			if(!((*it)->get_is_ref())){
 				ostringstream name;
 				name <<(*it)->get_type() << "_" << (*it)->get_n_in_tree();
 				vector<Cluster*> current_clusters = (*it)->get_clusters();
-				for(vector<Ray>::iterator jt=current_rays.rays.begin();jt!=current_rays.rays.end();++jt){
+				for(vector<Ray>::iterator jt=(current_rays->rays).begin();jt!=(current_rays->rays).end();++jt){
 					//double chiSquare_in_nref_dir = (nref_is_X[name.str()]) ? jt->get_chiSquare_X() : jt->get_chiSquare_Y();
 					//unsigned int clus_in_nref_dir = (nref_is_X[name.str()]) ? jt->get_clus_x_n() : jt->get_clus_y_n();
 					//if(clus_in_nref_dir<det_in_nref_dir[name.str()]) continue;
@@ -764,9 +766,9 @@ void Analyse::Residus_ref_MT(){
 				}
 			}
 		}
-		delete current_rays.CBevent;
+		delete current_rays;
 
-		if(jentry%100) Tomography::TomoCout << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << eventReconstructed;
+		//if(jentry%100) MT_display << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << eventReconstructed;
 		jentry++;
 		has_working_thread = false;
 		for(unsigned short i=0;i<threads.size();i++){
@@ -781,7 +783,8 @@ void Analyse::Residus_ref_MT(){
 		delete threads[i];
 	}
 
-	Tomography::TomoCout << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << eventReconstructed << "\n";
+	//MT_display << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << eventReconstructed << "\n";
+	MT_display->stop();
 
 	for(map<string,TCanvas*>::iterator it = c_MM.begin();it!=c_MM.end();++it){
 		cout << "\n\n";

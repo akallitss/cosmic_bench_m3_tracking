@@ -10,6 +10,7 @@
 	"live_graphic_display" : true, //set true if you want the plot to be updated during processing, if false, the plot will only be shown at the end of the process
 	"batch" : false, //set true if you don't want any graphic display
 	"metadata" : "test", //base name of some ouput files (images, config, etc), leave blank to disable these outputs
+	"thread_number" : 4, //set maximum worker thread number for MT computation
 	"electronic_type" : "dream", // must be "feminos" or "dream"
 	"max_file_size" : "1073743748", //maximum size of 1 data file (used for live display)
 	"data_file_basename" : "root_files/Cos_Run4Absorption_4MG2Dv1_141212_17H44_", //must not contain the n° of the file in the run
@@ -27,7 +28,8 @@
 	[
 		{
 			"id" : 8,
-			"n" : 1
+			"n" : 1,
+			"dream_mask": [ 0,1,2,3,4,5,6,7 ] //adapt to file format : only DREAMS in this array must be present in fdf file 
 		}
 	],
 	"CosmicBench":{

@@ -5,6 +5,9 @@
 DataLineDream::DataLineDream(){
 	data = 0;
 }
+DataLineDream::DataLineDream(uint16_t input): data(input){
+	
+}
 DataLineDream::~DataLineDream(){
 
 }
