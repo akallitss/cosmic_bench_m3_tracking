@@ -8,6 +8,9 @@
 #include <stdint.h>
 #include "TMath.h"
 
+#include <sys/msg.h>
+#include <unistd.h>
+
 using std::ostringstream;
 using std::setw;
 using std::setfill;
@@ -127,6 +130,18 @@ FeminosData& FeminosData::operator=(const FeminosData& other){
 	}
 	return *this;
 }
+status_message::status_message(){
+	mtype = -1;
+}
+status_message::~status_message(){
+	mtype = -1;
+}
+data_message::data_message(){
+	mtype = -1;
+}
+data_message::~data_message(){
+	mtype = -1;
+}
 
 ElecReader::ElecReader(){
 	first_index = -1;
@@ -153,6 +168,262 @@ ElecReader& ElecReader::operator=(const ElecReader& other){
 	return *this;
 }
 
+LiveElecReader::LiveElecReader(): ElecReader(){
+	Nevent = -1;
+	evttime = 0;
+	queue_id = -1;
+	current_message = NULL;
+	message_index = 0;
+}
+LiveElecReader::LiveElecReader(vector<int> used_asics): ElecReader(){
+	Nevent = -1;
+	evttime = 0;
+	for(vector<int>::iterator asics_it=used_asics.begin();asics_it!=used_asics.end();++asics_it){
+		data[*asics_it] = vector<vector<double> >(Tomography::Nchannel,vector<double>(Tomography::get_instance()->get_Nsample(),0));
+		if(dream_mask.count((*asics_it)/Tomography::Nasic_FEU)==0) dream_mask[(*asics_it)/Tomography::Nasic_FEU] = 0;
+		dream_mask[(*asics_it)/Tomography::Nasic_FEU] |= 0x1 << (*asics_it)%Tomography::Nasic_FEU;
+	}
+	queue_id = msgget(ftok("/proc/self/exe",getpid()), 0666 | IPC_CREAT);
+	live_reader_task = new Read_Live_Task(queue_id);
+	live_reader_thread = new Reader_Thread(live_reader_task);
+	live_reader_thread->start();
+	current_message = NULL;
+	message_index = 0;
+}
+LiveElecReader::~LiveElecReader(){
+	live_reader_thread->stop();
+	delete live_reader_thread;
+	delete live_reader_task;
+	Nevent = 0;
+	evttime = 0;
+	data.clear();
+	dream_mask.clear();
+	if(queue_id>0) msgctl(queue_id, IPC_RMID, NULL);
+	queue_id = 0;
+	delete current_message;
+	message_index = 0;
+}
+LiveElecReader::LiveElecReader(const LiveElecReader& other): ElecReader(other){
+	Nevent = other.Nevent;
+	evttime = other.evttime;
+	queue_id = other.queue_id;
+	live_reader_task = other.live_reader_task;
+	live_reader_thread = other.live_reader_thread;
+	data = other.data;
+	dream_mask = other.dream_mask;
+	current_message = other.current_message;
+	message_index = other.message_index;
+	cout << "Warning, the live elec reader should not be copied !" << endl;
+}
+LiveElecReader& LiveElecReader::operator=(const LiveElecReader& other){
+	ElecReader::operator=(other);
+	Nevent = other.Nevent;
+	evttime = other.evttime;
+	queue_id = other.queue_id;
+	live_reader_task = other.live_reader_task;
+	live_reader_thread = other.live_reader_thread;
+	data = other.data;
+	dream_mask = other.dream_mask;
+	current_message = other.current_message;
+	message_index = other.message_index;
+	cout << "Warning, the live elec reader should not be copied !" << endl;
+	return *this;
+}
+void LiveElecReader::reset_data(){
+	for(map<int,vector<vector<double> > >::iterator asic_it=data.begin();asic_it!=data.end();++asic_it){
+		for(vector<vector<double> >::iterator channel_it=(asic_it->second).begin();channel_it!=(asic_it->second).end();++channel_it){
+			for(vector<double>::iterator sample_it=channel_it->begin();sample_it!=channel_it->end();++sample_it){
+				*sample_it = 0;
+			}
+		}
+	}
+}
+DataLineDream LiveElecReader::get_next_word(){
+	if(current_message==NULL || message_index>=data_message::max_length){
+		if(live_reader_task->has_new_data()){
+			current_message = live_reader_task->get_next_data();
+			message_index = 0;
+		}
+		else return DataLineDream();
+	}
+	DataLineDream current_line((current_message->data)[message_index]);
+	current_line.ntohs_();
+	message_index++;
+	return current_line;
+}
+
+void LiveElecReader::read_next_event(){
+	int isample=-1; int isample_prev=-2;
+	int isample_nb=0;
+	int asic_nb = 0;
+	unsigned int feu_nb = 0;
+	int ichannel=0;
+	int asicN=0;
+	int FeuN=0;
+	int FeuHeaderLine=0;
+	int DataHeaderLine=0;
+	bool zs_mode = false;
+	bool got_channel_id=false;
+	bool event_complete = false;
+	bool has_bug = false;
+	int current_event = -1;
+	int current_event_old = -1;
+	double current_evttime = 0;
+	reset_data();
+	DataLineDream current_data;
+	current_data = get_next_word();
+	while(!(event_complete || has_bug)){
+		if(FeuHeaderLine<8 && current_data.is_Feu_header()){
+			if(FeuHeaderLine==0){
+				asic_nb = 0;
+				zs_mode = current_data.get_zs_mode();
+				FeuN = current_data.get_Feu_ID();
+				//if(FeuN != feu_id) cout << "problem in FeuN to FeuID mapping" << endl;
+			}
+			else if(FeuHeaderLine==1){
+				current_event = current_data.get_data();
+			}
+			else if(FeuHeaderLine==2){
+				current_evttime = current_data.get_data();
+			}
+			else if(FeuHeaderLine==3){
+				isample_prev = isample;
+				isample = current_data.get_sample_ID();
+				if(isample!=isample_prev+1){
+					cout << "problem in sample index : " << isample << "; " << isample_prev << endl;
+					has_bug = true;
+					break;
+				}
+			}
+			else if(FeuHeaderLine==4){
+				current_event += static_cast<int>(current_data.get_data()) << 12;
+			}
+			else{
+				current_evttime += Ldexp(static_cast<double>(current_data.get_data()),12*(FeuHeaderLine-4)); // data*2^(12*(FeuHeaderLine-4))
+			}
+			FeuHeaderLine++;
+		}
+		else if(FeuHeaderLine>7 && current_data.is_Feu_header()){
+			cout << "problem in Feu header" << endl;
+			has_bug = true;
+			break;
+		}
+		else if(FeuHeaderLine>3){
+			if(DataHeaderLine<4 && current_data.is_data_header()){
+				asicN = current_data.get_dream_ID();
+				DataHeaderLine++;
+			}
+			else if(DataHeaderLine>3 && current_data.is_data_header()){
+				cout << "problem in data header" << endl;
+				has_bug = true;
+				break;
+			}
+			else if(DataHeaderLine>3){
+				if(current_data.is_data() && !zs_mode){
+					data[asicN+(8*FeuN)][ichannel][isample] = current_data.get_data();
+					ichannel++;
+				}
+				else if(current_data.is_data_zs() && zs_mode){
+					if(!got_channel_id){
+						ichannel = current_data.get_channel_ID();
+						got_channel_id = true;
+					}
+					else{
+						data[asicN+(8*FeuN)][ichannel][isample] = current_data.get_data();
+						got_channel_id = false;
+					}
+				}
+				else if(current_data.is_data_trailer()){
+					if(ichannel!=64 && !zs_mode){
+						cout << "problem in channel number" << endl;
+						has_bug = true;
+						break;
+					}
+					if(got_channel_id){
+						cout << "problem in ZS data" << endl;
+						has_bug = true;
+						break;
+					}
+					if(DataHeaderLine!=4 && DataHeaderLine!=1){
+						cout << "problem in data header" << endl;
+						has_bug = true;
+						break;
+					}
+					ichannel=0;
+					asic_nb |= 0x1 << asicN;
+					asicN=0;
+					DataHeaderLine=0;
+				}
+			}
+			else if(current_data.is_final_trailer()){
+				if(ichannel!=0){
+					cout << "problem in channel number" << endl;
+					has_bug = true;
+					break;
+				}
+				if(got_channel_id){
+					cout << "problem in ZS data" << endl;
+					has_bug = true;
+					break;
+				}
+				if(FeuHeaderLine!=4 && FeuHeaderLine!=8){
+					cout << "problem in Feu Header" << endl;
+					has_bug = true;
+					break;
+				}
+				if(asic_nb!=dream_mask[FeuN]){
+					cout << "Problem in number of asic (" << asic_nb << ")" << endl;
+					has_bug = true;
+					break;
+				}
+				else feu_nb++;
+				if(isample==0) current_event_old = current_event;
+				else if(current_event_old != current_event && !has_bug){
+					cout << "problem in event ID (" << current_event_old << ";" << current_event << ")[sample=" << isample << "][feu_id=" << FeuN << "]" << endl;
+					//has_bug = true;
+					//break; //comment these 2 lines until bugfix by irakli :)
+				}
+				isample_nb++;
+				zs_mode = false;
+				FeuHeaderLine=0;
+				FeuN = 0;
+				current_data = get_next_word();
+				current_data = DataLineDream();
+				if(current_data.is_EOE()){
+					if(isample_nb!=Tomography::get_instance()->get_Nsample()) cout << "Reached EOE with less than " << Tomography::get_instance()->get_Nsample() << " samples (" << isample_nb << ")" << endl;
+					isample=-1; isample_prev=-2;
+					if(feu_nb==dream_mask.size()){
+						event_complete = true;
+						break;
+					}
+				}
+			}
+		}
+		current_data = get_next_word();
+	}
+	if(event_complete){
+		Nevent = current_event;
+		evttime = current_evttime;
+	}
+	if(has_bug){
+		Nevent = -1;
+		evttime = 0;
+
+	}
+}
+double LiveElecReader::get_data(int asic_n,int channel_n,int sample_n) const{
+	return ((data.find(asic_n))->second)[channel_n][sample_n];
+}
+long LiveElecReader::get_event_n() const{
+	return Nevent;
+}
+double LiveElecReader::get_evttime() const{
+	return evttime;
+}
+bool LiveElecReader::is_end() const{
+	return !((live_reader_task->has_new_data()) || (live_reader_thread->is_working()));
+}
+
 DreamElecReader::DreamElecReader(): ElecReader(){
 	feu_data.clear();
 	feu_id_to_n.clear();
@@ -166,11 +437,8 @@ DreamElecReader::DreamElecReader(string base_name_,vector<FeuInfo> feu_info,int 
 		feu_data[feu_it->id].Nevent = 1;
 		feu_data[feu_it->id].evttime = 0;
 		feu_data[feu_it->id].current_index = first_index;
-		ostringstream current_name;
-		current_name << base_name << setw(3) << setfill('0') << feu_data[feu_it->id].current_index << "_" << setw(2) << setfill('0') << feu_it->n << "." << Tomography::DreamExt;
-		feu_data[feu_it->id].file = new ifstream(current_name.str().c_str(),ifstream::binary);
-		if((feu_data[feu_it->id].file)->is_open()) cout << "\n" << current_name.str() << " loaded !" << endl;
-		else cout << "\ncan't load : " << current_name.str() << endl;
+		feu_data[feu_it->id].file = new ifstream();
+		open_file(feu_it->id);
 		feu_data[feu_it->id].dream_mask = 0;
 		for(int i=0;i<Tomography::Nasic_FEU;i++){
 			feu_data[feu_it->id].dream_mask |= (((feu_it->dream_mask)[i]) ? 0x1 : 0x0) << i;
@@ -248,24 +516,7 @@ void DreamElecReader::read_next_event_file(int feu_id){
 	reset_data(feu_id);
 	DataLineDream current_data;
 	while(feu_data[feu_id].current_index <= last_index){
-		if((feu_data[feu_id].file)->eof()){
-			if(feu_data[feu_id].current_index == last_index){
-				cout << "end of data for FEU : " << feu_id_to_n[feu_id] << endl;
-				reset_data(feu_id);
-				return;
-			}
-			(feu_data[feu_id].file)->close();
-			feu_data[feu_id].current_index++;
-			ostringstream current_name;
-			current_name << base_name << setw(3) << setfill('0') << feu_data[feu_id].current_index << "_" << setw(2) << setfill('0') << feu_id_to_n[feu_id] << "." << Tomography::DreamExt;
-			feu_data[feu_id].file->open(current_name.str().c_str(),ifstream::binary);
-			if((feu_data[feu_id].file)->is_open()) cout << "\n" << current_name.str() << " loaded !" << endl;
-			else{
-				cout << "\ncan't load : " << current_name.str() << endl;
-				reset_data(feu_id);
-				return;
-			}
-		}
+		check_file(feu_id);
 		(feu_data[feu_id].file)->read((char*)&current_data,sizeof(current_data));
 		current_data.ntohs_();
 		while((feu_data[feu_id].file)->good()){
@@ -415,24 +666,7 @@ void DreamElecReader::seek_next_EOE(int feu_id){
 	reset_data(feu_id);
 	DataLineDream current_data;
 	while(feu_data[feu_id].current_index <= last_index && !eoe_reached){
-		if((feu_data[feu_id].file)->eof()){
-			if(feu_data[feu_id].current_index == last_index){
-				cout << "end of data for FEU : " << feu_id_to_n[feu_id] << endl;
-				reset_data(feu_id);
-				return;
-			}
-			(feu_data[feu_id].file)->close();
-			feu_data[feu_id].current_index++;
-			ostringstream current_name;
-			current_name << base_name << setw(3) << setfill('0') << feu_data[feu_id].current_index << "_" << setw(2) << setfill('0') << feu_id_to_n[feu_id] << "." << Tomography::DreamExt;
-			feu_data[feu_id].file->open(current_name.str().c_str(),ifstream::binary);
-			if((feu_data[feu_id].file)->is_open()) cout << "\n" << current_name.str() << " loaded !" << endl;
-			else{
-				cout << "\ncan't load : " << current_name.str() << endl;
-				reset_data(feu_id);
-				return;
-			}
-		}
+		check_file(feu_id);
 		/*
 		(feu_data[feu_id].file)->read((char*)&current_data,sizeof(current_data));
 		current_data.ntohs_();
@@ -444,7 +678,36 @@ void DreamElecReader::seek_next_EOE(int feu_id){
 			if(current_data.is_EOE()) eoe_reached = true;
 		} while((feu_data[feu_id].file)->good() && !eoe_reached);
 	}
-	cout << "    skipped " << line_skipped << " lines (approx. " << line_skipped/(((74*Tomography::Nasic_FEU)+10)*Tomography::get_instance()->get_Nsample()) << " events) to realign with dream packet" << endl;
+	int unmasked_feu = 0;
+	for(int i=0;i<Tomography::Nasic_FEU;i++){
+		unmasked_feu += ((feu_data[feu_id].dream_mask >> i) & 0x1);
+	}
+	cout << "    skipped " << line_skipped << " lines (approx. " << line_skipped/(74+10) << " packets) to realign with dream packet" << endl;
+}
+void DreamElecReader::check_file(int feu_id){
+	if((feu_data[feu_id].file)->eof()){
+		if(feu_data[feu_id].current_index == last_index){
+			cout << "end of data for FEU : " << feu_id_to_n[feu_id] << endl;
+			reset_data(feu_id);
+			return;
+		}
+		(feu_data[feu_id].file)->close();
+		feu_data[feu_id].current_index++;
+		open_file(feu_id);
+	}
+}
+void DreamElecReader::open_file(int feu_id){
+	while(!((feu_data[feu_id].file)->is_open()) && feu_data[feu_id].current_index <= last_index){
+		ostringstream current_name;
+		current_name << base_name << setw(3) << setfill('0') << feu_data[feu_id].current_index << "_" << setw(2) << setfill('0') << feu_id_to_n[feu_id] << "." << Tomography::DreamExt;
+		feu_data[feu_id].file->open(current_name.str().c_str(),ifstream::binary);
+		if((feu_data[feu_id].file)->is_open()) cout << "\n" << current_name.str() << " loaded !" << endl;
+		else{
+			cout << "\ncan't load : " << current_name.str() << endl;
+			feu_data[feu_id].current_index++;
+			reset_data(feu_id);
+		}
+	}
 }
 double DreamElecReader::get_data(int asic_n,int channel_n,int sample_n){
 	if(!(feu_data.count(asic_n/Tomography::Nasic_FEU)>0)){
@@ -502,6 +765,7 @@ bool DreamElecReader::is_end() const{
 }
 bool DreamElecReader::is_end_feu(int feu_id) const{
 	if(((feu_data.find(feu_id))->second).current_index<last_index) return false;
+	if(!((((feu_data.find(feu_id))->second).file)->is_open())) return true;
 	if(!((((feu_data.find(feu_id))->second).file)->eof())) return false;
 	return true;
 }

@@ -284,10 +284,10 @@ int main(int argc, char ** argv){
 			threads.push_back(new Worker_Thread());
 			(threads.back())->start();
 		}
-		cout << Tomography::get_instance()->init_count() << "|" << setw(7) << "tasks" << endl;
+		//cout << Tomography::get_instance()->init_count() << "|" << setw(7) << "tasks" << endl;
 		bool has_working_thread = true;
 		while(has_working_thread && Tomography::get_instance()->get_can_continue()){
-			cout << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << Task::task_left() << flush;
+			//cout << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << Task::task_left() << flush;
 			has_working_thread = false;
 			for(unsigned short i=0;i<threads.size();i++){
 				if(threads[i]->is_working()){
@@ -301,7 +301,7 @@ int main(int argc, char ** argv){
 			threads[i]->stop();
 			delete threads[i];
 		}
-		cout << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << Task::task_left() << endl;
+		//cout << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << Task::task_left() << endl;
 		analysisFile->Write();
 		analysisFile->CloseFile();
 		delete blah;

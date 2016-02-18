@@ -7,13 +7,15 @@ class DataReader;
 
 class Read_Elec_Task: public Input_Task{
 	public:
-		Read_Elec_Task(DataReader * reader_);
-		Read_Elec_Task(DataReader * reader_, Task * next_task_);
+		//Read_Elec_Task(DataReader * reader_);
+		Read_Elec_Task(DataReader * reader_, Typed_Task<raw_data> * next_task_);
 		~Read_Elec_Task();
 		bool do_task();
-		bool can_exec();
+		bool can_exec() const;
+		void update_task_list() const;
 	protected:
 		DataReader * reader;
+		Typed_Task<raw_data> * next_task;
 };
 
 #endif

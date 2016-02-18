@@ -16,17 +16,33 @@
 
 #include <vector>
 #include <iostream>
+#include <iomanip>
 
 using std::vector;
 using std::cout;
 using std::endl;
 using std::flush;
+using std::right;
+using std::left;
+using std::setw;
+
+event_data::~event_data(){
+	for(map<Tomography::det_type,vector<Event*> >::iterator type_it = det_data.begin();type_it!=det_data.end();++type_it){
+		while((type_it->second).size()>0){
+			delete (type_it->second).back();
+			(type_it->second).pop_back();
+		}
+	}
+}
+ray_data::~ray_data(){
+	if(CBevent!=NULL) delete CBevent;
+}
+deviation_data::~deviation_data(){
+	if(CBevent!=NULL) delete CBevent;
+}
 
 Task::Task(){
-	next_task = NULL;
-}
-Task::Task(Task * next_task_){
-	next_task = next_task_;
+
 }
 Task::~Task(){
 
@@ -58,31 +74,162 @@ void Task::add_task(Task * new_task){
 unsigned int Task::task_left(){
 	return task_queue.size();
 }
-IO_Task::IO_Task(): Task(){
+
+template<typename T>
+Typed_Task<T>::Typed_Task(){
+	pthread_mutex_init(&data_queue_mutex, NULL);
+	data_treated = 0;
+	Display_Thread::get_instance()->register_task(this);
+}
+template<typename T>
+Typed_Task<T>::~Typed_Task(){
+	pthread_mutex_lock(&data_queue_mutex);
+	while(!(data_queue.empty())){
+		T * next_data = data_queue.front();
+		data_queue.pop();
+		delete next_data;
+	}
+	pthread_mutex_unlock(&data_queue_mutex);
+	pthread_mutex_destroy(&data_queue_mutex);
+}
+template<typename T>
+void Typed_Task<T>::push_next_data(T * next_data){
+	pthread_mutex_lock(&data_queue_mutex);
+	data_queue.push(next_data);
+	data_treated++;
+	pthread_mutex_unlock(&data_queue_mutex);
+}
+template<typename T>
+T * Typed_Task<T>::get_next_data(){
+	T * next_data;
+	pthread_mutex_lock(&data_queue_mutex);
+	next_data = data_queue.front();
+	data_queue.pop();
+	pthread_mutex_unlock(&data_queue_mutex);
+	return next_data;
+}
+template<typename T>
+bool Typed_Task<T>::is_queue_empty() const{
+	return data_queue.empty();
+}
+template<typename T>
+bool Typed_Task<T>::can_exec() const{
+	return !(data_queue.empty());
+}
+template<typename T>
+string Typed_Task<T>::print_count() const{
+	ostringstream outstring;
+	outstring << right << setw(10) << data_treated << " - " << left << setw(6) << data_queue.size();
+	return outstring.str();
+}
+template<>
+string Typed_Task<raw_data>::init_count() const{
+	ostringstream outstring;
+	outstring << left << setw(19) << "raw evt";
+	return outstring.str();
+}
+template<>
+string Typed_Task<ped_data>::init_count() const{
+	ostringstream outstring;
+	outstring << left << setw(19) << "ped evt";
+	return outstring.str();
+}
+template<>
+string Typed_Task<corr_data>::init_count() const{
+	ostringstream outstring;
+	outstring << left << setw(19) << "corr evt";
+	return outstring.str();
+}
+template<>
+string Typed_Task<event_data>::init_count() const{
+	ostringstream outstring;
+	outstring << left << setw(19) << "demux evt";
+	return outstring.str();
+}
+template<>
+string Typed_Task<ray_data>::init_count() const{
+	ostringstream outstring;
+	outstring << left << setw(19) << "abs tracked evt";
+	return outstring.str();
+}
+template<>
+string Typed_Task<deviation_data>::init_count() const{
+	ostringstream outstring;
+	outstring << left << setw(19) << "dev tracked evt";
+	return outstring.str();
+}
+
+template class Typed_Task<raw_data>;
+template class Typed_Task<ped_data>;
+template class Typed_Task<corr_data>;
+template class Typed_Task<event_data>;
+template class Typed_Task<ray_data>;
+template class Typed_Task<deviation_data>;
+
+template<typename T>
+Buffer_Task<T>::Buffer_Task(): Typed_Task<T>(){
+
+}
+template<typename T>
+Buffer_Task<T>::~Buffer_Task(){
+
+}
+template<typename T>
+bool Buffer_Task<T>::do_task(){
+	return true;
+}
+template<typename T>
+bool Buffer_Task<T>::can_exec() const{
+	return true;
+}
+template<typename T>
+void Buffer_Task<T>::update_task_list() const{
+
+}
+template<typename T>
+T * Buffer_Task<T>::fetch_data(){
+	return this->get_next_data();
+}
+template<typename T>
+bool Buffer_Task<T>::can_fetch_data() const{
+	return this->is_queue_empty();
+}
+
+template class Buffer_Task<raw_data>;
+template class Buffer_Task<ped_data>;
+template class Buffer_Task<corr_data>;
+template class Buffer_Task<event_data>;
+template class Buffer_Task<ray_data>;
+template class Buffer_Task<deviation_data>;
+
+template<typename T>
+Output_Task<T>::Output_Task(): Typed_Task<T>(){
 	pthread_mutex_init(&IO_mutex, NULL);
 }
-IO_Task::IO_Task(Task * next_task_): Task(next_task_){
-	pthread_mutex_init(&IO_mutex, NULL);
-}
-IO_Task::~IO_Task(){
+template<typename T>
+Output_Task<T>::~Output_Task(){
 	pthread_mutex_destroy(&IO_mutex);
 }
 
-Input_Task::Input_Task(long max_event_){
+template class Output_Task<raw_data>;
+template class Output_Task<ped_data>;
+template class Output_Task<corr_data>;
+template class Output_Task<event_data>;
+template class Output_Task<ray_data>;
+template class Output_Task<deviation_data>;
+
+Input_Task::Input_Task(long max_event_): Task(){
 	pthread_mutex_init(&IO_mutex, NULL);
-	next_task = NULL;
-	max_event = max_event_;
-}
-Input_Task::Input_Task(long max_event_, Task * next_task_){
-	pthread_mutex_init(&IO_mutex, NULL);
-	next_task = next_task_;
 	max_event = max_event_;
 }
 Input_Task::~Input_Task(){
 	pthread_mutex_destroy(&IO_mutex);
 }
-void Input_Task::update_task_list(){
-	Task::add_task(next_task);
+string Input_Task::init_count() const{
+	return "";
+}
+string Input_Task::print_count() const{
+	return "";
 }
 
 Thread::Thread(){
@@ -192,10 +339,21 @@ void Reader_Thread::pre_stop(){
 	working = false;
 }
 
+Display_Thread * Display_Thread::singleton_instance = 0;
+Display_Thread * Display_Thread::get_instance(){
+	if(!singleton_instance){
+		singleton_instance = new Display_Thread();
+		singleton_instance->start();
+	}
+	return singleton_instance;
+}
+
 Display_Thread::Display_Thread(): Thread(){
+	is_counting = false;
 }
 Display_Thread::Display_Thread(string log_file_name): Thread(), ostringstream(){
 	log_file.open(log_file_name.c_str());
+	is_counting = false;
 }
 Display_Thread::~Display_Thread(){
 	stop();
@@ -204,10 +362,11 @@ Display_Thread::~Display_Thread(){
 		log_file.close();
 	}
 	cout << endl;
+	singleton_instance = 0;
 }
 void Display_Thread::set_log_file(string log_file_name){
-	if(log_file.is_open() && log_file.good()){
-		log_file.flush();
+	if(log_file.is_open()){
+		if(log_file.good()) log_file.flush();
 		log_file.close();
 	}
 	log_file.open(log_file_name.c_str());
@@ -243,6 +402,7 @@ void Display_Thread::pre_stop(){
 	working = false;
 	display_text();
 	display_canvas();
+	is_counting = false;
 }
 void * Display_Thread::run(){
 	working = true;
@@ -259,12 +419,23 @@ void * Display_Thread::run(){
 	return 0;
 }
 void Display_Thread::display_text(){
+	ostringstream temp;
 	string buffer = str();
 	str("");
-	cout << buffer;
+	if(is_counting && (!registered_task.empty())){
+		if(buffer.size()>0) temp << "\n" << buffer << "\n";
+		vector<Task*>::reverse_iterator task_it=registered_task.rbegin();
+		temp << "\r" << (*task_it)->print_count();
+		while(task_it!=registered_task.rend()){
+			temp << "|" << (*task_it)->print_count();
+			++task_it;
+		}
+	}
+	else temp << buffer;
+	cout << temp.str();
 	cout.flush();
 	if(log_file.is_open() && log_file.good()){
-		log_file << buffer;
+		log_file << temp.str();
 		log_file.flush();
 	}
 }
@@ -277,4 +448,20 @@ void Display_Thread::display_canvas(){
 		it->addr->Modified();
 		it->addr->Update();
 	}
+}
+void Display_Thread::start_count(){
+	if(registered_task.empty()) return;
+	vector<Task*>::reverse_iterator task_it=registered_task.rbegin();
+	*this << (*task_it)->init_count();
+	while(task_it!=registered_task.rend()){
+		*this << "|" << (*task_it)->init_count();
+		++task_it;
+	}
+	is_counting = true;
+}
+void Display_Thread::stop_count(){
+	is_counting = false;
+}
+void Display_Thread::register_task(Task * some_task){
+	registered_task.push_back(some_task);
 }

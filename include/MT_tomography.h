@@ -10,58 +10,139 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <map>
 
 using std::queue;
 using std::ostringstream;
 using std::string;
 using std::ofstream;
 using std::vector;
+using std::map;
 
 class TCanvas;
 class TObject;
 
+class raw_data{
+	public:
+		int Nevent;
+		double evttime;
+		map<Tomography::det_type,vector<vector<vector<float> > > > strip_data;
+		raw_data(): Nevent(-1), evttime(0), strip_data(){}
+};
+class ped_data{
+	public:
+		int Nevent;
+		double evttime;
+		map<Tomography::det_type,vector<vector<vector<double> > > > strip_data;
+		ped_data(): Nevent(-1), evttime(0), strip_data(){}
+};
+class corr_data{
+	public:
+		int Nevent;
+		double evttime;
+		map<Tomography::det_type,vector<vector<vector<double> > > > strip_data;
+		corr_data(): Nevent(-1), evttime(0), strip_data(){}
+};
+class event_data{
+	public:
+		map<Tomography::det_type,vector<Event*> > det_data;
+		int Nevent;
+		double evttime;
+		event_data(): det_data(), Nevent(-1), evttime(0){}
+		~event_data();
+};
+class ray_data{
+	public:
+		CosmicBenchEvent * CBevent;
+		vector<Ray> rays;
+		ray_data(): CBevent(NULL), rays(){}
+		~ray_data();
+};
+class deviation_data{
+	public:
+		CosmicBenchEvent * CBevent;
+		vector<RayPair> rays;
+		deviation_data(): CBevent(NULL), rays(){}
+		~deviation_data();
+};
+
 class Task{
 	public:
 		Task();
-		Task(Task * next_task_);
+		//Task(Task * next_task_);
 		virtual ~Task();
 		virtual bool do_task() = 0;
-		virtual bool can_exec() = 0;
-		virtual void update_task_list() = 0;
+		virtual bool can_exec() const = 0;
+		virtual void update_task_list() const = 0;
 		static Task * get_next_task();
 		static void add_task(Task * new_task);
 		static unsigned int task_left();
+		virtual string init_count() const = 0;
+		virtual string print_count() const = 0;
 	protected:
 		static queue<Task*> task_queue;
 		static pthread_mutex_t queue_mutex;
 		static bool is_init;
-		Task * next_task;
+		//Task * next_task;
+};
+template<typename T>
+class Typed_Task: public Task{
+	public:
+		Typed_Task();
+		//Typed_Task(Task * next_task_);
+		virtual ~Typed_Task();
+		virtual bool do_task() = 0;
+		virtual bool can_exec() const;
+		virtual void update_task_list() const = 0;
+		virtual string init_count() const;
+		string print_count() const;
+		void push_next_data(T * next_data);
+	protected:
+		T * get_next_data();
+		bool is_queue_empty() const;
+		queue<T*> data_queue;
+		unsigned long data_treated;
+		pthread_mutex_t data_queue_mutex;
+
+};
+template<typename T>
+class Buffer_Task: public Typed_Task<T>{
+	public:
+		Buffer_Task();
+		~Buffer_Task();
+		bool do_task();
+		bool can_exec() const;
+		void update_task_list() const;
+		T * fetch_data();
+		bool can_fetch_data() const;
 };
 
-class IO_Task: public Task{
+template<typename T>
+class Output_Task: public Typed_Task<T>{
 	public:
-		IO_Task();
-		IO_Task(Task * next_task_);
-		~IO_Task();
+		Output_Task();
+		//IO_Task(Task * next_task_);
+		~Output_Task();
 		virtual bool do_task() = 0;
-		virtual bool can_exec() = 0;
-		virtual void update_task_list() = 0;
+		virtual bool can_exec() const = 0;
+		virtual void update_task_list() const = 0;
 	protected:
 		pthread_mutex_t IO_mutex;
-
 };
 
-class Input_Task{
+class Input_Task: public Task{
 	public:
 		Input_Task(long max_event_);
-		Input_Task(long max_event_, Task * next_task_);
+		//Input_Task(long max_event_, Task * next_task_);
 		~Input_Task();
 		virtual bool do_task() = 0;
-		virtual bool can_exec() = 0;
-		void update_task_list();
+		virtual bool can_exec() const = 0;
+		void update_task_list() const = 0;
+		string init_count() const;
+		string print_count() const;
 	protected:
 		pthread_mutex_t IO_mutex;
-		Task * next_task;
+		//Task * next_task;
 		long max_event;
 };
 
@@ -109,16 +190,21 @@ class Reader_Thread: public Thread{
 
 class Display_Thread: public Thread, public ostringstream{
 	public:
-		Display_Thread();
-		Display_Thread(string log_file_name);
-		~Display_Thread();
 		void set_log_file(string log_file_name);
 		bool is_working() const;
 		void register_canvas(TCanvas * new_canvas, unsigned short canvas_div_n = 0);
 		void register_plot(TObject * new_plot, string canvas_name, string draw_opt = "", unsigned short canvas_div = 0);
 		//void register_div_hist(TH1 * new_plot_a, TH1 * new_plot_b, string canvas_name, string draw_opt = "", unsigned short canvas_div = 0);
 		//void register_sub_hist(TH1 * new_plot_a, TH1 * new_plot_b, string canvas_name, string draw_opt = "", unsigned short canvas_div = 0);
+		void start_count();
+		void stop_count();
+		void register_task(Task * some_task);
+		static Display_Thread * get_instance();
 	protected:
+		static Display_Thread * singleton_instance;
+		Display_Thread();
+		Display_Thread(string log_file_name);
+		~Display_Thread();
 		struct plot_info{
 			TObject * plot;
 			unsigned short div;
@@ -148,8 +234,10 @@ class Display_Thread: public Thread, public ostringstream{
 		void * run();
 		void pre_stop();
 		bool working;
+		bool is_counting;
 		ofstream log_file;
 		vector<canvas_info> canvas_list;
+		vector<Task*> registered_task;
 		void display_text();
 		void display_canvas();
 

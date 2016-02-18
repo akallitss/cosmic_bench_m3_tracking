@@ -114,7 +114,6 @@ static map<const Tomography::det_type,const Detector* const> Static_Detector_bui
 }
 
 map<const Tomography::det_type,const Detector* const> Tomography::Static_Detector = Static_Detector_build();
-Display_Thread Tomography::TomoCout;// = Display_Thread();
 
 Tomography::Tomography(){
 	cout << "Warning ! Dummy Tomography instanciated" << endl;
@@ -130,12 +129,6 @@ Tomography::Tomography(){
 	live_graphic_display = false;
 	is_batch = true;
 	thread_number = 0;
-	pthread_mutex_init(&raw_data_mutex,NULL);
-	pthread_mutex_init(&ped_data_mutex,NULL);
-	pthread_mutex_init(&corr_data_mutex,NULL);
-	pthread_mutex_init(&event_mutex,NULL);
-	pthread_mutex_init(&ray_mutex,NULL);
-	pthread_mutex_init(&deviation_mutex,NULL);
 	thread_number = 0;
 	raw_data_treated = 0;
 	ped_data_treated = 0;
@@ -149,7 +142,6 @@ Tomography::Tomography(){
 	sigemptyset(&sigIntHandler.sa_mask);
 	sigIntHandler.sa_flags = 0;
 	sigaction(SIGINT, &sigIntHandler, NULL);
-	TomoCout.start();
 }
 Tomography::Tomography(ptree config_tree_){
 	cout << "Loading Tomography !" << endl;
@@ -181,12 +173,6 @@ Tomography::Tomography(ptree config_tree_){
 	can_continue = true;
 	thread_number = config_tree.get<unsigned short>("thread_number");
 	if(thread_number<1) thread_number = 1;
-	pthread_mutex_init(&raw_data_mutex,NULL);
-	pthread_mutex_init(&ped_data_mutex,NULL);
-	pthread_mutex_init(&corr_data_mutex,NULL);
-	pthread_mutex_init(&event_mutex,NULL);
-	pthread_mutex_init(&ray_mutex,NULL);
-	pthread_mutex_init(&deviation_mutex,NULL);
 	raw_data_treated = 0;
 	ped_data_treated = 0;
 	corr_data_treated = 0;
@@ -197,7 +183,6 @@ Tomography::Tomography(ptree config_tree_){
 	sigemptyset(&sigIntHandler.sa_mask);
 	sigIntHandler.sa_flags = 0;
 	sigaction(SIGINT, &sigIntHandler, NULL);
-	TomoCout.start();
 }
 Tomography::~Tomography(){
 	save_canvases();
@@ -207,12 +192,6 @@ Tomography::~Tomography(){
 	singleton_instance = 0;
 	can_continue = false;
 	thread_number = 0;
-	pthread_mutex_destroy(&raw_data_mutex);
-	pthread_mutex_destroy(&ped_data_mutex);
-	pthread_mutex_destroy(&corr_data_mutex);
-	pthread_mutex_destroy(&event_mutex);
-	pthread_mutex_destroy(&ray_mutex);
-	pthread_mutex_destroy(&deviation_mutex);
 	cout << "Terminating Tomography !" << endl;
 }
 void Tomography::Quit(){
@@ -291,109 +270,13 @@ void Tomography::save_canvases(){
 	if(gROOT->GetListOfCanvases()->GetSize() > 0) write_json(base_name + "config.json",config_tree);
 }
 void Tomography::Run(){
-	TomoCout.stop();
 	if(root_interpreter) root_interpreter->Run(true);
 }
 
-struct raw_data Tomography::get_next_raw_data(){
-	pthread_mutex_lock(&raw_data_mutex);
-	struct raw_data next_data = raw_data_queue.front();
-	raw_data_queue.pop();
-	pthread_mutex_unlock(&raw_data_mutex);
-	return next_data;
-}
-void Tomography::push_next_raw_data(struct raw_data new_data){
-	pthread_mutex_lock(&raw_data_mutex);
-	raw_data_queue.push(new_data);
-	pthread_mutex_unlock(&raw_data_mutex);
-	raw_data_treated++;
-}
-bool Tomography::is_raw_data_empty() const{
-	return raw_data_queue.empty();
-}
-struct ped_data Tomography::get_next_ped_data(){
-	pthread_mutex_lock(&ped_data_mutex);
-	struct ped_data next_data = ped_data_queue.front();
-	ped_data_queue.pop();
-	pthread_mutex_unlock(&ped_data_mutex);
-	return next_data;
-}
-void Tomography::push_next_ped_data(struct ped_data new_data){
-	pthread_mutex_lock(&ped_data_mutex);
-	ped_data_queue.push(new_data);
-	pthread_mutex_unlock(&ped_data_mutex);
-	ped_data_treated++;
-}
-bool Tomography::is_ped_data_empty() const{
-	return ped_data_queue.empty();
-}
-struct ped_data Tomography::get_next_corr_data(){
-	pthread_mutex_lock(&corr_data_mutex);
-	struct ped_data next_data = corr_data_queue.front();
-	corr_data_queue.pop();
-	pthread_mutex_unlock(&corr_data_mutex);
-	return next_data;
-}
-void Tomography::push_next_corr_data(struct ped_data new_data){
-	pthread_mutex_lock(&corr_data_mutex);
-	corr_data_queue.push(new_data);
-	pthread_mutex_unlock(&corr_data_mutex);
-	corr_data_treated++;
-}
-bool Tomography::is_corr_data_empty() const{
-	return corr_data_queue.empty();
-}
-struct event_data Tomography::get_next_event_data(){
-	pthread_mutex_lock(&event_mutex);
-	struct event_data next_data = event_queue.front();
-	event_queue.pop();
-	pthread_mutex_unlock(&event_mutex);
-	return next_data;
-}
-void Tomography::push_next_event_data(struct event_data new_data){
-	pthread_mutex_lock(&event_mutex);
-	event_queue.push(new_data);
-	pthread_mutex_unlock(&event_mutex);
-	event_treated++;
-}
-bool Tomography::is_event_data_empty() const{
-	return event_queue.empty();
-}
-struct ray_data Tomography::get_next_ray_data(){
-	pthread_mutex_lock(&ray_mutex);
-	struct ray_data next_data = ray_queue.front();
-	ray_queue.pop();
-	pthread_mutex_unlock(&ray_mutex);
-	return next_data;
-}
-void Tomography::push_next_ray_data(struct ray_data new_data){
-	pthread_mutex_lock(&ray_mutex);
-	ray_queue.push(new_data);
-	pthread_mutex_unlock(&ray_mutex);
-	ray_treated++;
-}
-bool Tomography::is_ray_data_empty() const{
-	return ray_queue.empty();
-}
-struct deviation_data Tomography::get_next_deviation_data(){
-	pthread_mutex_lock(&deviation_mutex);
-	struct deviation_data next_data = deviation_queue.front();
-	deviation_queue.pop();
-	pthread_mutex_unlock(&deviation_mutex);
-	return next_data;
-}
-void Tomography::push_next_deviation_data(struct deviation_data new_data){
-	pthread_mutex_lock(&deviation_mutex);
-	deviation_queue.push(new_data);
-	pthread_mutex_unlock(&deviation_mutex);
-	deviation_treated++;
-}
-bool Tomography::is_deviation_data_empty() const{
-	return deviation_queue.empty();
-}
 unsigned short Tomography::get_thread_number() const{
 	return thread_number;
 }
+/*
 string Tomography::init_count() const{
 	ostringstream outstring;
 	outstring << left << setw(21) << "raw event" << "|" << setw(21) << "ped event" << "|" << setw(21) << "corr event" << "|" << setw(21) << "demux event" << "|" << setw(21) << "tracked event - abs" << "|" << setw(21) << "tracked event - dev";
@@ -404,3 +287,4 @@ string Tomography::print_count() const{
 	outstring << right << setw(11) << raw_data_treated << " - " << left << setw(7) << raw_data_queue.size() << "|" << right << setw(11) << ped_data_treated << " - " << left << setw(7) << ped_data_queue.size() << "|" << right << setw(11) << corr_data_treated << " - " << left << setw(7) << corr_data_queue.size() << "|" << right << setw(11) << event_treated << " - " << left << setw(7) << event_queue.size() << "|" << right << setw(11) << ray_treated << " - " << left << setw(7) << ray_queue.size() << "|" << right << setw(11) << deviation_treated << " - " << left << setw(7) << deviation_queue.size();
 	return outstring.str();
 }
+*/

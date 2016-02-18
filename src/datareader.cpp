@@ -305,7 +305,13 @@ void DataReader::compute_RMSPed(){
 		for(unsigned int i=0;i<(type_it->second).size();i++){
 			for(unsigned int j=0;j<(type_it->second)[i].size();j++){
 				TFitResultPtr res = (type_it->second)[i][j]->Fit("gaus","SQN");
-				RMSPedFile << i << " " << j << " " << res->Parameter(2) << "\n";
+				if(res->IsEmpty()){
+					RMSPedFile << i << " " << j << " " << -1 << "\n";
+					cout << "    cannot fit to compute RMS of " << type_it->first << "_" << i << " strip " << j << endl;
+				}
+				else{
+					RMSPedFile << i << " " << j << " " << res->Parameter(2) << "\n";
+				}
 				delete (type_it->second)[i][j];
 			}
 		}

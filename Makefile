@@ -24,7 +24,7 @@ NC=\033[0m
 
 ECHO=/bin/echo -e
 
-DataReader_obj_tmp = NewDataReader.o datareader.o ElecReader.o Tsignal_W.o dataline.o tomography.o Tanalyse_W.o event.o detector.o ray.o cluster.o point.o MT_tomography.o task/read_elec_task.o task/ped_task.o task/multicluster_task.o task/write_analyse_task.o
+DataReader_obj_tmp = NewDataReader.o datareader.o ElecReader.o Tsignal_W.o dataline.o tomography.o Tanalyse_W.o event.o detector.o ray.o cluster.o point.o MT_tomography.o task/read_elec_task.o task/ped_task.o task/multicluster_task.o task/write_analyse_task.o task/read_live_task.o
 DataReader_obj = $(patsubst %, $(ODIR)/%, $(DataReader_obj_tmp))
 
 absorptionMap_obj_tmp = absorptionMap.o analyse.o Tanalyse_R.o event.o ray.o cluster.o detector.o point.o Tsignal_R.o tomography.o acceptanceFunction.o Tray.o dataline.o MT_tomography.o task/read_analyse_task.o task/tracking_task.o
@@ -45,7 +45,7 @@ AutoAlign_obj = $(patsubst %, $(ODIR)/%, $(AutoAlign_obj_tmp))
 HV_Monitor_obj_tmp = HV_Monitor.o CAEN_comm.o
 HV_Monitor_obj = $(patsubst %, $(ODIR)/%, $(HV_Monitor_obj_tmp))
 
-wrapper_obj_tmp = wrapper.o detector.o event.o cluster.o ray.o point.o datareader.o Tsignal_W.o dataline.o ElecReader.o tomography.o Tray.o MT_tomography.o
+wrapper_obj_tmp = wrapper.o detector.o event.o cluster.o ray.o point.o datareader.o Tsignal_W.o dataline.o ElecReader.o tomography.o Tray.o MT_tomography.o task/read_live_task.o
 wrapper_obj = $(patsubst %, $(ODIR)/%, $(wrapper_obj_tmp))
 
 carac_all_obj_tmp = carac_all.o carac.o Tanalyse_R.o event.o ray.o cluster.o detector.o point.o tomography.o MT_tomography.o
