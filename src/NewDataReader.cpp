@@ -293,6 +293,7 @@ int main(int argc, char ** argv){
 			threads.push_back(new Worker_Thread());
 			(threads.back())->start();
 		}
+		Display_Thread::get_instance()->start_count();
 		//cout << Tomography::get_instance()->init_count() << "|" << setw(7) << "tasks" << endl;
 		bool has_working_thread = true;
 		while(has_working_thread && Tomography::get_instance()->get_can_continue()){
@@ -310,6 +311,7 @@ int main(int argc, char ** argv){
 			threads[i]->stop();
 			delete threads[i];
 		}
+		Display_Thread::get_instance()->stop_count();
 		//cout << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << Task::task_left() << endl;
 		analysisFile->Write();
 		analysisFile->CloseFile();

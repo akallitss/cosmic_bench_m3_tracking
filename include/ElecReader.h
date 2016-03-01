@@ -87,7 +87,7 @@ class LiveElecReader: public ElecReader{
 	public:
 		LiveElecReader();
 		~LiveElecReader();
-		LiveElecReader(vector<int> used_asics);
+		LiveElecReader(vector<int> used_asics, string pipe_name);
 		LiveElecReader(const LiveElecReader& other);
 		LiveElecReader& operator=(const LiveElecReader& other);
 		void read_next_event();
@@ -100,7 +100,7 @@ class LiveElecReader: public ElecReader{
 		DataLineDream get_next_word();
 		data_message * current_message;
 		unsigned int message_index;
-		int queue_id;
+		//int queue_id;
 		Read_Live_Task * live_reader_task;
 		Reader_Thread * live_reader_thread;
 		map<int,vector<vector<double> > > data;

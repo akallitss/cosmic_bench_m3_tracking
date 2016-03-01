@@ -137,7 +137,7 @@ DataReader::DataReader(ptree config_tree, bool save_to_disk, bool is_live){
 			}
 			all_feu_info.push_back(current_feu_info);
 		}
-		if(is_live) reader = new LiveElecReader(used_asics);
+		if(is_live) reader = new LiveElecReader(used_asics,config_tree.get<string>("metadata"));
 		else reader = new DreamElecReader(data_file_basename,all_feu_info,first_index,last_index);
 		mapping = &Dream_mapping;
 	}

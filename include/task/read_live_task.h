@@ -3,12 +3,15 @@
 
 #include "MT_tomography.h"
 
+#include <string>
+using std::string;
+
 class DataReader;
 class data_message;
 
 class Read_Live_Task: public Input_Task{
 	public:
-		Read_Live_Task(int queue_id_);
+		Read_Live_Task(string pipe_name);
 		~Read_Live_Task();
 		bool do_task();
 		bool can_exec() const;
@@ -17,6 +20,7 @@ class Read_Live_Task: public Input_Task{
 		bool has_new_data() const;
 		int get_status() const;
 	protected:
+		void * pipe_ptr;
 		int queue_id;
 		queue<data_message*> data_queue;
 		int status;

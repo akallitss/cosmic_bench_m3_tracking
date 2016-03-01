@@ -1,29 +1,56 @@
 #define read_live_task_cpp
 
-#include <sys/msg.h>
-
+//#include <sys/msg.h>
+extern "C" {
+#include "Pipes.h"
+}
 #include "task/read_live_task.h"
 
 #include "ElecReader.h"
 
-Read_Live_Task::Read_Live_Task(int queue_id_): Input_Task(-1){
-	queue_id = queue_id_;
+#include <iostream>
+//#include <iomanip>
+using std::cout;
+using std::endl;
+/*
+using std::hex;
+using std::dec;
+using std::noshowbase;
+using std::showbase;
+*/
+
+Read_Live_Task::Read_Live_Task(string pipe_name): Input_Task(-1){
+	pipe_ptr = 0;
+	queue_id = Pipe_Create(&pipe_ptr,const_cast<char*>(pipe_name.c_str()), DEF_Pipe_Type_Rd);
+	if(queue_id < 0){
+		cout << "failed to create message queue with name : " << pipe_name << endl;
+	}
+	else{
+		cout << "created message queue (id : " << queue_id << ") with name " << pipe_name << endl;
+	}
 	status = 0;
 }
 Read_Live_Task::~Read_Live_Task(){
-
+	if(pipe_ptr) Pipe_Delete(&pipe_ptr);
+	pipe_ptr = 0;
 }
 bool Read_Live_Task::do_task(){
 	data_message * current_data = new data_message();
-	if(msgrcv(queue_id,current_data,sizeof(current_data->data),0,0) == -1) return false;
-	if(current_data->mtype == 2){
+	//cout << "trying to read message..." << endl;
+	//if(msgrcv(queue_id,current_data,sizeof(current_data->data),0,0) == -1) return false;
+	int rd_size;
+	if(Pipe_Read(pipe_ptr,(char*)current_data, &rd_size) < 0){
+		cout << "error while reading pipe" << endl;
+	}
+	//cout << "read message of type " << current_data->mtype << endl;
+	if(current_data->mtype == 1){
 		pthread_mutex_lock(&IO_mutex);
 		data_queue.push(current_data);
 		pthread_mutex_unlock(&IO_mutex);
 		return true;
 	}
-	else if(current_data->mtype == 1){
-		status |= (current_data->data)[0];
+	else{
+		status |= (current_data->mtype);
 		delete current_data;
 		return true;
 	}
@@ -31,6 +58,7 @@ bool Read_Live_Task::do_task(){
 	return false;
 }
 bool Read_Live_Task::can_exec() const{
+	//cout << "current status : " << hex << showbase << status << dec << noshowbase << endl;
 	return (!(status & 0x8000));
 }
 void Read_Live_Task::update_task_list() const{

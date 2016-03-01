@@ -9,8 +9,10 @@ ROOTGLIBS     = $(shell root-config --glibs)
 # Linux with egcs
 WARNINGS      = -Wall -Wextra -Wchar-subscripts -Wundef -Wshadow -Wwrite-strings -Wsign-compare -Wunused -Wunused-parameter -Wuninitialized -Winit-self -Wpointer-arith -Wredundant-decls -Wformat-nonliteral -Wformat-zero-length -Wmissing-format-attribute -Wsequence-point -Wparentheses -Wmissing-declarations
 CXX           = g++
+CGNU          = gcc
 #CXXFLAGS      = -O2 -Wall -Wextra -fexceptions -fPIC  $(ROOTCFLAGS) -fopenmp -I$(IDIR) -DUNIX -DLINUX
 CXXFLAGS      = -g -O $(WARNINGS) -fexceptions -fPIC  $(ROOTCFLAGS) -I$(IDIR) -DUNIX -DLINUX
+CFLAGS        = -O2 $(WARNINGS) -I$(IDIR) -pthread
 LD            = g++
 LIBS          = $(ROOTLIBS) -lNetx -lm -ldl -rdynamic 
 GLIBS         = $(ROOTGLIBS) -L/usr/X11R6/lib -lXpm -lX11 -lm -ldl -rdynamic -lpthread -lMinuit2
@@ -24,7 +26,7 @@ NC=\033[0m
 
 ECHO=/bin/echo -e
 
-DataReader_obj_tmp = NewDataReader.o datareader.o ElecReader.o Tsignal_W.o dataline.o tomography.o Tanalyse_W.o event.o detector.o ray.o cluster.o point.o MT_tomography.o task/read_elec_task.o task/ped_task.o task/multicluster_task.o task/write_analyse_task.o task/read_live_task.o
+DataReader_obj_tmp = NewDataReader.o datareader.o ElecReader.o Tsignal_W.o dataline.o tomography.o Tanalyse_W.o event.o detector.o ray.o cluster.o point.o MT_tomography.o task/read_elec_task.o task/ped_task.o task/multicluster_task.o task/write_analyse_task.o task/read_live_task.o Pipes.o Platform.o
 DataReader_obj = $(patsubst %, $(ODIR)/%, $(DataReader_obj_tmp))
 
 absorptionMap_obj_tmp = absorptionMap.o analyse.o Tanalyse_R.o event.o ray.o cluster.o detector.o point.o Tsignal_R.o tomography.o acceptanceFunction.o Tray.o dataline.o MT_tomography.o task/read_analyse_task.o task/tracking_task.o
@@ -45,7 +47,7 @@ AutoAlign_obj = $(patsubst %, $(ODIR)/%, $(AutoAlign_obj_tmp))
 HV_Monitor_obj_tmp = HV_Monitor.o CAEN_comm.o
 HV_Monitor_obj = $(patsubst %, $(ODIR)/%, $(HV_Monitor_obj_tmp))
 
-wrapper_obj_tmp = wrapper.o detector.o event.o cluster.o ray.o point.o datareader.o Tsignal_W.o dataline.o ElecReader.o tomography.o Tray.o MT_tomography.o task/read_live_task.o
+wrapper_obj_tmp = wrapper.o detector.o event.o cluster.o ray.o point.o datareader.o Tsignal_W.o dataline.o ElecReader.o tomography.o Tray.o MT_tomography.o task/read_live_task.o Pipes.o Platform.o
 wrapper_obj = $(patsubst %, $(ODIR)/%, $(wrapper_obj_tmp))
 
 carac_all_obj_tmp = carac_all.o carac.o Tanalyse_R.o event.o ray.o cluster.o detector.o point.o tomography.o MT_tomography.o
@@ -68,6 +70,11 @@ echo_things:
 $(ODIR)/%.o: $(SDIR)/%.cpp
 	@$(ECHO) "$(GREEN)Building $@$(NC)"
 	@$(CXX) -o $@ $(CXXFLAGS) -c $<
+
+$(ODIR)/%.o: $(SDIR)/%.c
+	@$(ECHO) "$(GREEN)Building $@$(NC)"
+	@$(CGNU) -o $@ $(CFLAGS) -c $<
+
 
 DataReader: $(DataReader_obj)
 	@$(ECHO) "$(GREEN)Building $@$(NC)"

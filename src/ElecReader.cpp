@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include "TMath.h"
 
-#include <sys/msg.h>
+//#include <sys/msg.h>
 #include <unistd.h>
 
 using std::ostringstream;
@@ -171,11 +171,11 @@ ElecReader& ElecReader::operator=(const ElecReader& other){
 LiveElecReader::LiveElecReader(): ElecReader(){
 	Nevent = -1;
 	evttime = 0;
-	queue_id = -1;
+	//queue_id = -1;
 	current_message = NULL;
 	message_index = 0;
 }
-LiveElecReader::LiveElecReader(vector<int> used_asics): ElecReader(){
+LiveElecReader::LiveElecReader(vector<int> used_asics, string pipe_name): ElecReader(){
 	Nevent = -1;
 	evttime = 0;
 	for(vector<int>::iterator asics_it=used_asics.begin();asics_it!=used_asics.end();++asics_it){
@@ -183,11 +183,11 @@ LiveElecReader::LiveElecReader(vector<int> used_asics): ElecReader(){
 		if(dream_mask.count((*asics_it)/Tomography::Nasic_FEU)==0) dream_mask[(*asics_it)/Tomography::Nasic_FEU] = 0;
 		dream_mask[(*asics_it)/Tomography::Nasic_FEU] |= 0x1 << (*asics_it)%Tomography::Nasic_FEU;
 	}
-	queue_id = msgget(ftok("/proc/self/exe",getpid()), 0666 | IPC_CREAT);
-	live_reader_task = new Read_Live_Task(queue_id);
+	//queue_id = msgget(ftok("/proc/self/exe",getpid()), 0666 | IPC_CREAT);
+	live_reader_task = new Read_Live_Task(pipe_name/*queue_id*/);
 	live_reader_thread = new Reader_Thread(live_reader_task);
 	live_reader_thread->start();
-	cout << "listening to queue : " << queue_id << endl;
+	//cout << "listening to queue : " << queue_id << endl;
 	current_message = NULL;
 	message_index = 0;
 }
@@ -199,15 +199,15 @@ LiveElecReader::~LiveElecReader(){
 	evttime = 0;
 	data.clear();
 	dream_mask.clear();
-	if(queue_id>0) msgctl(queue_id, IPC_RMID, NULL);
-	queue_id = 0;
+	//if(queue_id>0) msgctl(queue_id, IPC_RMID, NULL);
+	//queue_id = 0;
 	delete current_message;
 	message_index = 0;
 }
 LiveElecReader::LiveElecReader(const LiveElecReader& other): ElecReader(other){
 	Nevent = other.Nevent;
 	evttime = other.evttime;
-	queue_id = other.queue_id;
+	//queue_id = other.queue_id;
 	live_reader_task = other.live_reader_task;
 	live_reader_thread = other.live_reader_thread;
 	data = other.data;
@@ -220,7 +220,7 @@ LiveElecReader& LiveElecReader::operator=(const LiveElecReader& other){
 	ElecReader::operator=(other);
 	Nevent = other.Nevent;
 	evttime = other.evttime;
-	queue_id = other.queue_id;
+	//queue_id = other.queue_id;
 	live_reader_task = other.live_reader_task;
 	live_reader_thread = other.live_reader_thread;
 	data = other.data;
@@ -288,9 +288,9 @@ void LiveElecReader::read_next_event(){
 				current_evttime = current_data.get_data();
 			}
 			else if(FeuHeaderLine==3){
-				isample_prev = isample;
+				if(feu_nb==0 && asic_nb==0) isample_prev = current_data.get_sample_ID();;
 				isample = current_data.get_sample_ID();
-				if(isample!=isample_prev+1){
+				if(isample!=isample_prev){
 					cout << "problem in sample index : " << isample << "; " << isample_prev << endl;
 					has_bug = true;
 					break;
@@ -310,6 +310,12 @@ void LiveElecReader::read_next_event(){
 			break;
 		}
 		else if(FeuHeaderLine>3){
+			if(feu_nb==0 && asic_nb==0 && isample==0) current_event_old = current_event;
+			if(current_event != current_event_old){
+				cout << "problem in event id : " << current_event << "; " << current_event_old << endl;
+				has_bug = true;
+				break;
+			}
 			if(DataHeaderLine<4 && current_data.is_data_header()){
 				asicN = current_data.get_dream_ID();
 				DataHeaderLine++;
@@ -321,6 +327,7 @@ void LiveElecReader::read_next_event(){
 			}
 			else if(DataHeaderLine>3){
 				if(current_data.is_data() && !zs_mode){
+					cout << "getting data for asic : " << asicN+(8*FeuN) << " channel : " << ichannel << " sample : " << isample << endl;
 					data[asicN+(8*FeuN)][ichannel][isample] = current_data.get_data();
 					ichannel++;
 				}
@@ -378,12 +385,6 @@ void LiveElecReader::read_next_event(){
 					break;
 				}
 				else feu_nb++;
-				if(isample==0) current_event_old = current_event;
-				else if(current_event_old != current_event && !has_bug){
-					cout << "problem in event ID (" << current_event_old << ";" << current_event << ")[sample=" << isample << "][feu_id=" << FeuN << "]" << endl;
-					//has_bug = true;
-					//break; //comment these 2 lines until bugfix by irakli :)
-				}
 				isample_nb++;
 				zs_mode = false;
 				FeuHeaderLine=0;
@@ -397,6 +398,9 @@ void LiveElecReader::read_next_event(){
 						event_complete = true;
 						break;
 					}
+				}
+				if(feu_nb==dream_mask.size()){
+					feu_nb=0;
 				}
 			}
 		}
