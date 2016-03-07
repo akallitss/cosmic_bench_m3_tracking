@@ -173,7 +173,7 @@ int main(int argc, char ** argv){
 		live,
 		read
 	};
-	process_type operation = data_run;
+	process_type operation = read;
 	for(int i=2;i<argc;i++){
 		if(argv[i] == string("ped")){
 			operation = ped_run;
@@ -195,14 +195,13 @@ int main(int argc, char ** argv){
 	ptree config_tree;
 	read_json(config_file, config_tree);
 	Tomography::Init(config_tree);
-	if(operation==live){
-		DataReader * blah = new DataReader(config_tree,true,true);
+	if((operation == live) || (operation == read)){
+		DataReader * blah = new DataReader(config_tree,true,operation==live);
 		blah->process();
 		delete blah;
 	}
 	else if(operation != analysis){
 		DataReader * blah = new DataReader(config_tree,true);
-		if(operation == read) blah->process();
 		if(operation == ped_run) blah->compute_ped();
 		blah->read_ped();
 		blah->do_ped_sub();
