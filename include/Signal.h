@@ -23,6 +23,7 @@ class Signal: public Tsignal_R, public CosmicBench{
 		Signal(ptree config_tree);
 		~Signal();
 		void MultiCluster();
+		void MultiCluster_raw();
 		//void ElecToAnalyse();
 		//void ElecToRays(string outFileName);
 		void EventDisplay(int evn_min = 0, int evn_max = 20, Tomography::signal_type signal_correction = Tomography::corr);

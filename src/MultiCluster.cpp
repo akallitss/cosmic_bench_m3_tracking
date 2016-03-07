@@ -23,6 +23,7 @@ int main(int argc, char ** argv){
 	Tomography::Init(config_file.str());
 	Signal * blah = new Signal(config_file.str());
 	string multicluster = "multicluster";
+	string multicluster_raw = "rawcluster";
 	string hough = "hough";
 	string SoB = "SoB";
 	//string EtA = "EtA";
@@ -33,11 +34,10 @@ int main(int argc, char ** argv){
 		blah->MultiCluster();
 		is_interactive = false;
 	}
-	/*
-	else if(argv[2] == EtA){
-		blah->ElecToAnalyse();
+	else if(argv[2] == multicluster_raw){
+		blah->MultiCluster_raw();
+		is_interactive = false;
 	}
-	*/
 	else if(argv[2] == SoB){
 		blah->SignalOverNoiseDisplay();
 	}

@@ -8,6 +8,12 @@
 #include "Tray.h"
 #include "cluster.h"
 
+#include "MT_tomography.h"
+#include "task/read_signal_task.h"
+#include "task/ped_task.h"
+#include "task/multicluster_task.h"
+#include "task/write_analyse_task.h"
+
 #include <fstream>
 #include <iostream>
 #include <iomanip>
@@ -114,6 +120,59 @@ Signal::~Signal(){
 	if(exists){
 		delete fIn;
 	}
+}
+void Signal::MultiCluster_raw(){
+	cout << "reading pedfile : " << PedName << endl;
+	map<Tomography::det_type,vector<vector<double> > > current_ped = CosmicBench::read_pedfile(PedName,det_N);
+	cout << "reading RMSfile : " << PedName << endl;
+	map<Tomography::det_type,vector<vector<double> > > current_RMS = CosmicBench::read_pedfile(RMSName,det_N);
+	Tanalyse_W * analyseFile = new Tanalyse_W(analyseTree,det_n);
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
+	fChain->SetBranchStatus("*",0);
+	fChain->SetBranchStatus("Nevent",1);
+	fChain->SetBranchStatus("evttime",1);
+	for(map<Tomography::det_type,unsigned short>::const_iterator type_it=det_N.begin();type_it!=det_N.end();++type_it){
+		if(type_it->second > 0){
+			ostringstream name;
+			name << "StripAmpl_" << type_it->first;
+			fChain->SetBranchStatus(name.str().c_str(),1);
+		}
+	}
+
+	Input_Task * to_do = new Read_Signal_Task<raw_data>(nentries,this, new Ped_Corr_Task(current_ped, new Multicluster_Task(this,new Write_Analyse_Task(analyseFile))));
+	vector<Thread*> threads;
+	threads.push_back(new Reader_Thread(to_do));
+	(threads.back())->start();
+	const unsigned short n_thread = Tomography::get_instance()->get_thread_number();
+	cout << "1 | " << n_thread << endl;
+	for(unsigned short i=0;i<n_thread;i++){
+		threads.push_back(new Worker_Thread());
+		(threads.back())->start();
+	}
+	Display_Thread::get_instance()->start_count();
+	//cout << Tomography::get_instance()->init_count() << "|" << setw(7) << "tasks" << endl;
+	bool has_working_thread = true;
+	while(has_working_thread && Tomography::get_instance()->get_can_continue()){
+		//cout << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << Task::task_left() << flush;
+		has_working_thread = false;
+		for(unsigned short i=0;i<threads.size();i++){
+			if(threads[i]->is_working()){
+				has_working_thread = true;
+				break;
+			}
+		}
+		usleep(10000);
+	}
+	for(unsigned short i=0;i<threads.size();i++){
+		threads[i]->stop();
+		delete threads[i];
+	}
+	Display_Thread::get_instance()->stop_count();
+
+	analyseFile->Write();
+	analyseFile->CloseFile();
+	//delete analyseFile;
+	fChain->SetBranchStatus("*",1);
 }
 void Signal::MultiCluster(){
 	cout << "destination file : " << analyseTree << endl;

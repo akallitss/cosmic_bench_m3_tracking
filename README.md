@@ -12,7 +12,7 @@ config_file : path to config file which contain the cosmic bench caracteristics 
 ped : use this option to build signal file ped and corr branches, calculate the Ped.dat and RMS.dat using an existing signal file with filled raw branches  
 data : use this option to build signal file ped and corr branches using existing Ped.dat and signal file with filled raw branches
 analyse : use this option to build analyse file using existing Ped.dat and RMS.dat  
-live : use this option to read online data from FeuUdpControl using option -q to build the raw branches of the signal file
+live : use this option to read online data from FeuUdpControl using option -q to build the raw branches of the signal file  
 read : use this option to read electronic binary files and build the raw branches of the signal file
 
 * Multicluster
@@ -21,6 +21,7 @@ read : use this option to read electronic binary files and build the raw branche
 
 config_file : path to config file which contain the cosmic bench caracteristics and different file path  
 multicluster : use this option to build analyse file using existing Ped.dat and RMS.dat and signal file  
+rawcluster : use this option to build analyse file using existing Ped.dat and RMS.dat and signal file with only raw branches filled  
 SoB : use this option to display signal and noise amplitude  
 dispersion : use this option to display some correlation between the detectors signal  
 display : use this option to display the signal shape for each detector for a signal type (raw,ped or corr) from event 0 to n (n being the additional option)  

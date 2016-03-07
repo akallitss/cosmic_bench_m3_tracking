@@ -35,7 +35,7 @@ absorptionMap_obj = $(patsubst %, $(ODIR)/%, $(absorptionMap_obj_tmp))
 tracking_obj_tmp = tracking.o analyse.o Tanalyse_R.o event.o ray.o cluster.o detector.o point.o Tsignal_R.o tomography.o acceptanceFunction.o Tray.o dataline.o MT_tomography.o task/read_analyse_task.o task/tracking_task.o
 tracking_obj = $(patsubst %, $(ODIR)/%, $(tracking_obj_tmp))
 
-MultiCluster_obj_tmp = MultiCluster.o Signal.o detector.o event.o cluster.o Tanalyse_W.o ray.o point.o Tsignal_R.o tomography.o Tray.o MT_tomography.o
+MultiCluster_obj_tmp = MultiCluster.o Signal.o detector.o event.o cluster.o Tanalyse_W.o ray.o point.o Tsignal_R.o tomography.o Tray.o MT_tomography.o task/read_signal_task.o task/ped_task.o task/write_analyse_task.o task/multicluster_task.o
 MultiCluster_obj = $(patsubst %, $(ODIR)/%, $(MultiCluster_obj_tmp))
 
 live_obj_tmp = live.o liveDisplay.o datareader.o dataline.o detector.o event.o cluster.o ray.o point.o tomography.o MT_tomography.o

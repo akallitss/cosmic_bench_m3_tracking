@@ -10,7 +10,27 @@ Ped_Task::Ped_Task(map<Tomography::det_type,vector<vector<float> > > ped_): Type
 	next_task = NULL;
 }
 */
-Ped_Task::Ped_Task(map<Tomography::det_type,vector<vector<float> > > ped_, Typed_Task<ped_data> * next_task_): Typed_Task<raw_data>(){
+
+template<typename A>
+Ped_Task::Ped_Task(map<Tomography::det_type,vector<vector<A> > > ped_, Typed_Task<ped_data> * next_task_): Typed_Task<raw_data>(){
+	for(typename map<Tomography::det_type,vector<vector<A> > >::iterator type_it=ped_.begin();type_it!=ped_.end();++type_it){
+		ped[type_it->first] = vector<vector<double> >((type_it->second).size(),vector<double>((type_it->second).front().size(),0));
+		vector<vector<double> >::iterator final_det_it = ped[type_it->first].begin();
+		for(typename vector<vector<A> >::iterator det_it=(type_it->second).begin();det_it!=(type_it->second).end();++det_it){
+			vector<double>::iterator final_strip_it = final_det_it->begin();
+			for(typename vector<A>::iterator strip_it=det_it->begin();strip_it!=det_it->end();++strip_it){
+				*final_strip_it = *strip_it;
+				++final_strip_it;
+			}
+			++final_det_it;
+		}
+	}
+	next_task = next_task_;
+}
+template Ped_Task::Ped_Task(map<Tomography::det_type,vector<vector<float> > > ped_, Typed_Task<ped_data> * next_task_);
+
+template<>
+Ped_Task::Ped_Task(map<Tomography::det_type,vector<vector<double> > > ped_, Typed_Task<ped_data> * next_task_): Typed_Task<raw_data>(){
 	ped = ped_;
 	next_task = next_task_;
 }
@@ -27,11 +47,11 @@ bool Ped_Task::do_task(){
 	sub_data->Nevent = current_data->Nevent;
 	sub_data->evttime = current_data->evttime;
 	for(map<Tomography::det_type,vector<vector<vector<float> > > >::iterator type_it=(current_data->strip_data).begin();type_it!=(current_data->strip_data).end();++type_it){
-		vector<vector<float> >::iterator ped_det_it = ped[type_it->first].begin();
+		vector<vector<double> >::iterator ped_det_it = ped[type_it->first].begin();
 		(sub_data->strip_data)[type_it->first] = vector<vector<vector<double> > >((type_it->second).size(),vector<vector<double> >(Tomography::Static_Detector[type_it->first]->get_Nchannel(),vector<double>(Tomography::get_instance()->get_Nsample(),0)));
 		vector<vector<vector<double> > >::iterator sub_det_it = (sub_data->strip_data)[type_it->first].begin();
 		for(vector<vector<vector<float> > >::iterator det_it=(type_it->second).begin();det_it!=(type_it->second).end();++det_it){
-			vector<float>::iterator ped_strip_it = ped_det_it->begin();
+			vector<double>::iterator ped_strip_it = ped_det_it->begin();
 			vector<vector<double> >::iterator sub_strip_it = sub_det_it->begin();
 			for(vector<vector<float> >::iterator strip_it=det_it->begin();strip_it!=det_it->end();++strip_it){
 				vector<double>::iterator sub_sample_it = sub_strip_it->begin();
@@ -110,7 +130,26 @@ Ped_Corr_Task::Ped_Corr_Task(map<Tomography::det_type,vector<vector<float> > > p
 	next_task = NULL;
 }
 */
-Ped_Corr_Task::Ped_Corr_Task(map<Tomography::det_type,vector<vector<float> > > ped_, Typed_Task<corr_data> * next_task_): Typed_Task<raw_data>(){
+template<typename A>
+Ped_Corr_Task::Ped_Corr_Task(map<Tomography::det_type,vector<vector<A> > > ped_, Typed_Task<corr_data> * next_task_): Typed_Task<raw_data>(){
+	for(typename map<Tomography::det_type,vector<vector<A> > >::iterator type_it=ped_.begin();type_it!=ped_.end();++type_it){
+		ped[type_it->first] = vector<vector<double> >((type_it->second).size(),vector<double>((type_it->second).front().size(),0));
+		vector<vector<double> >::iterator final_det_it = ped[type_it->first].begin();
+		for(typename vector<vector<A> >::iterator det_it=(type_it->second).begin();det_it!=(type_it->second).end();++det_it){
+			vector<double>::iterator final_strip_it = final_det_it->begin();
+			for(typename vector<A>::iterator strip_it=det_it->begin();strip_it!=det_it->end();++strip_it){
+				*final_strip_it = *strip_it;
+				++final_strip_it;
+			}
+			++final_det_it;
+		}
+	}
+	next_task = next_task_;
+}
+template Ped_Corr_Task::Ped_Corr_Task(map<Tomography::det_type,vector<vector<float> > > ped_, Typed_Task<corr_data> * next_task_);
+
+template<>
+Ped_Corr_Task::Ped_Corr_Task(map<Tomography::det_type,vector<vector<double> > > ped_, Typed_Task<corr_data> * next_task_): Typed_Task<raw_data>(){
 	ped = ped_;
 	next_task = next_task_;
 }
@@ -129,7 +168,7 @@ bool Ped_Corr_Task::do_task(){
 
 	for(map<Tomography::det_type,vector<vector<vector<float> > > >::iterator it = (current_data->strip_data).begin();it!=(current_data->strip_data).end();++it){
 		(sub_data->strip_data)[it->first] = vector<vector<vector<double> > >((it->second).size(),vector<vector<double> >(Tomography::Static_Detector[it->first]->get_Nchannel(),vector<double>(Tomography::get_instance()->get_Nsample(),0)));
-		vector<vector<float> >::iterator ped_jt = ped[it->first].begin();
+		vector<vector<double> >::iterator ped_jt = ped[it->first].begin();
 		vector<vector<vector<double> > >::iterator out_it = (sub_data->strip_data)[it->first].begin();
 		for(vector<vector<vector<float> > >::iterator jt = (it->second).begin();jt!=(it->second).end();++jt){
 			for(int k=0;k<Tomography::get_instance()->get_Nsample();k++){
