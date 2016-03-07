@@ -170,7 +170,8 @@ int main(int argc, char ** argv){
 		data_run,
 		ped_run,
 		analysis,
-		live
+		live,
+		read
 	};
 	process_type operation = data_run;
 	for(int i=2;i<argc;i++){
@@ -186,6 +187,9 @@ int main(int argc, char ** argv){
 		else if(argv[i] == string("live")){
 			operation = live;
 		}
+		else if(argv[i] == string("read")){
+			operation = read;
+		}
 	}
 	string config_file = argv[1];
 	ptree config_tree;
@@ -198,7 +202,7 @@ int main(int argc, char ** argv){
 	}
 	else if(operation != analysis){
 		DataReader * blah = new DataReader(config_tree,true);
-		blah->process();
+		if(operation == read) blah->process();
 		if(operation == ped_run) blah->compute_ped();
 		blah->read_ped();
 		blah->do_ped_sub();
