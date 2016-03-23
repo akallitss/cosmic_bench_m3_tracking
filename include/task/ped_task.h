@@ -17,6 +17,7 @@ class Ped_Task: public Typed_Task<raw_data>{
 		~Ped_Task();
 		bool do_task();
 		void update_task_list() const;
+		bool is_queueable() const;
 	protected:
 		map<Tomography::det_type,vector<vector<double> > > ped;
 		Typed_Task<ped_data> * next_task;
@@ -28,6 +29,7 @@ class Corr_Task: public Typed_Task<ped_data>{
 		~Corr_Task();
 		bool do_task();
 		void update_task_list() const;
+		bool is_queueable() const;
 	protected:
 		Typed_Task<corr_data> * next_task;
 };
@@ -38,6 +40,7 @@ class Ped_Corr_Task: public Typed_Task<raw_data>{
 		~Ped_Corr_Task();
 		bool do_task();;
 		void update_task_list() const;
+		bool is_queueable() const;
 	protected:
 		map<Tomography::det_type,vector<vector<double> > > ped;
 		Typed_Task<corr_data> * next_task;

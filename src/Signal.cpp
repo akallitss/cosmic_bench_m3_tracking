@@ -139,12 +139,16 @@ void Signal::MultiCluster_raw(){
 		}
 	}
 
-	Input_Task * to_do = new Read_Signal_Task<raw_data>(nentries,this, new Ped_Corr_Task(current_ped, new Multicluster_Task(this,new Write_Analyse_Task(analyseFile))));
+	Output_Task<event_data> * to_write = new Write_Analyse_Task(analyseFile);
+	Input_Task * to_do = new Read_Signal_Task<raw_data>(nentries,this, new Ped_Corr_Task(current_ped, new Multicluster_Task(this,to_write)));
 	vector<Thread*> threads;
+	threads.push_back(new Writer_Thread(to_write));
+	(threads.back())->start();
 	threads.push_back(new Reader_Thread(to_do));
 	(threads.back())->start();
-	const unsigned short n_thread = Tomography::get_instance()->get_thread_number();
-	cout << "1 | " << n_thread << endl;
+	unsigned short n_thread = Tomography::get_instance()->get_thread_number() - threads.size();
+	if(n_thread<1) n_thread = 1;
+	cout << "1 | " << n_thread << " | 1" << endl;
 	for(unsigned short i=0;i<n_thread;i++){
 		threads.push_back(new Worker_Thread());
 		(threads.back())->start();

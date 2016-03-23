@@ -75,6 +75,9 @@ bool Ped_Task::do_task(){
 void Ped_Task::update_task_list() const{
 	add_task(next_task);
 }
+bool Ped_Task::is_queueable() const{
+	return true;
+}
 /*
 Corr_Task::Corr_Task(): Typed_Task<ped_data>(){
 	next_task = NULL;
@@ -124,6 +127,9 @@ bool Corr_Task::do_task(){
 }
 void Corr_Task::update_task_list() const{
 	add_task(next_task);
+}
+bool Corr_Task::is_queueable() const{
+	return true;
 }
 /*
 Ped_Corr_Task::Ped_Corr_Task(map<Tomography::det_type,vector<vector<float> > > ped_): Typed_Task<raw_data>(){
@@ -202,4 +208,7 @@ bool Ped_Corr_Task::do_task(){
 }
 void Ped_Corr_Task::update_task_list() const{
 	add_task(next_task);
+}
+bool Ped_Corr_Task::is_queueable() const{
+	return true;
 }

@@ -37,6 +37,9 @@ bool Tracking_Abs_Task::can_exec() const{
 void Tracking_Abs_Task::update_task_list() const{
 	add_task(next_task);
 }
+bool Tracking_Abs_Task::is_queueable() const{
+	return true;
+}
 /*
 Tracking_Dev_Task::Tracking_Dev_Task(const CosmicBench * const detectors_): Typed_Task<event_data>(){
 	detectors = detectors_;
@@ -70,4 +73,7 @@ bool Tracking_Dev_Task::can_exec() const{
 }
 void Tracking_Dev_Task::update_task_list() const{
 	add_task(next_task);
+}
+bool Tracking_Dev_Task::is_queueable() const{
+	return true;
 }

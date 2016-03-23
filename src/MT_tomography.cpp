@@ -98,9 +98,11 @@ void Task::add_task(Task * new_task){
 		pthread_mutex_init(&queue_mutex, NULL);
 		is_init = true;
 	}
-	pthread_mutex_lock(&queue_mutex);
-	task_queue.push(new_task);
-	pthread_mutex_unlock(&queue_mutex);
+	if(new_task->is_queueable()){
+		pthread_mutex_lock(&queue_mutex);
+		task_queue.push(new_task);
+		pthread_mutex_unlock(&queue_mutex);
+	}
 }
 unsigned int Task::task_left(){
 	return task_queue.size();
@@ -230,6 +232,10 @@ template<typename T>
 bool Buffer_Task<T>::can_fetch_data() const{
 	return !(this->is_queue_empty());
 }
+template<typename T>
+bool Buffer_Task<T>::is_queueable() const{
+	return false;
+}
 
 template class Buffer_Task<raw_data>;
 template class Buffer_Task<ped_data>;
@@ -241,10 +247,17 @@ template class Buffer_Task<deviation_data>;
 template<typename T>
 Output_Task<T>::Output_Task(): Typed_Task<T>(){
 	pthread_mutex_init(&IO_mutex, NULL);
+	next_task = NULL;
+}
+template<typename T>
+Output_Task<T>::Output_Task(Typed_Task<T> * next_task_): Typed_Task<T>(){
+	pthread_mutex_init(&IO_mutex, NULL);
+	next_task = next_task_;
 }
 template<typename T>
 Output_Task<T>::~Output_Task(){
 	pthread_mutex_destroy(&IO_mutex);
+	if(next_task != NULL) delete next_task;
 }
 template<>
 string Output_Task<raw_data>::init_count() const{
@@ -282,6 +295,14 @@ string Output_Task<deviation_data>::init_count() const{
 	outstring << left << setw(19) << "dev tracked evt (w)";
 	return outstring.str();
 }
+template<typename T>
+bool Output_Task<T>::is_queueable() const{
+	return false;
+}
+template<typename T>
+void Output_Task<T>::update_task_list() const{
+	if(next_task!=NULL) Task::add_task(next_task);
+}
 
 template class Output_Task<raw_data>;
 template class Output_Task<ped_data>;
@@ -302,6 +323,9 @@ string Input_Task::init_count() const{
 }
 string Input_Task::print_count() const{
 	return "";
+}
+bool Input_Task::is_queueable() const{
+	return false;
 }
 
 Thread::Thread(){
@@ -425,6 +449,58 @@ void * Reader_Thread::run(){
 	return 0;
 }
 void Reader_Thread::pre_stop(){
+	working = false;
+}
+
+template<typename T>
+Writer_Thread::Writer_Thread(Output_Task<T> * current_task_): Thread(){
+	working = false;
+	current_task = current_task_;
+}
+template Writer_Thread::Writer_Thread(Output_Task<event_data> * current_task_);
+template Writer_Thread::Writer_Thread(Output_Task<raw_data> * current_task_);
+template Writer_Thread::Writer_Thread(Output_Task<ped_data> * current_task_);
+template Writer_Thread::Writer_Thread(Output_Task<corr_data> * current_task_);
+template Writer_Thread::Writer_Thread(Output_Task<ray_data> * current_task_);
+template Writer_Thread::Writer_Thread(Output_Task<deviation_data> * current_task_);
+
+Writer_Thread::~Writer_Thread(){
+	working = false;
+	current_task = NULL;
+}
+bool Writer_Thread::is_working() const{
+	return working;
+}
+void * Writer_Thread::run(){
+	working = current_task!=NULL;
+	unsigned int wait_time = 0;
+	while(working){
+		if(current_task->can_exec()){
+			wait_time = 0;
+			while(!(current_task->do_task())){
+				usleep(1000);
+				wait_time++;
+				if(wait_time>100){
+					working = false;
+					*(Display_Thread::get_instance()) << "writer thread execution timeout" << endl;
+					break;
+				}
+			}
+			if(working) current_task->update_task_list();
+		}
+		else{
+			usleep(1000);
+			wait_time++;
+			if(wait_time>10){
+				working = false;
+				*(Display_Thread::get_instance()) << "writer thread check timeout" << endl;
+				break;
+			}
+		}
+	}
+	return 0;
+}
+void Writer_Thread::pre_stop(){
 	working = false;
 }
 

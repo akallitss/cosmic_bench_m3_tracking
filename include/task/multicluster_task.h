@@ -12,6 +12,7 @@ class Multicluster_Task: public Typed_Task<corr_data>{
 		~Multicluster_Task();
 		bool do_task();
 		void update_task_list() const;
+		bool is_queueable() const;
 	protected:
 		const CosmicBench * detectors;
 		Typed_Task<event_data> * next_task;

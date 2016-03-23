@@ -13,6 +13,7 @@ class Tracking_Abs_Task: public Typed_Task<event_data>{
 		bool do_task();
 		bool can_exec() const;
 		void update_task_list() const;
+		bool is_queueable() const;
 	protected:
 		const CosmicBench * detectors;
 		Typed_Task<ray_data> * next_task;
@@ -25,6 +26,7 @@ class Tracking_Dev_Task: public Typed_Task<event_data>{
 		bool do_task();
 		bool can_exec() const;
 		void update_task_list() const;
+		bool is_queueable() const;
 	protected:
 		const CosmicBench * detectors;
 		Typed_Task<deviation_data> * next_task;

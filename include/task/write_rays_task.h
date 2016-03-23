@@ -8,11 +8,10 @@ class Tray;
 class Write_Rays_Task: public Output_Task<ray_data>{
 	public:
 		Write_Rays_Task(Tray * writer_, double z_up_, double z_down_);
-		//Write_Rays_Task(Tray * writer_, double z_up_, double z_down_, Typed_Task<ray_data> * next_task_);
+		Write_Rays_Task(Tray * writer_, double z_up_, double z_down_, Typed_Task<ray_data> * next_task_);
 		~Write_Rays_Task();
 		bool do_task();
 		bool can_exec() const;
-		void update_task_list() const;
 	protected:
 		Tray * writer;
 		double z_up;

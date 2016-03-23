@@ -82,6 +82,7 @@ class Task{
 		static unsigned int task_left();
 		virtual string init_count() const = 0;
 		virtual string print_count() const = 0;
+		virtual bool is_queueable() const = 0;
 	protected:
 		static queue<Task*> task_queue;
 		static pthread_mutex_t queue_mutex;
@@ -102,6 +103,7 @@ class Typed_Task: public Task{
 		string print_count() const;
 		void push_next_data(T * next_data);
 		unsigned int get_queue_size() const;
+		virtual bool is_queueable() const = 0;
 	protected:
 		T * get_next_data();
 		bool is_queue_empty() const;
@@ -120,20 +122,23 @@ class Buffer_Task: public Typed_Task<T>{
 		void update_task_list() const;
 		T * fetch_data();
 		bool can_fetch_data() const;
+		bool is_queueable() const;
 };
 
 template<typename T>
 class Output_Task: public Typed_Task<T>{
 	public:
 		Output_Task();
-		//IO_Task(Task * next_task_);
+		Output_Task(Typed_Task<T> * next_task_);
 		~Output_Task();
 		virtual bool do_task() = 0;
 		virtual bool can_exec() const = 0;
-		virtual void update_task_list() const = 0;
+		void update_task_list() const;
 		string init_count() const;
+		bool is_queueable() const;
 	protected:
 		pthread_mutex_t IO_mutex;
+		Typed_Task<T> * next_task;
 };
 
 class Input_Task: public Task{
@@ -147,6 +152,7 @@ class Input_Task: public Task{
 		virtual bool is_saturated() const = 0;
 		string init_count() const;
 		string print_count() const;
+		bool is_queueable() const;
 	protected:
 		pthread_mutex_t IO_mutex;
 		//Task * next_task;
@@ -193,6 +199,18 @@ class Reader_Thread: public Thread{
 		void pre_stop();
 		bool working;
 		Input_Task * current_task;
+};
+
+class Writer_Thread: public Thread{
+	public:
+		template<typename T> Writer_Thread(Output_Task<T> * current_task_);
+		~Writer_Thread();
+		bool is_working() const;
+	protected:
+		void * run();
+		void pre_stop();
+		bool working;
+		Task * current_task;
 };
 
 class Display_Thread: public Thread, public ostringstream{

@@ -9,13 +9,13 @@ Write_Rays_Task::Write_Rays_Task(Tray * writer_, double z_up_, double z_down_): 
 	z_up = z_up_;
 	z_down = z_down_;
 }
-/*
-Write_Rays_Task::Write_Rays_Task(Tray * writer_, double z_up_, double z_down_, Typed_Task<ray_data> * next_task_): Output_Task<ray_data>(){
+
+Write_Rays_Task::Write_Rays_Task(Tray * writer_, double z_up_, double z_down_, Typed_Task<ray_data> * next_task_): Output_Task<ray_data>(next_task_){
 	writer = writer_;
 	z_up = z_up_;
 	z_down = z_down_;
 }
-*/
+
 Write_Rays_Task::~Write_Rays_Task(){
 
 }
@@ -25,12 +25,10 @@ bool Write_Rays_Task::do_task(){
 	pthread_mutex_lock(&IO_mutex);
 	writer->fillTree((current_data->CBevent)->get_evn(), (current_data->CBevent)->get_evttime(), current_data->rays, z_up, z_down);
 	pthread_mutex_unlock(&IO_mutex);
-	delete current_data;
+	if(next_task==NULL) delete current_data;
+	else next_task->push_next_data(current_data);
 	return true;
 }
 bool Write_Rays_Task::can_exec() const{
 	return (writer!=NULL && (!is_queue_empty()));
-}
-void Write_Rays_Task::update_task_list() const{
-	//add_task(next_task);
 }

@@ -10,11 +10,10 @@ template<typename T=void>
 class Write_Signal_Task: public Output_Task<T>{
 	public:
 		Write_Signal_Task(Tsignal_W * writer_);
-		//Write_Signal_Task(Tsignal_W * writer_, Typed_Task<T> * next_task_);
+		Write_Signal_Task(Tsignal_W * writer_, Typed_Task<T> * next_task_);
 		~Write_Signal_Task();
 		bool do_task();
-		bool can_exec();
-		void update_task_list();
+		bool can_exec() const;
 	protected:
 		Tsignal_W * writer;
 };

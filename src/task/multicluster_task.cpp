@@ -39,3 +39,6 @@ bool Multicluster_Task::do_task(){
 void Multicluster_Task::update_task_list() const{
 	add_task(next_task);
 }
+bool Multicluster_Task::is_queueable() const{
+	return true;
+}
