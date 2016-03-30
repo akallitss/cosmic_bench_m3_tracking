@@ -601,7 +601,7 @@ void * Display_Thread::run(){
 			display_canvas();
 			delay = 0;
 		}
-		usleep(10000);
+		usleep(250000);
 		delay++;
 	}
 	return 0;
