@@ -198,9 +198,6 @@ void DataReader::process(){
 	if(outTree != NULL){
 		outTree->Reset_raw();
 	}
-	cout << "reader : " << reader->is_end() << endl;
-	cout << event_nb << " | " << max_event << endl;
-	cout << "tomo : " << Tomography::get_instance()->get_can_continue() << endl;
 	while((!(reader->is_end())) && !((event_nb>max_event)*(max_event>0)) && Tomography::get_instance()->get_can_continue()){
 		if((event_nb%100) == 0) cout << "\r" << "event processed : " << event_nb << flush;
 		process_event();
@@ -208,7 +205,6 @@ void DataReader::process(){
 		if((event_nb%1000)==0 && outTree != NULL) outTree->Write();
 	}
 	cout << "\r" << "event processed : " << event_nb << endl;
-	cout << "blah" << endl;
 	if(outTree != NULL){
 		outTree->Write();
 	}

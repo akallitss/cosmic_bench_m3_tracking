@@ -231,6 +231,8 @@ class Display_Thread: public Thread, public ostringstream{
 		void unregister_task(Task * some_task);
 		static Display_Thread * get_instance();
 		static void Quit();
+		void display_text();
+		void display_canvas();
 	protected:
 		static Display_Thread * singleton_instance;
 		Display_Thread();
@@ -269,8 +271,6 @@ class Display_Thread: public Thread, public ostringstream{
 		ofstream log_file;
 		vector<canvas_info> canvas_list;
 		vector<Task*> registered_task;
-		void display_text();
-		void display_canvas();
 
 };
 

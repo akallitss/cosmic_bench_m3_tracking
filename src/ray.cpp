@@ -103,7 +103,7 @@ void Ray_2D::add_cluster(const Cluster * const clus){
 		clusters.push_back(clus->Clone());
 	}
 }
-
+/*
 void Ray_2D::process(){
 	if(clusters.size()<2) return;
 	TGraph * pos = new TGraph();
@@ -133,7 +133,7 @@ void Ray_2D::process(){
 	//if(line->Eval(1398.)>600. || line->Eval(1398.)<-100. || line->Eval(27.)>600. || line->Eval(27.)<-100.) chiSquare = numeric_limits<double>::max();
 	delete pos; delete line;
 }
-
+*/
 //MT safe implementation
 /*
 #include <Fit/BinData.h>
@@ -168,7 +168,7 @@ void Ray_2D::process(){
 	delete line;
 }
 */
-/*
+
 //This implementation is two order of magnitude faster than the one above
 void Ray_2D::process(){
 	if(clusters.size()<2) return;
@@ -186,6 +186,7 @@ void Ray_2D::process(){
 	mean_x /= i;
 	mean_y /= i;
 	mean_xy /= i;
+	mean_xx /= i;
 	slope = (mean_xy - mean_x*mean_y)/(mean_xx - mean_x*mean_x);
 	Z_intercept = mean_y - slope*mean_x;
 	double distance = 0;
@@ -195,7 +196,7 @@ void Ray_2D::process(){
 	distance /= (1+slope*slope);
 	chiSquare = distance;
 }
-*/
+
 double Ray_2D::get_chiSquare() const{
 	return chiSquare;
 }
