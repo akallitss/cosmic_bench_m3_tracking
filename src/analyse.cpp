@@ -679,6 +679,13 @@ void Analyse::Residus_ref_MT(){
 	bool has_working_thread = true;
 	unsigned long jentry = 0;
 	while((has_working_thread || ray_list->can_fetch_data()) && Tomography::get_instance()->get_can_continue()){
+		has_working_thread = false;
+		for(unsigned short i=0;i<threads.size();i++){
+			if(threads[i]->is_working()){
+				has_working_thread = true;
+				break;
+			}
+		}
 		if(!(ray_list->can_fetch_data())){
 			usleep(1000);
 			continue;
@@ -770,13 +777,6 @@ void Analyse::Residus_ref_MT(){
 
 		//if(jentry%100) MT_display << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << eventReconstructed;
 		jentry++;
-		has_working_thread = false;
-		for(unsigned short i=0;i<threads.size();i++){
-			if(threads[i]->is_working()){
-				has_working_thread = true;
-				break;
-			}
-		}
 		if(jentry%5000 == 0 && Tomography::get_instance()->get_live_graphic_display()) MT_display->display_canvas();
 	}
 	for(unsigned short i=0;i<threads.size();i++){
