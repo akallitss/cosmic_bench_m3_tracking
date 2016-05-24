@@ -242,25 +242,25 @@ CM_Event::CM_Event(Tanalyse_R * treeObject, const CM_Detector * const det,long e
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);
 	}
-	for(int i=0;i<treeObject->CM_NClus[detector->get_n_in_tree()];i++){
+	for(int i=0;i<treeObject->NClus[Tomography::CM][detector->get_n_in_tree()];i++){
 		clusters.push_back(new CM_Cluster(treeObject,i,det));
 		if(!(det->is_suitable(clusters.back()))){
 			delete clusters.back();
 			clusters.pop_back();
 		}
 	}
-	has_spark = (treeObject->CM_Spark[detector->get_n_in_tree()]==1) ? true : false;
+	has_spark = (treeObject->Spark[Tomography::CM][detector->get_n_in_tree()]==1) ? true : false;
 	type = Tomography::CM;
 }
 CM_Event::CM_Event(const Tanalyse_R * const treeObject, const CM_Detector * const det): Event(treeObject,det){
-	for(int i=0;i<treeObject->CM_NClus[detector->get_n_in_tree()];i++){
+	for(int i=0;i<treeObject->NClus.find(Tomography::CM)->second[detector->get_n_in_tree()];i++){
 		clusters.push_back(new CM_Cluster(treeObject,i,det));
 		if(!(det->is_suitable(clusters.back()))){
 			delete clusters.back();
 			clusters.pop_back();
 		}
 	}
-	has_spark = (treeObject->CM_Spark[detector->get_n_in_tree()]==1) ? true : false;
+	has_spark = (treeObject->Spark.find(Tomography::CM)->second[detector->get_n_in_tree()]==1) ? true : false;
 	type = Tomography::CM;
 }
 CM_Event::CM_Event(const CM_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, double evttime_): Event(detector_,evn_, evttime_){
@@ -379,7 +379,7 @@ MG_Event::MG_Event(Tanalyse_R * treeObject, const MG_Detector * const det,long e
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);
 	}
-	for(int i=0;i<treeObject->MG_NClus[detector->get_n_in_tree()];i++){
+	for(int i=0;i<treeObject->NClus[Tomography::MG][detector->get_n_in_tree()];i++){
 		clusters.push_back(new MG_Cluster(treeObject,i,det));
 		if(!(det->is_suitable(clusters.back()))){
 			delete clusters.back();
@@ -387,11 +387,11 @@ MG_Event::MG_Event(Tanalyse_R * treeObject, const MG_Detector * const det,long e
 		}
 	}
 	use_srf = use_srf_;
-	has_spark = (treeObject->MG_Spark[detector->get_n_in_tree()]==1) ? true : false;
+	has_spark = (treeObject->Spark[Tomography::MG][detector->get_n_in_tree()]==1) ? true : false;
 	type = Tomography::MG;
 }
 MG_Event::MG_Event(const Tanalyse_R * const treeObject, const MG_Detector * const det, bool use_srf_): Event(treeObject,det){
-	for(int i=0;i<treeObject->MG_NClus[detector->get_n_in_tree()];i++){
+	for(int i=0;i<treeObject->NClus.find(Tomography::MG)->second[detector->get_n_in_tree()];i++){
 		clusters.push_back(new MG_Cluster(treeObject,i,det));
 		if(!(det->is_suitable(clusters.back()))){
 			delete clusters.back();
@@ -399,7 +399,7 @@ MG_Event::MG_Event(const Tanalyse_R * const treeObject, const MG_Detector * cons
 		}
 	}
 	use_srf = use_srf_;
-	has_spark = (treeObject->MG_Spark[detector->get_n_in_tree()]==1) ? true : false;
+	has_spark = (treeObject->Spark.find(Tomography::MG)->second[detector->get_n_in_tree()]==1) ? true : false;
 	type = Tomography::MG;
 }
 MG_Event::MG_Event(const MG_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, double evttime_, bool use_srf_): Event(detector_,evn_, evttime_){
@@ -928,7 +928,7 @@ MGv2_Event::MGv2_Event(Tanalyse_R * treeObject, const MGv2_Detector * const det,
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);
 	}
-	for(int i=0;i<treeObject->MGv2_NClus[detector->get_n_in_tree()];i++){
+	for(int i=0;i<treeObject->NClus[Tomography::MGv2][detector->get_n_in_tree()];i++){
 		clusters.push_back(new MGv2_Cluster(treeObject,i,det));
 		if(!(det->is_suitable(clusters.back()))){
 			delete clusters.back();
@@ -936,11 +936,11 @@ MGv2_Event::MGv2_Event(Tanalyse_R * treeObject, const MGv2_Detector * const det,
 		}
 	}
 	use_srf = use_srf_;
-	has_spark = (treeObject->MGv2_Spark[detector->get_n_in_tree()]==1) ? true : false;
+	has_spark = (treeObject->Spark[Tomography::MGv2][detector->get_n_in_tree()]==1) ? true : false;
 	type = Tomography::MGv2;
 }
 MGv2_Event::MGv2_Event(const Tanalyse_R * const treeObject, const MGv2_Detector * const det, bool use_srf_): Event(treeObject,det){
-	for(int i=0;i<treeObject->MGv2_NClus[detector->get_n_in_tree()];i++){
+	for(int i=0;i<treeObject->NClus.find(Tomography::MGv2)->second[detector->get_n_in_tree()];i++){
 		clusters.push_back(new MGv2_Cluster(treeObject,i,det));
 		if(!(det->is_suitable(clusters.back()))){
 			delete clusters.back();
@@ -948,7 +948,7 @@ MGv2_Event::MGv2_Event(const Tanalyse_R * const treeObject, const MGv2_Detector 
 		}
 	}
 	use_srf = use_srf_;
-	has_spark = (treeObject->MGv2_Spark[detector->get_n_in_tree()]==1) ? true : false;
+	has_spark = (treeObject->Spark.find(Tomography::MGv2)->second[detector->get_n_in_tree()]==1) ? true : false;
 	type = Tomography::MGv2;
 }
 MGv2_Event::MGv2_Event(const MGv2_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, double evttime_, bool use_srf_): Event(detector_,evn_,evttime_){

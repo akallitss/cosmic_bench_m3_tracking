@@ -54,6 +54,8 @@ class Detector{
 		virtual Detector * build_det(const ptree::value_type& child) const = 0;
 		virtual int feminos_mapping(int channel) const = 0;
 		virtual int dream_mapping(int channel) const = 0;
+		virtual string Name() const = 0;
+		virtual int get_MaxNClus() const = 0;
 	protected:
 		Detector();	
 		Detector(const Detector& other);
@@ -115,6 +117,8 @@ class CM_Detector: public Detector{
 		Event * build_event(vector<vector<double> > strip_ampl_, int evn_, double evttime_) const;
 		int feminos_mapping(int channel) const;
 		int dream_mapping(int channel) const;
+		string Name() const;
+		int get_MaxNClus() const;
 	protected:
 		bool use_thin_strip;
 		//Detector dependent Cuts
@@ -165,6 +169,8 @@ class MG_Detector: public Detector{
 		Event * build_event(vector<vector<double> > strip_ampl_, int evn_, double evttime_) const;
 		int feminos_mapping(int channel) const;
 		int dream_mapping(int channel) const;
+		string Name() const;
+		int get_MaxNClus() const;
 	protected:
 		//Detector dependant cuts
 		double ClusSizeCut_Min;
@@ -218,6 +224,8 @@ class MGv2_Detector: public Detector{
 		Event * build_event(vector<vector<double> > strip_ampl_, int evn_, double evttime_) const;
 		int feminos_mapping(int channel) const;
 		int dream_mapping(int channel) const;
+		string Name() const;
+		int get_MaxNClus() const;
 	protected:
 		//Detector dependant cuts
 		double ClusSizeCut_Min;

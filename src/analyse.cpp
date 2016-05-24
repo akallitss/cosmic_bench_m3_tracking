@@ -777,6 +777,7 @@ void Analyse::Residus_ref_MT(){
 				break;
 			}
 		}
+		if(jentry%5000 == 0 && Tomography::get_instance()->get_live_graphic_display()) MT_display->display_canvas();
 	}
 	for(unsigned short i=0;i<threads.size();i++){
 		threads[i]->stop();
@@ -812,6 +813,7 @@ void Analyse::Residus_ref_MT(){
 		cout << "-b/2a : " << angle_xy_fit[it->first]->GetParameter(1)/(2.*angle_xy_fit[it->first]->GetParameter(2)) << "\n";
 		cout << it->first << " efficacity : " << 100.*efficacity[it->first] << "%" << endl;
 	}
+	MT_display->display_canvas();
 }
 double Analyse::Residus_ref_cost(){
 	double chisquare_threshold = 10;
@@ -2197,9 +2199,9 @@ void Analyse::bugtest(){
 		cout << endl;
 		delete CBEvent;
 		for(int i=0;i<det_N[Tomography::MG]-1;i++){
-			cout << setw(10) << MG_ClusPos[i][0] << " | ";
+			cout << setw(10) << reinterpret_cast<Double_t(*)[det_N[Tomography::MG]]>(ClusPos[Tomography::MG])[i][0] << " | ";
 		}
-		cout << setw(10) << MG_ClusPos[det_N[Tomography::MG]-1][0] << endl;
+		cout << setw(10) << reinterpret_cast<Double_t(*)[det_N[Tomography::MG]]>(ClusPos[Tomography::MG])[det_N[Tomography::MG]-1][0] << endl;
 	}
 }
 

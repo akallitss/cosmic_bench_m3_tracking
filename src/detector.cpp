@@ -272,6 +272,12 @@ int CM_Detector::feminos_mapping(int channel) const{
 int CM_Detector::dream_mapping(int channel) const{
 	return channel;
 }
+string CM_Detector::Name() const{
+	return "CM";
+}
+int CM_Detector::get_MaxNClus() const{
+	return 300;
+}
 
 MG_Detector::MG_Detector(): Detector(){
 	ClusTOTCut_Min = -1;
@@ -427,6 +433,12 @@ int MG_Detector::feminos_mapping(int channel) const{
 }
 int MG_Detector::dream_mapping(int channel) const{
 	return (channel + 1 - (2*(channel%2)));
+}
+string MG_Detector::Name() const{
+	return "MG";
+}
+int MG_Detector::get_MaxNClus() const{
+	return 300;
 }
 
 MGv2_Detector::MGv2_Detector(): Detector(){
@@ -592,6 +604,12 @@ int MGv2_Detector::dream_mapping(int channel) const{
 	else if(channel == 55) return 6;
 	else return (63 - channel);
 	*/
+}
+string MGv2_Detector::Name() const{
+	return "MGv2";
+}
+int MGv2_Detector::get_MaxNClus() const{
+	return 300;
 }
 
 

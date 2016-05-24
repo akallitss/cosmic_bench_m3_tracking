@@ -58,10 +58,8 @@ config_file : use a custom config_file for the cosmic bench caracteristics (use 
 Add a new type of detector :
 
 * Add your type to Tomogrphy::det_type enum
-* update Tomography::operator<<(ostream,det_type) function
 * update Tomography::Static_Detector map
 * Implement your `<type>_Detector` class (must inherit from `Detector` class)
 * Implement your `<type>_Cluster` (must inherit from `Cluster` class)
 * Implement your `<type>_Event` (must inherit from `Event` class)
-* Update `T{signal,analyse}_{R,W}` storage classes to use ROOT disk I/O (in particular constructor, destructor, init, fill and get methods)
 * Update the config file corresponding to your bench caracteristcs

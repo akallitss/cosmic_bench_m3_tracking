@@ -36,12 +36,7 @@ const string Tomography::DreamExt = "fdf";
 const string Tomography::FeminosExt = "aqs";
 
 ostream& operator<<(ostream& os, const Tomography::det_type& det){
-	switch(det){
-		case Tomography::CM : os << "CM"; break;
-		case Tomography::MG : os << "MG"; break;
-		case Tomography::MGv2 : os << "MGv2"; break;
-		default : os << "unknown det";
-	}
+	os << Tomography::Static_Detector[det]->Name();
 	return os;
 }
 ostream& operator<<(ostream& os, const Tomography::strip_type& strip){
