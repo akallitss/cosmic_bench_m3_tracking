@@ -18,6 +18,8 @@
 #include <iostream>
 #include <iomanip>
 
+#include <signal.h>
+
 using std::vector;
 using std::cout;
 using std::endl;
@@ -361,6 +363,7 @@ int Thread::stop(){
 		return -1;
 	}
 	pre_stop();
+	pthread_kill(id,SIGALRM);
 	void * status;
 	int result = pthread_join(id,&status);
 	if(result == 0) running = 0;
@@ -598,7 +601,7 @@ void * Display_Thread::run(){
 	while(working){
 		display_text();
 		if(delay>300){
-			display_canvas();
+			//display_canvas();
 			delay = 0;
 		}
 		usleep(250000);
