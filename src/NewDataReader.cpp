@@ -8,6 +8,7 @@
 #include "datareader.h"
 #include "Tanalyse_W.h"
 #include "Tsignal_W.h"
+#include "Tray.h"
 #include "event.h"
 #include "tomography.h"
 
@@ -16,7 +17,9 @@
 #include "task/multicluster_task.h"
 #include "task/write_analyse_task.h"
 #include "task/write_signal_task.h"
+#include "task/write_rays_task.h"
 #include "task/read_elec_task.h"
+#include "task/tracking_task.h"
 
 //#include <pthread.h>
 //#include <queue>
@@ -40,6 +43,7 @@ int main(int argc, char ** argv){
 		ped_run,
 		analysis,
 		pyramids,
+		pyrarays,
 		live,
 		read
 	};
@@ -63,13 +67,16 @@ int main(int argc, char ** argv){
 		else if(argv[i] == string("pyramids")){
 			operation = pyramids;
 		}
+		else if(argv[i] == string("pyrarays")){
+			operation = pyrarays;
+		}
 	}
 	string config_file = argv[1];
 	ptree config_tree;
 	read_json(config_file, config_tree);
 	Tomography::Init(config_tree);
-	if((operation == live) || (operation == read)){
-		DataReader * blah = new DataReader(config_tree,true,operation==live);
+	if(operation == read){
+		DataReader * blah = new DataReader(config_tree,true,false);
 		blah->process();
 		delete blah;
 	}
@@ -119,25 +126,47 @@ int main(int argc, char ** argv){
 		delete analysisFile;
 		delete bench;
 	}
-	else if(operation == pyramids){
+	else if((operation == pyramids) || (operation == pyrarays) || (operation == live)){
 		CosmicBench * bench = new CosmicBench(config_tree);
-		Tanalyse_W * analysisFile = new Tanalyse_W(config_tree.get<string>("Tree"),bench->get_det_N());
+		Tanalyse_W * analysisFile = NULL;
+		Tray * raysFile = NULL;
 		DataReader * blah = new DataReader(config_tree,false,true);
 		blah->read_ped();
 		map<Tomography::det_type,vector<vector<float> > > current_ped = blah->get_Ped();
 		Tsignal_W * signalFile = new Tsignal_W(config_tree.get<string>("signal_file"),bench->get_det_N());
-		Output_Task<event_data> * to_write_analyse = new Write_Analyse_Task(analysisFile);
-		Output_Task<raw_data> * to_write_signal = new Write_Signal_Task<raw_data>(signalFile,new Ped_Corr_Task(current_ped,new Multicluster_Task(bench,to_write_analyse)));
-		Input_Task * to_do = new Read_Elec_Task(blah,to_write_signal);
+
+		Output_Task<event_data> * to_write_analyse = NULL;
+		Output_Task<ray_data> * to_write_rays = NULL;
 		vector<Thread*> threads;
-		threads.push_back(new Reader_Thread(to_do));
-		(threads.back())->start();
+		if(operation==pyrarays){
+			raysFile = new Tray(config_tree.get<string>("metadata") + "_rays.root");
+			to_write_rays = new Write_Rays_Task(raysFile,bench->get_z_Up(),bench->get_z_Down());
+			threads.push_back(new Writer_Thread(to_write_rays));
+		}
+		else{
+
+		}
+		Output_Task<raw_data> * to_write_signal;
+		if(operation!=live){
+			analysisFile = new Tanalyse_W(config_tree.get<string>("Tree"),bench->get_det_N());
+			if(operation == pyrarays) to_write_analyse = new Write_Analyse_Task(analysisFile, new Tracking_Abs_Task(bench,to_write_rays));
+			else to_write_analyse = new Write_Analyse_Task(analysisFile);
+			threads.push_back(new Writer_Thread(to_write_analyse));
+			to_write_signal = new Write_Signal_Task<raw_data>(signalFile,new Ped_Corr_Task(current_ped,new Multicluster_Task(bench,to_write_analyse)));
+		}
+		else{
+			to_write_signal = new Write_Signal_Task<raw_data>(signalFile);
+		}
 		threads.push_back(new Writer_Thread(to_write_signal));
-		(threads.back())->start();
-		threads.push_back(new Writer_Thread(to_write_analyse));
-		(threads.back())->start();
+
+		Input_Task * to_do = new Read_Elec_Task(blah,to_write_signal);
+		threads.push_back(new Reader_Thread(to_do));
+		for(vector<Thread*>::reverse_iterator thread_it=threads.rbegin();thread_it!=threads.rend();++thread_it){
+			(*thread_it)->start();
+		}
+
 		const unsigned short n_thread = (Tomography::get_instance()->get_thread_number() > threads.size()) ? (Tomography::get_instance()->get_thread_number() - threads.size()) : 1;
-		cout << "1 | " << n_thread << " | 1" << endl;
+		cout << " reader : 1 | worker : " << n_thread << " | writer : " << (threads.size() - 1) << endl;
 		for(unsigned short i=0;i<n_thread;i++){
 			threads.push_back(new Worker_Thread());
 			(threads.back())->start();
@@ -164,10 +193,17 @@ int main(int argc, char ** argv){
 		//cout << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << Task::task_left() << endl;
 		signalFile->Write();
 		signalFile->CloseFile();
-		analysisFile->Write();
-		analysisFile->CloseFile();
+		if(operation != live){
+			analysisFile->Write();
+			analysisFile->CloseFile();
+			delete analysisFile;
+			if(operation==pyrarays){
+				raysFile->Write();
+				raysFile->CloseFile();
+				delete raysFile;
+			}
+		}
 		delete blah;
-		delete analysisFile;
 		delete signalFile;
 		delete bench;
 		delete to_do;

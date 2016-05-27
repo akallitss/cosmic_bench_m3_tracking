@@ -2332,3 +2332,9 @@ void CosmicBenchEvent::do_cuts(){
 		(*it)->do_cuts();
 	}
 }
+int CosmicBenchEvent::get_evn() const{
+	return (events.front())->get_evn();
+}
+double CosmicBenchEvent::get_evttime() const{
+	return (events.front())->get_evttime();
+}

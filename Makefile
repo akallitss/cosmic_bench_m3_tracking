@@ -26,7 +26,7 @@ NC=\033[0m
 
 ECHO=/bin/echo -e
 
-DataReader_obj_tmp = NewDataReader.o datareader.o ElecReader.o Tsignal_W.o dataline.o tomography.o Tanalyse_W.o event.o detector.o ray.o cluster.o point.o MT_tomography.o task/read_elec_task.o task/ped_task.o task/multicluster_task.o task/write_analyse_task.o task/read_live_task.o task/write_signal_task.o Pipes.o Platform.o
+DataReader_obj_tmp = NewDataReader.o datareader.o ElecReader.o Tsignal_W.o dataline.o tomography.o Tanalyse_W.o event.o detector.o ray.o cluster.o point.o MT_tomography.o task/read_elec_task.o task/ped_task.o task/multicluster_task.o task/write_analyse_task.o task/read_live_task.o task/write_signal_task.o task/write_rays_task.o task/tracking_task.o Tray.o Pipes.o Platform.o
 DataReader_obj = $(patsubst %, $(ODIR)/%, $(DataReader_obj_tmp))
 
 absorptionMap_obj_tmp = absorptionMap.o analyse.o Tanalyse_R.o event.o ray.o cluster.o detector.o point.o Tsignal_R.o tomography.o acceptanceFunction.o Tray.o dataline.o MT_tomography.o task/read_analyse_task.o task/tracking_task.o

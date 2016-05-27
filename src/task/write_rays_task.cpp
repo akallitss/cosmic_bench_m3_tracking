@@ -3,6 +3,7 @@
 #include "task/write_rays_task.h"
 
 #include "Tray.h"
+#include "event.h"
 
 Write_Rays_Task::Write_Rays_Task(Tray * writer_, double z_up_, double z_down_): Output_Task<ray_data>(){
 	writer = writer_;

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <utility>
+#include <limits>
 
 //Boost
 #include <boost/foreach.hpp>
@@ -19,6 +20,7 @@ using std::endl;
 using std::ifstream;
 using std::ostringstream;
 using std::pair;
+using std::numeric_limits;
 
 using TMath::Exp;
 using TMath::Log;
@@ -787,4 +789,22 @@ Detector * CosmicBench::get_detector(unsigned int i) const{
 }
 int CosmicBench::get_non_ref_N() const{
 	return non_ref_n;
+}
+double CosmicBench::get_z_Up() const{
+	double z_Up = numeric_limits<double>::max();
+	for(vector<Detector*>::const_iterator it = detectors.begin();it!=detectors.end();++it){
+		if((*it)->get_is_up() && (*it)->get_z()<z_Up){
+			z_Up = (*it)->get_z();
+		}
+	}
+	return z_Up;
+}
+double CosmicBench::get_z_Down() const{
+	double z_Down = numeric_limits<double>::min();
+	for(vector<Detector*>::const_iterator it = detectors.begin();it!=detectors.end();++it){
+		if(!((*it)->get_is_up()) && (*it)->get_z()>z_Down){
+			z_Down = (*it)->get_z();
+		}
+	}
+	return z_Down;
 }

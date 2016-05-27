@@ -2156,25 +2156,6 @@ void Analyse::StoreRayPairs(string outFileName){
 	c1->Update();
 }*/
 
-double Analyse::get_z_Up() const{
-	double z_Up = numeric_limits<double>::max();
-	for(vector<Detector*>::const_iterator it = detectors.begin();it!=detectors.end();++it){
-		if((*it)->get_is_up() && (*it)->get_z()<z_Up){
-			z_Up = (*it)->get_z();
-		}
-	}
-	return z_Up;
-}
-double Analyse::get_z_Down() const{
-	double z_Down = numeric_limits<double>::min();
-	for(vector<Detector*>::const_iterator it = detectors.begin();it!=detectors.end();++it){
-		if(!((*it)->get_is_up()) && (*it)->get_z()>z_Down){
-			z_Down = (*it)->get_z();
-		}
-	}
-	return z_Down;
-}
-
 void Analyse::bugtest(){
 	if (fChain == 0) return;
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
