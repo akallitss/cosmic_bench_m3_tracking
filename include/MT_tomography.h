@@ -221,8 +221,8 @@ class Display_Thread: public Thread, public ostringstream{
 	public:
 		void set_log_file(string log_file_name);
 		bool is_working() const;
-		void register_canvas(TCanvas * new_canvas, unsigned short canvas_div_n = 0);
-		void register_plot(TObject * new_plot, string canvas_name, string draw_opt = "", unsigned short canvas_div = 0);
+		void register_canvas(TCanvas * new_canvas, int canvas_div_n = 0);
+		void register_plot(TNamed * new_plot, string canvas_name, string draw_opt = "", int canvas_div = 0);
 		//void register_div_hist(TH1 * new_plot_a, TH1 * new_plot_b, string canvas_name, string draw_opt = "", unsigned short canvas_div = 0);
 		//void register_sub_hist(TH1 * new_plot_a, TH1 * new_plot_b, string canvas_name, string draw_opt = "", unsigned short canvas_div = 0);
 		void start_count();
@@ -239,8 +239,9 @@ class Display_Thread: public Thread, public ostringstream{
 		Display_Thread(string log_file_name);
 		~Display_Thread();
 		struct plot_info{
-			TObject * plot;
-			unsigned short div;
+			TNamed * plot_orig;
+			TNamed * plot_clone;
+			int div;
 			string draw_opt;
 		};
 		/*
@@ -259,7 +260,7 @@ class Display_Thread: public Thread, public ostringstream{
 		*/
 		struct canvas_info{
 			TCanvas * addr;
-			unsigned short div_n;
+			int div_n;
 			vector<plot_info> plots;
 			//vector<divided_hist> div_plots;
 			//vector<substracted_hist> sub_plots;

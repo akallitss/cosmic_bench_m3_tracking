@@ -16,6 +16,7 @@ using std::ostringstream;
 Tsignal_W::Tsignal_W(string saveFileName, map<Tomography::det_type,unsigned short> det_N_)
 {
    saveFile = new TFile(saveFileName.c_str(),"UPDATE");
+   saveFile->SetCompressionLevel(1);
    T = (TTree*)saveFile->Get("T");
    if(!T) T = new TTree("T","event");
    T->SetMaxTreeSize(10000000000000LL);
