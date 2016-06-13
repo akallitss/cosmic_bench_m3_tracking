@@ -56,6 +56,8 @@ class Detector{
 		virtual Detector * build_det(const ptree::value_type& child) const = 0;
 		virtual int feminos_mapping(int channel, bool connector_direction) const = 0;
 		virtual int dream_mapping(int channel, bool connector_direction) const = 0;
+		virtual string Name() const = 0;
+		virtual int get_MaxNClus() const = 0;
 	protected:
 		Detector();	
 		Detector(const Detector& other);
@@ -94,6 +96,7 @@ class CM_Detector: public Detector{
 		static const int Nstrip = 1024;
 		static const double size = 500.;
 		static const int CMN_div = 2;
+		static const int MaxNClus = 600;
 		unsigned int StripToChannel(unsigned int i) const;
 		double get_size() const;
 		int get_Nchannel() const;
@@ -117,6 +120,8 @@ class CM_Detector: public Detector{
 		Event * build_event(vector<vector<double> > strip_ampl_, int evn_, double evttime_) const;
 		int feminos_mapping(int channel, bool connector_direction) const;
 		int dream_mapping(int channel, bool connector_direction) const;
+		string Name() const;
+		int get_MaxNClus() const;
 	protected:
 		bool use_thin_strip;
 		//Detector dependent Cuts
@@ -144,6 +149,7 @@ class MG_Detector: public Detector{
 		static const int Nstrip = 1024;
 		static const double size = 500.;
 		static const int CMN_div = 2;
+		static const int MaxNClus = 300;
 		double get_size() const;
 		int get_Nchannel() const;
 		int get_Nstrip() const;
@@ -167,6 +173,8 @@ class MG_Detector: public Detector{
 		Event * build_event(vector<vector<double> > strip_ampl_, int evn_, double evttime_) const;
 		int feminos_mapping(int channel, bool connector_direction) const;
 		int dream_mapping(int channel, bool connector_direction) const;
+		string Name() const;
+		int get_MaxNClus() const;
 	protected:
 		//Detector dependant cuts
 		double ClusSizeCut_Min;
@@ -197,6 +205,7 @@ class MGv2_Detector: public Detector{
 		static const int Nstrip = 1037;
 		static const double size = 500.;
 		static const int CMN_div = 2;
+		static const int MaxNClus = 300;
 		double get_size() const;
 		int get_Nchannel() const;
 		int get_Nstrip() const;
@@ -220,6 +229,8 @@ class MGv2_Detector: public Detector{
 		Event * build_event(vector<vector<double> > strip_ampl_, int evn_, double evttime_) const;
 		int feminos_mapping(int channel, bool connector_direction) const;
 		int dream_mapping(int channel, bool connector_direction) const;
+		string Name() const;
+		int get_MaxNClus() const;
 	protected:
 		//Detector dependant cuts
 		double ClusSizeCut_Min;
@@ -247,6 +258,8 @@ class CosmicBench{
 		int get_non_ref_N() const;
 		Detector * get_detector(unsigned int i) const;
 		static map<Tomography::det_type,vector<vector<double> > > read_pedfile(string filename, map<Tomography::det_type,unsigned short> det_n_);
+		double get_z_Up() const;
+		double get_z_Down() const;
 	protected:
 		void Init(ptree config_tree);
 		vector<Detector*> detectors;

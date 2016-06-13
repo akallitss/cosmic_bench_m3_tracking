@@ -35,8 +35,6 @@ class Analyse: public Tanalyse_R, public CosmicBench{
 		void StoreRayPairs(string outFileName);
 		void CalcStripResponseFunction(int bin_nb = 0);
 		void Correlation();
-		double get_z_Up() const;
-		double get_z_Down() const;
 		//void MultiGenDebug(int i);
 		void bugtest();
 		void EventDisplay(long event_nb, TCanvas * c1 = 0);

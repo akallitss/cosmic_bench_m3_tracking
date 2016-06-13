@@ -103,7 +103,7 @@ void Ray_2D::add_cluster(const Cluster * const clus){
 		clusters.push_back(clus->Clone());
 	}
 }
-
+/*
 void Ray_2D::process(){
 	if(clusters.size()<2) return;
 	TGraph * pos = new TGraph();
@@ -133,7 +133,42 @@ void Ray_2D::process(){
 	//if(line->Eval(1398.)>600. || line->Eval(1398.)<-100. || line->Eval(27.)>600. || line->Eval(27.)<-100.) chiSquare = numeric_limits<double>::max();
 	delete pos; delete line;
 }
+*/
+//MT safe implementation
 /*
+#include <Fit/BinData.h>
+#include <Fit/Fitter.h>
+#include <Math/WrappedMultiTF1.h>
+#include <Math/WrappedParamFunction.h>
+void Ray_2D::process(){
+	if(clusters.size()<2) return;
+	double maxZ = numeric_limits<double>::min();
+	double minZ = numeric_limits<double>::max();
+	ROOT::Fit::BinData pos(clusters.size(),1,ROOT::Fit::BinData::kNoError);
+	for(vector<Cluster*>::iterator it = clusters.begin(); it!=clusters.end();++it){
+		if((*it)->get_z()>maxZ) maxZ = (*it)->get_z();
+		if((*it)->get_z()<minZ) minZ = (*it)->get_z();
+		pos.Add((*it)->get_z(),(*it)->get_pos_mm());
+	}
+	TF1 * line = new TF1("line","pol1(0)",minZ-10,maxZ+10);
+	double maxSlope = Tomography::get_instance()->get_XY_size()/(maxZ-minZ);
+	line->SetParameters(0,0);
+	if(minZ>0) line->SetParLimits(0,-(Tomography::get_instance()->get_XY_size()/2.)-(maxSlope*minZ),(Tomography::get_instance()->get_XY_size()/2.)+maxSlope*minZ);
+	else if(maxZ<0) line->SetParLimits(0,-(Tomography::get_instance()->get_XY_size()/2.)+(maxSlope*maxZ),(Tomography::get_instance()->get_XY_size()/2.)-maxSlope*maxZ);
+	else line->SetParLimits(0,-(Tomography::get_instance()->get_XY_size()/2.),Tomography::get_instance()->get_XY_size()/2.);
+	line->SetParLimits(1,-maxSlope,maxSlope);
+	ROOT::Math::WrappedMultiTF1 wline(*line);
+	ROOT::Math::IParamMultiFunction & pline = wline;
+	ROOT::Fit::Fitter fitter;
+	fitter.SetFunction(pline);
+	fitter.Fit(pos,pline);
+	chiSquare = fitter.Result().Chi2();
+	Z_intercept = fitter.Result().Parameter(0);
+	slope = fitter.Result().Parameter(1);
+	delete line;
+}
+*/
+
 //This implementation is two order of magnitude faster than the one above
 void Ray_2D::process(){
 	if(clusters.size()<2) return;
@@ -151,6 +186,7 @@ void Ray_2D::process(){
 	mean_x /= i;
 	mean_y /= i;
 	mean_xy /= i;
+	mean_xx /= i;
 	slope = (mean_xy - mean_x*mean_y)/(mean_xx - mean_x*mean_x);
 	Z_intercept = mean_y - slope*mean_x;
 	double distance = 0;
@@ -160,7 +196,7 @@ void Ray_2D::process(){
 	distance /= (1+slope*slope);
 	chiSquare = distance;
 }
-*/
+
 double Ray_2D::get_chiSquare() const{
 	return chiSquare;
 }

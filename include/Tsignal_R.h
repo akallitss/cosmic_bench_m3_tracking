@@ -33,6 +33,7 @@ public :
    map<Tomography::det_type,unsigned short> det_N;
    Int_t           Nevent;
    Double_t        evttime;
+   /*
    Float_t         *StripAmpl_MG;
    Float_t         *StripAmpl_MG_ped;
    Float_t         *StripAmpl_MG_corr;
@@ -42,10 +43,15 @@ public :
    Float_t         *StripAmpl_CM;
    Float_t         *StripAmpl_CM_ped;
    Float_t         *StripAmpl_CM_corr;
+   */
+   map<Tomography::det_type,Float_t*> StripAmpl;
+   map<Tomography::det_type,Float_t*> StripAmpl_ped;
+   map<Tomography::det_type,Float_t*> StripAmpl_corr;
 
    // List of branches
    TBranch        *b_Nevent;   //!
    TBranch        *b_evttime;   //!
+   /*
    TBranch        *b_StripAmpl_MG;   //!
    TBranch        *b_StripAmpl_MG_ped;   //!
    TBranch        *b_StripAmpl_MG_corr;   //!
@@ -55,6 +61,10 @@ public :
    TBranch        *b_StripAmpl_CM;   //!
    TBranch        *b_StripAmpl_CM_ped;   //!
    TBranch        *b_StripAmpl_CM_corr;   //!
+   */
+   map<Tomography::det_type,TBranch*> b_StripAmpl; //!
+   map<Tomography::det_type,TBranch*> b_StripAmpl_ped; //!
+   map<Tomography::det_type,TBranch*> b_StripAmpl_corr; //!
 
    Tsignal_R(TTree *tree, map<Tomography::det_type,unsigned short> det_N_);
    Tsignal_R();

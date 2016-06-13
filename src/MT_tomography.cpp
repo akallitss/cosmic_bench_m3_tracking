@@ -18,6 +18,8 @@
 #include <iostream>
 #include <iomanip>
 
+#include <signal.h>
+
 using std::vector;
 using std::cout;
 using std::endl;
@@ -361,6 +363,7 @@ int Thread::stop(){
 		return -1;
 	}
 	pre_stop();
+	pthread_kill(id,SIGALRM);
 	void * status;
 	int result = pthread_join(id,&status);
 	if(result == 0) running = 0;
@@ -562,7 +565,7 @@ void Display_Thread::set_log_file(string log_file_name){
 bool Display_Thread::is_working() const{
 	return working;
 }
-void Display_Thread::register_canvas(TCanvas * new_canvas, unsigned short canvas_div_n){
+void Display_Thread::register_canvas(TCanvas * new_canvas, int canvas_div_n){
 	for(vector<canvas_info>::iterator it=canvas_list.begin();it!=canvas_list.end();++it){
 		if(new_canvas->GetName() == it->addr->GetName()){
 			cout << "canvas \"" << new_canvas->GetName() << "\" already registered !" << endl;
@@ -574,11 +577,14 @@ void Display_Thread::register_canvas(TCanvas * new_canvas, unsigned short canvas
 	next_canvas.div_n = canvas_div_n;
 	canvas_list.push_back(next_canvas);
 }
-void Display_Thread::register_plot(TObject * new_plot, string canvas_name, string draw_opt, unsigned short canvas_div){
+void Display_Thread::register_plot(TNamed * new_plot, string canvas_name, string draw_opt, int canvas_div){
 	for(vector<canvas_info>::iterator it=canvas_list.begin();it!=canvas_list.end();++it){
 		if((canvas_name == it->addr->GetName()) && (canvas_div <= it->div_n)){
 			struct plot_info next_plot;
-			next_plot.plot = new_plot;
+			next_plot.plot_orig = new_plot;
+			next_plot.plot_clone = dynamic_cast<TNamed*>(new_plot->Clone((new_plot->GetName()+string("_clone")).c_str()));
+			//new_plot->Copy(*(next_plot.plot_clone));
+			//next_plot.plot_clone->SetName((new_plot->GetName()+string("_clone")).c_str());
 			next_plot.div = canvas_div;
 			next_plot.draw_opt = draw_opt;
 			(it->plots).push_back(next_plot);
@@ -597,8 +603,10 @@ void * Display_Thread::run(){
 	unsigned int delay = 0;
 	while(working){
 		display_text();
-		if(delay>300){
-			display_canvas();
+		cout << " " << delay;
+		if(delay>240){
+		//if(delay>60){
+			//display_canvas();
 			delay = 0;
 		}
 		usleep(250000);
@@ -630,8 +638,14 @@ void Display_Thread::display_text(){
 void Display_Thread::display_canvas(){
 	for(vector<canvas_info>::iterator it=canvas_list.begin();it!=canvas_list.end();++it){
 		for(vector<plot_info>::iterator jt = (it->plots).begin();jt!=(it->plots).end();++jt){
-			it->addr->cd(jt->div);
-			jt->plot->DrawClone((jt->draw_opt).c_str());
+			delete (jt->plot_clone);
+			//cout << "Switching to canvas " << it->addr->GetName() << " - " << jt->div << " : " << it->addr->cd(jt->div) << std::flush;
+			//cout << " | " << gPad << std::flush;
+			jt->plot_clone = dynamic_cast<TNamed*>(jt->plot_orig->Clone((jt->plot_orig->GetName()+string("_clone")).c_str()));
+			//jt->plot_orig->Copy(*(jt->plot_clone));
+			//jt->plot_clone->SetName((jt->plot_orig->GetName()+string("_clone")).c_str());
+			jt->plot_clone->Draw((jt->draw_opt).c_str());
+			//cout << " | " << gPad << endl;
 		}
 		it->addr->Modified();
 		it->addr->Update();

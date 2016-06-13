@@ -10,6 +10,11 @@
 #include <utility>
 #include <TROOT.h>
 #include <TCanvas.h>
+#include <TThread.h>
+#include <Math/MinimizerOptions.h>
+#include <Fit/FitConfig.h>
+#include <TVirtualFitter.h>
+#include <TError.h>
 
 #include <boost/foreach.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -32,12 +37,7 @@ const string Tomography::DreamExt = "fdf";
 const string Tomography::FeminosExt = "aqs";
 
 ostream& operator<<(ostream& os, const Tomography::det_type& det){
-	switch(det){
-		case Tomography::CM : os << "CM"; break;
-		case Tomography::MG : os << "MG"; break;
-		case Tomography::MGv2 : os << "MGv2"; break;
-		default : os << "unknown det";
-	}
+	os << Tomography::Static_Detector[det]->Name();
 	return os;
 }
 ostream& operator<<(ostream& os, const Tomography::strip_type& strip){
@@ -126,6 +126,7 @@ Tomography::Tomography(){
 	SampleMax = -1;
 	sigma = 0;
 	TOTCut = -1;
+	noise_RMS = ADC_max+1;
 	chisquare_threshold = 0;
 	live_graphic_display = false;
 	is_batch = true;
@@ -137,6 +138,11 @@ Tomography::Tomography(){
 	event_treated = 0;
 	ray_treated = 0;
 	deviation_treated = 0;
+	TThread::Initialize();
+	gErrorIgnoreLevel = 1001;
+	ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2");
+	ROOT::Fit::FitConfig::SetDefaultMinimizer("Minuit2");
+	TVirtualFitter::SetDefaultFitter("Minuit2");
 	sigIntHandler.sa_handler = signal_handler;
 	gROOT->SetBatch(true);
 	can_continue = true;
@@ -157,6 +163,7 @@ Tomography::Tomography(ptree config_tree_){
 	SampleMax = config_tree.get<int>("SampleMax");
 	sigma = config_tree.get<double>("sigma");
 	TOTCut = config_tree.get<int>("TOTCut");
+	noise_RMS = config_tree.get<double>("noise_RMS");
 	chisquare_threshold = config_tree.get<double>("chisquare_threshold");
 	if(gROOT->IsBatch()) is_batch = true;
 	else is_batch = config_tree.get<bool>("batch");
@@ -180,6 +187,11 @@ Tomography::Tomography(ptree config_tree_){
 	event_treated = 0;
 	ray_treated = 0;
 	deviation_treated = 0;
+	TThread::Initialize();
+	gErrorIgnoreLevel = 1001;
+	ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2");
+	ROOT::Fit::FitConfig::SetDefaultMinimizer("Minuit2");
+	TVirtualFitter::SetDefaultFitter("Minuit2");
 	sigIntHandler.sa_handler = signal_handler;
 	sigemptyset(&sigIntHandler.sa_mask);
 	sigIntHandler.sa_flags = 0;
@@ -196,11 +208,11 @@ Tomography::~Tomography(){
 	cout << "Terminating Tomography !" << endl;
 }
 void Tomography::Quit(){
+	Display_Thread::Quit();
 	if(singleton_instance != 0){
 		delete singleton_instance;
 		singleton_instance = 0;
 	}
-	Display_Thread::Quit();
 }
 Tomography * Tomography::get_instance(){
 	if(!singleton_instance){
@@ -246,6 +258,9 @@ double Tomography::get_chisquare_threshold() const{
 double Tomography::get_sigma() const{
 	return sigma;
 }
+double Tomography::get_noise_RMS() const{
+	return noise_RMS;
+}
 bool Tomography::get_live_graphic_display() const{
 	return live_graphic_display;
 }
@@ -272,6 +287,7 @@ void Tomography::save_canvases(){
 	if(gROOT->GetListOfCanvases()->GetSize() > 0) write_json(base_name + "config.json",config_tree);
 }
 void Tomography::Run(){
+	Display_Thread::get_instance()->stop();
 	if(root_interpreter) root_interpreter->Run(true);
 }
 

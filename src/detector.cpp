@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <utility>
+#include <limits>
 
 //Boost
 #include <boost/foreach.hpp>
@@ -19,6 +20,7 @@ using std::endl;
 using std::ifstream;
 using std::ostringstream;
 using std::pair;
+using std::numeric_limits;
 
 using TMath::Exp;
 using TMath::Log;
@@ -274,6 +276,12 @@ int CM_Detector::dream_mapping(int channel, bool connector_direction) const{
 	if(connector_direction) return channel;
 	else return Tomography::Nchannel - 1 - channel;
 }
+string CM_Detector::Name() const{
+	return "CM";
+}
+int CM_Detector::get_MaxNClus() const{
+	return MaxNClus;
+}
 
 MG_Detector::MG_Detector(): Detector(){
 	ClusTOTCut_Min = -1;
@@ -431,6 +439,12 @@ int MG_Detector::feminos_mapping(int channel, bool connector_direction) const{
 int MG_Detector::dream_mapping(int channel, bool connector_direction) const{
 	int tmpchan = (connector_direction) ? channel : (Tomography::Nchannel - 1 - channel);
 	return (tmpchan + 1 - (2*(tmpchan%2)));
+}
+string MG_Detector::Name() const{
+	return "MG";
+}
+int MG_Detector::get_MaxNClus() const{
+	return MaxNClus;
 }
 
 MGv2_Detector::MGv2_Detector(): Detector(){
@@ -598,6 +612,12 @@ int MGv2_Detector::dream_mapping(int channel, bool connector_direction) const{
 	else if(channel == 55) return 6;
 	else return (63 - channel);
 	*/
+}
+string MGv2_Detector::Name() const{
+	return "MGv2";
+}
+int MGv2_Detector::get_MaxNClus() const{
+	return MaxNClus;
 }
 
 
@@ -775,4 +795,22 @@ Detector * CosmicBench::get_detector(unsigned int i) const{
 }
 int CosmicBench::get_non_ref_N() const{
 	return non_ref_n;
+}
+double CosmicBench::get_z_Up() const{
+	double z_Up = numeric_limits<double>::max();
+	for(vector<Detector*>::const_iterator it = detectors.begin();it!=detectors.end();++it){
+		if((*it)->get_is_up() && (*it)->get_z()<z_Up){
+			z_Up = (*it)->get_z();
+		}
+	}
+	return z_Up;
+}
+double CosmicBench::get_z_Down() const{
+	double z_Down = numeric_limits<double>::min();
+	for(vector<Detector*>::const_iterator it = detectors.begin();it!=detectors.end();++it){
+		if(!((*it)->get_is_up()) && (*it)->get_z()>z_Down){
+			z_Down = (*it)->get_z();
+		}
+	}
+	return z_Down;
 }

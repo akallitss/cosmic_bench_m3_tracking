@@ -6,6 +6,7 @@
 	"SampleMax" : 21, //Max sample used in clustering
 	"sigma" : 4, //significance needed for the signal to be considered in clustering
 	"TOTCut" : 3, //signal min TOT to be considered in clustering
+	"noise_RMS" : 4096, //channel with noise RMS greater than this value will be treated differently during clustering
 	"chisquare_threshold" : 100, //quality cut of tracks
 	"live_graphic_display" : true, //set true if you want the plot to be updated during processing, if false, the plot will only be shown at the end of the process
 	"batch" : false, //set true if you don't want any graphic display

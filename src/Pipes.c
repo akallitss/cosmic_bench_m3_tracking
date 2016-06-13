@@ -37,6 +37,8 @@
 #include <sys/msg.h>
 #include <sys/stat.h>
 
+#include <string.h>
+
 #include "Platform.h"
 #include "Pipes.h"
 

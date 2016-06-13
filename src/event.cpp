@@ -36,6 +36,7 @@ using TMath::Max;
 using TMath::Abs;
 using TMath::FloorNint;
 using TMath::CeilNint;
+using TMath::Sqrt;
 /*
 vector<map<double,int> > CosmicBenchEvent::combinaisons(map<double,int> sizes, bool allow_drop){
 	map<double,int> partial_product;
@@ -241,25 +242,25 @@ CM_Event::CM_Event(Tanalyse_R * treeObject, const CM_Detector * const det,long e
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);
 	}
-	for(int i=0;i<treeObject->CM_NClus[detector->get_n_in_tree()];i++){
+	for(int i=0;i<treeObject->NClus[Tomography::CM][detector->get_n_in_tree()];i++){
 		clusters.push_back(new CM_Cluster(treeObject,i,det));
 		if(!(det->is_suitable(clusters.back()))){
 			delete clusters.back();
 			clusters.pop_back();
 		}
 	}
-	has_spark = (treeObject->CM_Spark[detector->get_n_in_tree()]==1) ? true : false;
+	has_spark = (treeObject->Spark[Tomography::CM][detector->get_n_in_tree()]==1) ? true : false;
 	type = Tomography::CM;
 }
 CM_Event::CM_Event(const Tanalyse_R * const treeObject, const CM_Detector * const det): Event(treeObject,det){
-	for(int i=0;i<treeObject->CM_NClus[detector->get_n_in_tree()];i++){
+	for(int i=0;i<treeObject->NClus.find(Tomography::CM)->second[detector->get_n_in_tree()];i++){
 		clusters.push_back(new CM_Cluster(treeObject,i,det));
 		if(!(det->is_suitable(clusters.back()))){
 			delete clusters.back();
 			clusters.pop_back();
 		}
 	}
-	has_spark = (treeObject->CM_Spark[detector->get_n_in_tree()]==1) ? true : false;
+	has_spark = (treeObject->Spark.find(Tomography::CM)->second[detector->get_n_in_tree()]==1) ? true : false;
 	type = Tomography::CM;
 }
 CM_Event::CM_Event(const CM_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, double evttime_): Event(detector_,evn_, evttime_){
@@ -378,7 +379,7 @@ MG_Event::MG_Event(Tanalyse_R * treeObject, const MG_Detector * const det,long e
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);
 	}
-	for(int i=0;i<treeObject->MG_NClus[detector->get_n_in_tree()];i++){
+	for(int i=0;i<treeObject->NClus[Tomography::MG][detector->get_n_in_tree()];i++){
 		clusters.push_back(new MG_Cluster(treeObject,i,det));
 		if(!(det->is_suitable(clusters.back()))){
 			delete clusters.back();
@@ -386,11 +387,11 @@ MG_Event::MG_Event(Tanalyse_R * treeObject, const MG_Detector * const det,long e
 		}
 	}
 	use_srf = use_srf_;
-	has_spark = (treeObject->MG_Spark[detector->get_n_in_tree()]==1) ? true : false;
+	has_spark = (treeObject->Spark[Tomography::MG][detector->get_n_in_tree()]==1) ? true : false;
 	type = Tomography::MG;
 }
 MG_Event::MG_Event(const Tanalyse_R * const treeObject, const MG_Detector * const det, bool use_srf_): Event(treeObject,det){
-	for(int i=0;i<treeObject->MG_NClus[detector->get_n_in_tree()];i++){
+	for(int i=0;i<treeObject->NClus.find(Tomography::MG)->second[detector->get_n_in_tree()];i++){
 		clusters.push_back(new MG_Cluster(treeObject,i,det));
 		if(!(det->is_suitable(clusters.back()))){
 			delete clusters.back();
@@ -398,7 +399,7 @@ MG_Event::MG_Event(const Tanalyse_R * const treeObject, const MG_Detector * cons
 		}
 	}
 	use_srf = use_srf_;
-	has_spark = (treeObject->MG_Spark[detector->get_n_in_tree()]==1) ? true : false;
+	has_spark = (treeObject->Spark.find(Tomography::MG)->second[detector->get_n_in_tree()]==1) ? true : false;
 	type = Tomography::MG;
 }
 MG_Event::MG_Event(const MG_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, double evttime_, bool use_srf_): Event(detector_,evn_, evttime_){
@@ -927,7 +928,7 @@ MGv2_Event::MGv2_Event(Tanalyse_R * treeObject, const MGv2_Detector * const det,
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);
 	}
-	for(int i=0;i<treeObject->MGv2_NClus[detector->get_n_in_tree()];i++){
+	for(int i=0;i<treeObject->NClus[Tomography::MGv2][detector->get_n_in_tree()];i++){
 		clusters.push_back(new MGv2_Cluster(treeObject,i,det));
 		if(!(det->is_suitable(clusters.back()))){
 			delete clusters.back();
@@ -935,11 +936,11 @@ MGv2_Event::MGv2_Event(Tanalyse_R * treeObject, const MGv2_Detector * const det,
 		}
 	}
 	use_srf = use_srf_;
-	has_spark = (treeObject->MGv2_Spark[detector->get_n_in_tree()]==1) ? true : false;
+	has_spark = (treeObject->Spark[Tomography::MGv2][detector->get_n_in_tree()]==1) ? true : false;
 	type = Tomography::MGv2;
 }
 MGv2_Event::MGv2_Event(const Tanalyse_R * const treeObject, const MGv2_Detector * const det, bool use_srf_): Event(treeObject,det){
-	for(int i=0;i<treeObject->MGv2_NClus[detector->get_n_in_tree()];i++){
+	for(int i=0;i<treeObject->NClus.find(Tomography::MGv2)->second[detector->get_n_in_tree()];i++){
 		clusters.push_back(new MGv2_Cluster(treeObject,i,det));
 		if(!(det->is_suitable(clusters.back()))){
 			delete clusters.back();
@@ -947,7 +948,7 @@ MGv2_Event::MGv2_Event(const Tanalyse_R * const treeObject, const MGv2_Detector 
 		}
 	}
 	use_srf = use_srf_;
-	has_spark = (treeObject->MGv2_Spark[detector->get_n_in_tree()]==1) ? true : false;
+	has_spark = (treeObject->Spark.find(Tomography::MGv2)->second[detector->get_n_in_tree()]==1) ? true : false;
 	type = Tomography::MGv2;
 }
 MGv2_Event::MGv2_Event(const MGv2_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, double evttime_, bool use_srf_): Event(detector_,evn_,evttime_){
@@ -969,9 +970,11 @@ void MGv2_Event::MultiCluster(){
 	int SampleMin = Tomography::get_instance()->get_SampleMin();
 	int SampleMax = Tomography::get_instance()->get_SampleMax();
 	int TOTCut = Tomography::get_instance()->get_TOTCut();
+	double noise_RMS = Tomography::get_instance()->get_noise_RMS();
 	int p = 61;
 	int n = 1037;
 	map<int,bool> channelOverThreshold;
+	map<int,bool> noisyChannels;
 	map<int,StripInfo> allChannels;
 	for(int i=0;i<p;i++){
 		StripInfo current_strip;
@@ -979,6 +982,7 @@ void MGv2_Event::MultiCluster(){
 		current_strip.MaxSample = 0;
 		current_strip.TOT = 0;
 		current_strip.Time = 0;
+		if((detector->get_RMS(i))>noise_RMS) noisyChannels.insert(pair<int,bool>(i,true));
 		for(int j=0;j<SampleMin;j++){
 			current_strip.signal_sample[j] = false;
 		}
@@ -1077,19 +1081,22 @@ void MGv2_Event::MultiCluster(){
 				vector<int> used_channel;
 				used_channel.push_back(MGv2_Detector::StripToChannel_a[i]);
 				map<int,int> hole_channel;
+				unsigned int noisy_channel_n = 0;
 				for(int j=i+1;j<n;j++){
 					if(/*find(used_channel.begin(),used_channel.end(),MGv2_Detector::StripToChannel_a[j]) == used_channel.end() &&*/ find(global_used_channel.begin(),global_used_channel.end(),MGv2_Detector::StripToChannel_a[j]) == global_used_channel.end() /*&& !(hole_channel.count(MGv2_Detector::StripToChannel_a[j])>0)*/){
 						if(channelOverThreshold.count(MGv2_Detector::StripToChannel_a[j])>0){
 							current_cluster.second = j;
 							used_channel.push_back(MGv2_Detector::StripToChannel_a[j]);
 						}
-						else if(hole_channel.size()<max_hole_size){
+						else if(hole_channel.size()<(max_hole_size + noisy_channel_n)){
 							hole_channel.insert(pair<int,int>(MGv2_Detector::StripToChannel_a[j],j));
+							if(noisyChannels.count(MGv2_Detector::StripToChannel_a[j])>0) noisy_channel_n++;
 						}
 						else break;
 					}		
 					else break;
 				}
+				/*
 				map<int,int>::iterator hole_it = hole_channel.begin();
 				while(hole_it!=hole_channel.end()){
 					if(hole_it->second > current_cluster.second){
@@ -1103,6 +1110,12 @@ void MGv2_Event::MultiCluster(){
 				for(hole_it = hole_channel.begin();hole_it!=hole_channel.end();++hole_it){
 					used_channel.push_back(hole_it->first);
 				}
+				*/
+				//--
+				for(map<int,int>::iterator hole_it = hole_channel.begin();hole_it!=hole_channel.end();++hole_it){
+					if(hole_it->second < current_cluster.second) used_channel.push_back(hole_it->first);
+				}
+				//--
 				if((current_cluster.second - current_cluster.first)>(biggest_current_cluster.second - biggest_current_cluster.first)){
 					biggest_current_cluster = current_cluster;
 					current_used_channel = used_channel;
@@ -1627,7 +1640,7 @@ void CosmicBenchEvent::createPairs(){
 		bool b=true;
 		while(b){
 			b = false;
-			double bestDoca = 50;
+			double bestDoca = 1000000;
 			double current_chiSquare = chiSquare_threshold;
 			map<bool, map<bool, int > > best_comb;
 			RayPair bestRay = RayPair();
@@ -1641,9 +1654,22 @@ void CosmicBenchEvent::createPairs(){
 							currentRayPair.process();
 							double currentDoca = currentRayPair.get_doca();
 							Point currentPoCA = currentRayPair.get_PoCA();
-							if(currentPoCA.get_Z()>(max_z+10) || currentPoCA.get_Z()<(min_z-10)) continue;
-							if(currentPoCA.get_X()>10.*Tomography::get_instance()->get_XY_size()/10. || currentPoCA.get_X()<-10.*Tomography::get_instance()->get_XY_size()/10.) continue;
-							if(currentPoCA.get_Y()>10.*Tomography::get_instance()->get_XY_size()/10. || currentPoCA.get_Y()<-10.*Tomography::get_instance()->get_XY_size()/10.) continue;
+							double distance_z = 0;
+							double distance_x = 0;
+							double distance_y = 0;
+							//if(currentPoCA.get_Z()>(max_z+10) || currentPoCA.get_Z()<(min_z-10)) continue;
+							if(currentPoCA.get_Z()>max_z) distance_z = currentPoCA.get_Z() - max_z;
+							if(currentPoCA.get_Z()<min_z) distance_z = -(currentPoCA.get_Z()) + min_z;
+							else distance_z= 0;
+							//if(currentPoCA.get_X()>10.*Tomography::get_instance()->get_XY_size()/10. || currentPoCA.get_X()<-10.*Tomography::get_instance()->get_XY_size()/10.) continue;
+							if(currentPoCA.get_X()>(Tomography::get_instance()->get_XY_size()/2.)) distance_x = currentPoCA.get_X() - (Tomography::get_instance()->get_XY_size()/2.);
+							else if(currentPoCA.get_X()<(-Tomography::get_instance()->get_XY_size()/2.)) distance_x = -(currentPoCA.get_X()) - (Tomography::get_instance()->get_XY_size()/2.);
+							else distance_x = 0;
+							//if(currentPoCA.get_Y()>10.*Tomography::get_instance()->get_XY_size()/10. || currentPoCA.get_Y()<-10.*Tomography::get_instance()->get_XY_size()/10.) continue;
+							if(currentPoCA.get_Y()>(Tomography::get_instance()->get_XY_size()/2.)) distance_y = currentPoCA.get_Y() - (Tomography::get_instance()->get_XY_size()/2.);
+							else if(currentPoCA.get_Y()<(-Tomography::get_instance()->get_XY_size()/2.)) distance_y = -(currentPoCA.get_Y()) - (Tomography::get_instance()->get_XY_size()/2.);
+							else distance_y = 0;
+							currentDoca += Sqrt((distance_x*distance_x)+(distance_y*distance_y)+(distance_z*distance_z));
 							if(currentDoca<bestDoca){
 								bestDoca = currentDoca;
 								bestRay = currentRayPair;
@@ -2317,4 +2343,10 @@ void CosmicBenchEvent::do_cuts(){
 	for(vector<Event*>::iterator it = events.begin(); it!=events.end(); ++it){
 		(*it)->do_cuts();
 	}
+}
+int CosmicBenchEvent::get_evn() const{
+	return (events.front())->get_evn();
+}
+double CosmicBenchEvent::get_evttime() const{
+	return (events.front())->get_evttime();
 }

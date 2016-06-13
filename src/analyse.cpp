@@ -563,7 +563,7 @@ void Analyse::Residus_ref_MT(){
 	//map<string, bool> nref_is_X;
 	//unsigned int det_x_n = 0;
 	unsigned int nref_x_n = 0;
-	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
+	unsigned long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
 		if(!((*it)->get_is_ref())){
 			ostringstream name;
@@ -664,7 +664,7 @@ void Analyse::Residus_ref_MT(){
 
 
 	Buffer_Task<ray_data> * ray_list = new Buffer_Task<ray_data>();
-	Input_Task * to_do = new Read_Analyse_Task(-1,this,this, new Tracking_Abs_Task(this, ray_list));
+	Input_Task * to_do = new Read_Analyse_Task(nentries,this,this, new Tracking_Abs_Task(this, ray_list));
 	vector<Thread*> threads;
 	threads.push_back(new Reader_Thread(to_do));
 	(threads.back())->start();
@@ -679,6 +679,13 @@ void Analyse::Residus_ref_MT(){
 	bool has_working_thread = true;
 	unsigned long jentry = 0;
 	while((has_working_thread || ray_list->can_fetch_data()) && Tomography::get_instance()->get_can_continue()){
+		has_working_thread = false;
+		for(unsigned short i=0;i<threads.size();i++){
+			if(threads[i]->is_working()){
+				has_working_thread = true;
+				break;
+			}
+		}
 		if(!(ray_list->can_fetch_data())){
 			usleep(1000);
 			continue;
@@ -770,13 +777,7 @@ void Analyse::Residus_ref_MT(){
 
 		//if(jentry%100) MT_display << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << eventReconstructed;
 		jentry++;
-		has_working_thread = false;
-		for(unsigned short i=0;i<threads.size();i++){
-			if(threads[i]->is_working()){
-				has_working_thread = true;
-				break;
-			}
-		}
+		if(jentry%5000 == 0 && Tomography::get_instance()->get_live_graphic_display()) MT_display->display_canvas();
 	}
 	for(unsigned short i=0;i<threads.size();i++){
 		threads[i]->stop();
@@ -812,6 +813,7 @@ void Analyse::Residus_ref_MT(){
 		cout << "-b/2a : " << angle_xy_fit[it->first]->GetParameter(1)/(2.*angle_xy_fit[it->first]->GetParameter(2)) << "\n";
 		cout << it->first << " efficacity : " << 100.*efficacity[it->first] << "%" << endl;
 	}
+	MT_display->display_canvas();
 }
 double Analyse::Residus_ref_cost(){
 	double chisquare_threshold = 10;
@@ -1893,6 +1895,20 @@ void Analyse::StoreRayPairs(string outFileName){
 	c2->Divide(3);
 	TH1D * pocaX = new TH1D("pocaX","pocaX",100,-Tomography::get_instance()->get_XY_size(),Tomography::get_instance()->get_XY_size());
 	TH1D * pocaY = new TH1D("pocaY","pocaY",100,-Tomography::get_instance()->get_XY_size(),Tomography::get_instance()->get_XY_size());
+	
+	TCanvas * c3 = new TCanvas();
+	c3->Divide(3,2);
+	TH1D * chi2_h = new TH1D("chisquares","chisquares",100,0,1);
+	c3->GetPad(1)->SetLogy();
+	TH1D * sizes = new TH1D("sizes","sizes",10,0,10);
+	TH1D * suitable_h = new TH1D("suitable","suitable",10,0,10);
+	suitable_h->SetLineColor(2);
+	c3->GetPad(2)->SetLogy();
+	TH1D * nclus_xh_h = new TH1D("nclus_xh","nclus_xh",20,0,20);
+	TH1D * nclus_yh_h = new TH1D("nclus_yh","nclus_yh",20,0,20);
+	TH1D * nclus_xb_h = new TH1D("nclus_xb","nclus_xb",20,0,20);
+	TH1D * nclus_yb_h = new TH1D("nclus_yb","nclus_yb",20,0,20);
+	
 	double z_Up_tot = numeric_limits<double>::min();
 	for(vector<Detector*>::const_iterator it = detectors.begin();it!=detectors.end();++it){
 		if((*it)->get_z()>z_Up_tot){
@@ -1906,7 +1922,12 @@ void Analyse::StoreRayPairs(string outFileName){
 		}
 	}
 	TH1D * pocaZ = new TH1D("pocaZ","pocaZ",100,z_Down_tot - (z_Up_tot-z_Down_tot),z_Up_tot + (z_Up_tot-z_Down_tot));
-
+	TLine * downLim = new TLine(z_Down_tot,0,z_Down_tot,1);
+	TLine * upLim = new TLine(z_Up_tot,0,z_Up_tot,1);
+	downLim->SetLineStyle(2);
+	upLim->SetLineStyle(2);
+	downLim->SetLineColor(2);
+	upLim->SetLineColor(2);
 	long eventReconstructed = 0;
 	long eventSuitable = 0;
 
@@ -1952,9 +1973,39 @@ void Analyse::StoreRayPairs(string outFileName){
 		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,-1);
 		currentCBEvent->createPairs();
 		eventSuitable+=currentCBEvent->get_clus_N()/(get_det_N_tot());
+		bool is_suitable = true;	
+		for(vector<Detector*>::const_iterator it = detectors.begin();it!=detectors.end();++it){
+			if(currentCBEvent->get_clus_N_by_det(*it)<1) is_suitable = false;
+			if((*it)->get_is_up()){
+				if((*it)->get_is_X()){
+					nclus_xh_h->Fill(currentCBEvent->get_clus_N_by_det(*it));
+				}
+				else{	
+					nclus_yh_h->Fill(currentCBEvent->get_clus_N_by_det(*it));
+				}
+			}
+			else{
+				if((*it)->get_is_X()){
+					nclus_xb_h->Fill(currentCBEvent->get_clus_N_by_det(*it));
+				}
+				else{	
+					nclus_yb_h->Fill(currentCBEvent->get_clus_N_by_det(*it));
+				}
+			}
+		}
+		if(is_suitable) suitable_h->Fill(1);
+		else suitable_h->Fill(0);
 		eventReconstructed+=currentCBEvent->get_rayPairs_N();
+		sizes->Fill(currentCBEvent->get_rayPairs_N());
 		for(unsigned int i=0;i<currentCBEvent->get_rayPairs_N();i++){
 			RayPair currentRayPair = currentCBEvent->get_rayPair(i);
+			double current_chi = 0;
+			current_chi += currentRayPair.downRay.get_chiSquare_X()*currentRayPair.downRay.get_chiSquare_X();
+			current_chi += currentRayPair.downRay.get_chiSquare_Y()*currentRayPair.downRay.get_chiSquare_Y();
+			current_chi += currentRayPair.upRay.get_chiSquare_X()*currentRayPair.upRay.get_chiSquare_X();
+			current_chi += currentRayPair.upRay.get_chiSquare_Y()*currentRayPair.upRay.get_chiSquare_Y();
+			current_chi = Sqrt(current_chi);
+			chi2_h->Fill(current_chi);
 			doca->Fill(currentRayPair.get_doca());
 			thetaXUp->Fill(currentRayPair.upRay.get_slope_X());
 			thetaYUp->Fill(currentRayPair.upRay.get_slope_Y());
@@ -1997,8 +2048,27 @@ void Analyse::StoreRayPairs(string outFileName){
 			pocaY->Draw();
 			c2->cd(3);
 			pocaZ->Draw();
+			upLim->SetY2(pocaZ->GetMaximum());
+			downLim->SetY2(pocaZ->GetMaximum());
+			upLim->Draw();
+			downLim->Draw();
 			c2->Modified();
 			c2->Update();
+			c3->cd(1);
+			chi2_h->Draw();
+			c3->cd(2);
+			sizes->Draw();
+			suitable_h->Draw("SAME");
+			c3->cd(3);
+			nclus_xh_h->Draw();
+			c3->cd(4);
+			nclus_yh_h->Draw();
+			c3->cd(5);
+			nclus_xb_h->Draw();
+			c3->cd(6);
+			nclus_yb_h->Draw();
+			c3->Modified();
+			c3->Update();
 		}
 	}
 	cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << eventSuitable << "|" << setw(20) << nentries << endl;
@@ -2023,8 +2093,27 @@ void Analyse::StoreRayPairs(string outFileName){
 	pocaY->Draw();
 	c2->cd(3);
 	pocaZ->Draw();
+	upLim->SetY2(pocaZ->GetMaximum());
+	downLim->SetY2(pocaZ->GetMaximum());
+	upLim->Draw();
+	downLim->Draw();
 	c2->Modified();
 	c2->Update();
+	c3->cd(1);
+	chi2_h->Draw();
+	c3->cd(2);
+	sizes->Draw();
+	suitable_h->Draw("SAME");
+	c3->cd(3);
+	nclus_xh_h->Draw();
+	c3->cd(4);
+	nclus_yh_h->Draw();
+	c3->cd(5);
+	nclus_xb_h->Draw();
+	c3->cd(6);
+	nclus_yb_h->Draw();
+	c3->Modified();
+	c3->Update();
 }
 
 /*void Analyse::MultiGenDebug(int i){
@@ -2067,25 +2156,6 @@ void Analyse::StoreRayPairs(string outFileName){
 	c1->Update();
 }*/
 
-double Analyse::get_z_Up() const{
-	double z_Up = numeric_limits<double>::max();
-	for(vector<Detector*>::const_iterator it = detectors.begin();it!=detectors.end();++it){
-		if((*it)->get_is_up() && (*it)->get_z()<z_Up){
-			z_Up = (*it)->get_z();
-		}
-	}
-	return z_Up;
-}
-double Analyse::get_z_Down() const{
-	double z_Down = numeric_limits<double>::min();
-	for(vector<Detector*>::const_iterator it = detectors.begin();it!=detectors.end();++it){
-		if(!((*it)->get_is_up()) && (*it)->get_z()>z_Down){
-			z_Down = (*it)->get_z();
-		}
-	}
-	return z_Down;
-}
-
 void Analyse::bugtest(){
 	if (fChain == 0) return;
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
@@ -2110,9 +2180,9 @@ void Analyse::bugtest(){
 		cout << endl;
 		delete CBEvent;
 		for(int i=0;i<det_N[Tomography::MG]-1;i++){
-			cout << setw(10) << MG_ClusPos[i][0] << " | ";
+			cout << setw(10) << reinterpret_cast<Double_t(*)[MG_Detector::MaxNClus]>(ClusPos[Tomography::MG])[i][0] << " | ";
 		}
-		cout << setw(10) << MG_ClusPos[det_N[Tomography::MG]-1][0] << endl;
+		cout << setw(10) << reinterpret_cast<Double_t(*)[MG_Detector::MaxNClus]>(ClusPos[Tomography::MG])[det_N[Tomography::MG]-1][0] << endl;
 	}
 }
 

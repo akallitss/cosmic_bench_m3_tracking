@@ -26,44 +26,18 @@ Tanalyse_R::Tanalyse_R(TTree *tree, map<Tomography::det_type,unsigned short> det
 
 Tanalyse_R::~Tanalyse_R()
 {
-   if(det_N.count(Tomography::CM)>0){
-      delete[] CM_NClus;
-      delete[] CM_Spark;
-      delete[] CM_ClusAmpl;
-      delete[] CM_ClusSize;
-      delete[] CM_ClusPos;
-      delete[] CM_ClusTOT;
-      delete[] CM_ClusT;
-      delete[] CM_ClusMaxStrip;
-      delete[] CM_ClusMaxSample;
-      delete[] CM_ClusMaxStripAmpl;
-      delete[] CM_StripMaxAmpl;
-   }
-   if(det_N.count(Tomography::MG)>0){
-      delete[] MG_NClus;
-      delete[] MG_Spark;
-      delete[] MG_ClusAmpl;
-      delete[] MG_ClusSize;
-      delete[] MG_ClusPos;
-      delete[] MG_ClusTOT;
-      delete[] MG_ClusT;
-      delete[] MG_ClusMaxStrip;
-      delete[] MG_ClusMaxSample;
-      delete[] MG_ClusMaxStripAmpl;
-      delete[] MG_StripMaxAmpl;
-   }
-   if(det_N.count(Tomography::MGv2)>0){
-      delete[] MGv2_NClus;
-      delete[] MGv2_Spark;
-      delete[] MGv2_ClusAmpl;
-      delete[] MGv2_ClusSize;
-      delete[] MGv2_ClusPos;
-      delete[] MGv2_ClusTOT;
-      delete[] MGv2_ClusT;
-      delete[] MGv2_ClusMaxStrip;
-      delete[] MGv2_ClusMaxSample;
-      delete[] MGv2_ClusMaxStripAmpl;
-      delete[] MGv2_StripMaxAmpl;
+   for(map<Tomography::det_type,unsigned short>::iterator type_it=det_N.begin();type_it!=det_N.end();++type_it){
+      delete NClus[type_it->first];
+      delete Spark[type_it->first];
+      delete ClusAmpl[type_it->first];
+      delete ClusSize[type_it->first];
+      delete ClusPos[type_it->first];
+      delete ClusTOT[type_it->first];
+      delete ClusT[type_it->first];
+      delete ClusMaxStrip[type_it->first];
+      delete ClusMaxSample[type_it->first];
+      delete ClusMaxStripAmpl[type_it->first];
+      delete StripMaxAmpl[type_it->first];
    }
    if (!fChain) return;
    delete fChain->GetCurrentFile();
@@ -127,33 +101,36 @@ void Tanalyse_R::Init(TTree *tree, map<Tomography::det_type,unsigned short> det_
    fChain->SetBranchAddress("evn", &evn, &b_evn);
    //evttime = 0;
    fChain->SetBranchAddress("evttime", &evttime, &b_evttime);
-   if(det_N.count(Tomography::CM)>0){
-      CM_NClus = new int[det_N[Tomography::CM]];
-      fChain->SetBranchAddress("CM_NClus", CM_NClus, &b_CM_NClus);
-      CM_Spark = new int[det_N[Tomography::CM]];
-      for(int i = 0;i<det_N[Tomography::CM];i++){
-         CM_Spark[i] = 0;
+   for(map<Tomography::det_type,unsigned short>::iterator type_it=det_N.begin();type_it!=det_N.end();++type_it){
+      NClus[type_it->first] = new int[type_it->second];
+      string current_name = Tomography::Static_Detector[type_it->first]->Name();
+      fChain->SetBranchAddress((current_name+"_NClus").c_str(), NClus[type_it->first], &b_NClus[type_it->first]);
+      Spark[type_it->first] = new int[type_it->second];
+      for(int i = 0;i<(type_it->second);i++){
+         Spark[type_it->first][i] = 0;
       }
-      //fChain->SetBranchAddress("CM_Spark", CM_Spark, &b_CM_Spark);
-      CM_ClusAmpl = new Double_t[det_N[Tomography::CM]][600];
-      fChain->SetBranchAddress("CM_ClusAmpl", CM_ClusAmpl, &b_CM_ClusAmpl);
-      CM_ClusSize = new Double_t[det_N[Tomography::CM]][600];
-      fChain->SetBranchAddress("CM_ClusSize", CM_ClusSize, &b_CM_ClusSize);
-      CM_ClusPos = new Double_t[det_N[Tomography::CM]][600];
-      fChain->SetBranchAddress("CM_ClusPos", CM_ClusPos, &b_CM_ClusPos);
-      CM_ClusMaxStripAmpl = new Double_t[det_N[Tomography::CM]][600];
-      fChain->SetBranchAddress("CM_ClusMaxStripAmpl", CM_ClusMaxStripAmpl, &b_CM_ClusMaxStripAmpl);
-      CM_ClusMaxStrip = new Int_t[det_N[Tomography::CM]][600];
-      fChain->SetBranchAddress("CM_ClusMaxStrip", CM_ClusMaxStrip, &b_CM_ClusMaxStrip);
-      CM_ClusMaxSample = new Double_t[det_N[Tomography::CM]][600];
-      fChain->SetBranchAddress("CM_ClusMaxSample", CM_ClusMaxSample, &b_CM_ClusMaxSample);
-      CM_ClusTOT = new Double_t[det_N[Tomography::CM]][600];
-      fChain->SetBranchAddress("CM_ClusTOT", CM_ClusTOT, &b_CM_ClusTOT);
-      CM_ClusT = new Double_t[det_N[Tomography::CM]][600];
-      fChain->SetBranchAddress("CM_ClusT", CM_ClusT, &b_CM_ClusT);
-      CM_StripMaxAmpl = new Double_t[det_N[Tomography::CM]][CM_Detector::Nchannel/2];
-      fChain->SetBranchAddress("CM_StripMaxAmpl", CM_StripMaxAmpl, &b_CM_StripMaxAmpl);
+      //fChain->SetBranchAddress((current_name+"_Spark").c_str(), Spark[type_it->first], &b_Spark[type_it->first]);
+      int current_MaxNClus = Tomography::Static_Detector[type_it->first]->get_MaxNClus();
+      ClusAmpl[type_it->first] = new Double_t[(type_it->second)*current_MaxNClus];
+      fChain->SetBranchAddress((current_name+"_ClusAmpl").c_str(), ClusAmpl[type_it->first], &b_ClusAmpl[type_it->first]);
+      ClusSize[type_it->first] = new Double_t[(type_it->second)*current_MaxNClus];
+      fChain->SetBranchAddress((current_name+"_ClusSize").c_str(), ClusSize[type_it->first], &b_ClusSize[type_it->first]);
+      ClusPos[type_it->first] = new Double_t[(type_it->second)*current_MaxNClus];
+      fChain->SetBranchAddress((current_name+"_ClusPos").c_str(), ClusPos[type_it->first], &b_ClusPos[type_it->first]);
+      ClusMaxStripAmpl[type_it->first] = new Double_t[(type_it->second)*current_MaxNClus];
+      fChain->SetBranchAddress((current_name+"_ClusMaxStripAmpl").c_str(), ClusMaxStripAmpl[type_it->first], &b_ClusMaxStripAmpl[type_it->first]);
+      ClusMaxStrip[type_it->first] = new Int_t[(type_it->second)*current_MaxNClus];
+      fChain->SetBranchAddress((current_name+"_ClusMaxStrip").c_str(), ClusMaxStrip[type_it->first], &b_ClusMaxStrip[type_it->first]);
+      ClusMaxSample[type_it->first] = new Double_t[(type_it->second)*current_MaxNClus];
+      fChain->SetBranchAddress((current_name+"_ClusMaxSample").c_str(), ClusMaxSample[type_it->first], &b_ClusMaxSample[type_it->first]);
+      ClusTOT[type_it->first] = new Double_t[(type_it->second)*current_MaxNClus];
+      fChain->SetBranchAddress((current_name+"_ClusTOT").c_str(), ClusTOT[type_it->first], &b_ClusTOT[type_it->first]);
+      ClusT[type_it->first] = new Double_t[(type_it->second)*current_MaxNClus];
+      fChain->SetBranchAddress((current_name+"_ClusT").c_str(), ClusT[type_it->first], &b_ClusT[type_it->first]);
+      StripMaxAmpl[type_it->first] = new Double_t[(type_it->second)*(Tomography::Static_Detector[type_it->first]->get_Nchannel())];
+      fChain->SetBranchAddress((current_name+"_StripMaxAmpl").c_str(), StripMaxAmpl[type_it->first], &b_StripMaxAmpl[type_it->first]);
    }
+   /*
    if(det_N.count(Tomography::MG)>0){
       MG_NClus = new int[det_N[Tomography::MG]];
       fChain->SetBranchAddress("MG_NClus", MG_NClus, &b_MG_NClus);
@@ -208,6 +185,7 @@ void Tanalyse_R::Init(TTree *tree, map<Tomography::det_type,unsigned short> det_
       MGv2_StripMaxAmpl = new Double_t[det_N[Tomography::MGv2]][MGv2_Detector::Nchannel];
       fChain->SetBranchAddress("MGv2_StripMaxAmpl", MGv2_StripMaxAmpl, &b_MGv2_StripMaxAmpl);
    }
+   */
    Notify();
 }
 

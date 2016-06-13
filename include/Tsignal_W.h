@@ -32,6 +32,7 @@ public :
    map<Tomography::det_type,unsigned short> det_N;
    Int_t           Nevent;
    Double_t        evttime;
+   /*
    Float_t         *StripAmpl_MG;
    Float_t         *StripAmpl_MG_ped;
    Float_t         *StripAmpl_MG_corr;
@@ -41,6 +42,10 @@ public :
    Float_t         *StripAmpl_CM;
    Float_t         *StripAmpl_CM_ped;
    Float_t         *StripAmpl_CM_corr;
+   */
+   map<Tomography::det_type,Float_t*> StripAmpl;
+   map<Tomography::det_type,Float_t*> StripAmpl_ped;
+   map<Tomography::det_type,Float_t*> StripAmpl_corr;
 
 
    Tsignal_W(string saveFileName, map<Tomography::det_type,unsigned short> det_N_);

@@ -32,6 +32,7 @@ public:
    map<Tomography::det_type,unsigned short> det_N;
    Int_t           evn;
    Double_t        evttime;
+   /*
    Int_t           *CM_NClus;
    Int_t           *CM_Spark;
    Double_t        (*CM_ClusAmpl)[600];
@@ -65,10 +66,23 @@ public:
    Double_t        (*MGv2_ClusT)[300];
    Int_t           (*MGv2_ClusMaxStrip)[300];
    Double_t        (*MGv2_StripMaxAmpl)[MGv2_Detector::Nchannel];
+   */
+   map<Tomography::det_type,Int_t*> NClus;
+   map<Tomography::det_type,Int_t*> Spark;
+   map<Tomography::det_type,Double_t*> ClusAmpl;
+   map<Tomography::det_type,Double_t*> ClusSize;
+   map<Tomography::det_type,Double_t*> ClusPos;
+   map<Tomography::det_type,Double_t*> ClusMaxStripAmpl;
+   map<Tomography::det_type,Int_t*> ClusMaxStrip;
+   map<Tomography::det_type,Double_t*> ClusMaxSample;
+   map<Tomography::det_type,Double_t*> ClusTOT;
+   map<Tomography::det_type,Double_t*> ClusT;
+   map<Tomography::det_type,Double_t*> StripMaxAmpl;
 
    // List of branches
    TBranch        *b_evn;   //!
    TBranch        *b_evttime;
+   /*
    TBranch        *b_CM_NClus;   //!
    TBranch        *b_CM_Spark;
    TBranch        *b_CM_ClusAmpl;   //!
@@ -102,6 +116,18 @@ public:
    TBranch        *b_MGv2_ClusT;   //!
    TBranch        *b_MGv2_ClusMaxStrip;   //!
    TBranch        *b_MGv2_StripMaxAmpl;   //!
+   */
+   map<Tomography::det_type,TBranch*> b_NClus; //!
+   map<Tomography::det_type,TBranch*> b_Spark;
+   map<Tomography::det_type,TBranch*> b_ClusAmpl; //!
+   map<Tomography::det_type,TBranch*> b_ClusSize; //!
+   map<Tomography::det_type,TBranch*> b_ClusPos; //!
+   map<Tomography::det_type,TBranch*> b_ClusMaxStripAmpl; //!
+   map<Tomography::det_type,TBranch*> b_ClusMaxStrip; //!
+   map<Tomography::det_type,TBranch*> b_ClusMaxSample; //!
+   map<Tomography::det_type,TBranch*> b_ClusTOT; //!
+   map<Tomography::det_type,TBranch*> b_ClusT; //!
+   map<Tomography::det_type,TBranch*> b_StripMaxAmpl; //!
 
    Tanalyse_R();
    Tanalyse_R(TTree *tree, map<Tomography::det_type,unsigned short> det_N_);

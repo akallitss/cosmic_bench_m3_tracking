@@ -26,6 +26,7 @@ class Tanalyse_W{
 
       Int_t           evn;
       Double_t        evttime;
+      /*
       Int_t           *CM_NClus;
       Int_t           *CM_Spark;
       Double_t        (*CM_ClusAmpl)[600];
@@ -59,6 +60,18 @@ class Tanalyse_W{
       Double_t        (*MGv2_ClusT)[300];
       Int_t           (*MGv2_ClusMaxStrip)[300];
       Double_t        (*MGv2_StripMaxAmpl)[MGv2_Detector::Nchannel];
+      */
+      map<Tomography::det_type,Int_t*> NClus;
+      map<Tomography::det_type,Int_t*> Spark;
+      map<Tomography::det_type,Double_t*> ClusAmpl;
+      map<Tomography::det_type,Double_t*> ClusSize;
+      map<Tomography::det_type,Double_t*> ClusPos;
+      map<Tomography::det_type,Double_t*> ClusMaxStripAmpl;
+      map<Tomography::det_type,Int_t*> ClusMaxStrip;
+      map<Tomography::det_type,Double_t*> ClusMaxSample;
+      map<Tomography::det_type,Double_t*> ClusTOT;
+      map<Tomography::det_type,Double_t*> ClusT;
+      map<Tomography::det_type,Double_t*> StripMaxAmpl;
 
       //Tanalyse(string saveFileName);
       Tanalyse_W(string saveFileName, map<Tomography::det_type,unsigned short> det_N_);
