@@ -85,7 +85,11 @@ int main(int argc, char ** argv){
 		}
 		else{
 			float z = atof(argv[3]);
-			blah->AbsorptionFluxMapNormTheo(z);
+			double bench_angle = 0;
+			if(argc>4){
+				bench_angle = atof(argv[4]);
+			}
+			blah->AbsorptionFluxMapNormTheo(z,bench_angle);
 		}
 	}
 	else if(argv[2] == raypairs){

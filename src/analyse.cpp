@@ -1652,7 +1652,7 @@ void Analyse::WatToFluxMap(double z,TEllipse el, TCanvas * c1, TCanvas * c2, dou
 	c2->Modified();
 	c2->Update();
 }
-void Analyse::AbsorptionFluxMapNormTheo(double z, TCanvas * c1, TCanvas * c2, TCanvas * c3, TCanvas * c4){
+void Analyse::AbsorptionFluxMapNormTheo(double z, double bench_angle, TCanvas * c1, TCanvas * c2, TCanvas * c3, TCanvas * c4){
 	long eventReconstructed = 0;
 	long eventSuitable = 0;
 	double chisquare_threshold = 100;
@@ -1692,7 +1692,7 @@ void Analyse::AbsorptionFluxMapNormTheo(double z, TCanvas * c1, TCanvas * c2, TC
 	TH2D * fluxMapSigma = new TH2D("fluxMapSigma","fluxMapSigma",nbins,x_min,x_max,nbins,x_min,x_max);
 	fluxMapSigma->SetStats(0);
 	if(c3 == 0) c3 = new TCanvas("fluxMap_Sigma","fluxMap_Sigma");
-	acceptanceFunction acceptanceEstimation(-Tomography::get_instance()->get_XY_size()/2.,Tomography::get_instance()->get_XY_size()/2.,-Tomography::get_instance()->get_XY_size()/2.,Tomography::get_instance()->get_XY_size()/2.,z_max,z_min,0);
+	acceptanceFunction acceptanceEstimation(-Tomography::get_instance()->get_XY_size()/2.,Tomography::get_instance()->get_XY_size()/2.,-Tomography::get_instance()->get_XY_size()/2.,Tomography::get_instance()->get_XY_size()/2.,z_max,z_min,bench_angle);
 	TH2D * background = new TH2D(acceptanceEstimation.plot_XY(nbins,x_min,x_max,nbins,x_min,x_max,z));
 	if(c4 == 0) c4 = new TCanvas("fluxMap_background","fluxMap_background");
 	c4->cd();
