@@ -1,8 +1,8 @@
 diff --git a/include/detector.h b/include/detector.h
-index 3ac0345..becf224 100644
+index 7b1b6aa..65159fc 100644
 --- a/include/detector.h
 +++ b/include/detector.h
-@@ -88,13 +88,13 @@ class CM_Detector: public Detector{
+@@ -90,13 +90,13 @@ class CM_Detector: public Detector{
  		~CM_Detector();
  		Detector * build_det(const ptree::value_type& child) const;
  		//CosMulti general charac
@@ -23,7 +23,7 @@ index 3ac0345..becf224 100644
  		unsigned int StripToChannel(unsigned int i) const;
  		double get_size() const;
  		int get_Nchannel() const;
-@@ -142,12 +142,12 @@ class MG_Detector: public Detector{
+@@ -144,12 +144,12 @@ class MG_Detector: public Detector{
  		static const vector<unsigned int> StripToChannel_a;
  		static vector<unsigned int> ChannelToStrip(unsigned int channel_nb);
  		//MultiGen general charac
@@ -42,7 +42,7 @@ index 3ac0345..becf224 100644
  		double get_size() const;
  		int get_Nchannel() const;
  		int get_Nstrip() const;
-@@ -198,12 +198,12 @@ class MGv2_Detector: public Detector{
+@@ -200,12 +200,12 @@ class MGv2_Detector: public Detector{
  		static const vector<unsigned int> StripToChannel_a;
  		static vector<unsigned int> ChannelToStrip(unsigned int channel_nb);
  		//MultiGen general charac
@@ -61,7 +61,7 @@ index 3ac0345..becf224 100644
  		double get_size() const;
  		int get_Nchannel() const;
  		int get_Nstrip() const;
-@@ -266,4 +266,4 @@ class CosmicBench{
+@@ -270,4 +270,4 @@ class CosmicBench{
  bool operator==(Detector const &det1, Detector const &det2);
  bool operator!=(Detector const &det1, Detector const &det2);
  
@@ -69,7 +69,7 @@ index 3ac0345..becf224 100644
 \ No newline at end of file
 +#endif
 diff --git a/include/tomography.h b/include/tomography.h
-index 57f46c6..642cfc2 100644
+index 9fe40b9..0b63520 100644
 --- a/include/tomography.h
 +++ b/include/tomography.h
 @@ -68,11 +68,11 @@ class Tomography{
@@ -89,7 +89,7 @@ index 57f46c6..642cfc2 100644
  		static const string DreamExt;
  		static const string FeminosExt;
  		//TODO : make this map const
-@@ -198,4 +198,4 @@ namespace Tomography{
+@@ -200,4 +200,4 @@ namespace Tomography{
  	//void process_elec_files(ptree config_tree);
  }
  */
