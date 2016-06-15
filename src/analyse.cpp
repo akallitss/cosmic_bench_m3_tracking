@@ -1882,6 +1882,14 @@ void Analyse::AbsorptionFluxMapNormTheoAngle(double bench_angle, int mult, TCanv
 			c3->Update();
 		}
 	}
+	for(unsigned short i=0;i<threads.size();i++){
+		threads[i]->stop();
+		delete threads[i];
+	}
+
+	//MT_display << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << eventReconstructed << "\n";
+	MT_display->stop();
+	
 	TH2D * copy = new TH2D(*fluxMapZ);
 	copy->SetNameTitle("fluxMapDiff","fluxMapDiff");
 	copy->SetStats(0);
