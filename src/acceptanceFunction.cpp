@@ -16,7 +16,6 @@
 using std::cout;
 using std::endl;
 using std::flush;
-
 using TMath::ATan;
 using TMath::Tan;
 using TMath::Erf;
@@ -263,11 +262,12 @@ TH2D acceptanceFunction::plot_XY(int nbin_x, int nbin_y,double z, double y_angle
 	return proba_XY;
 }
 
-FreeSkyFunction::FreeSkyFunction(double x_min_,double x_max_,double y_min_,double y_max_,vector<double> z_){
+FreeSkyFunction::FreeSkyFunction(double x_min_,double x_max_,double y_min_,double y_max_,vector<double> z_, double bench_angle_){
 	x_min = x_min_;
 	x_max = x_max_;
 	y_min = y_min_;
 	y_max = y_max_;
+	bench_angle = bench_angle_;
 	z = set<double>(z_.begin(),z_.end());
 }
 FreeSkyFunction::~FreeSkyFunction(){
@@ -321,8 +321,8 @@ TH2D FreeSkyFunction::plot_PhiTheta(int nbin_phi, int nbin_theta, unsigned int m
 
 }
 double FreeSkyFunction::operator()(double phi, double theta, double delta_z){
-	double eff_x = ((x_max - x_min) - delta_z*Tan(phi))/(x_max - x_min);
-	double eff_y = ((y_max - y_min) - delta_z*Tan(theta))/(y_max - y_min);
+	double eff_x = ((x_max - x_min) - delta_z*Abs(Tan(phi)))/(x_max - x_min);
+	double eff_y = ((y_max - y_min) - delta_z*Tan(Abs(theta - bench_angle)))/(y_max - y_min);
 	if(eff_x<0 || eff_y<0) return 0;
 	double flux_comp = Cos(PiOver2() - theta);
 	flux_comp *= flux_comp;

@@ -1808,7 +1808,7 @@ void Analyse::AbsorptionFluxMapNormTheoAngle(double bench_angle, int mult, TCanv
 	TH2D * fluxMapSigma = new TH2D("fluxMapSigma","fluxMapSigma",nbins,-phi_max,phi_max,nbins,bench_angle-phi_max,bench_angle+phi_max);
 	fluxMapSigma->SetStats(0);
 	if(c3 == 0) c3 = new TCanvas("fluxMap_Sigma","fluxMap_Sigma");
-	FreeSkyFunction acceptanceEstimation(-Tomography::get_instance()->get_XY_size()/2.,Tomography::get_instance()->get_XY_size()/2.,-Tomography::get_instance()->get_XY_size()/2.,Tomography::get_instance()->get_XY_size()/2.,z_det);
+	FreeSkyFunction acceptanceEstimation(-Tomography::get_instance()->get_XY_size()/2.,Tomography::get_instance()->get_XY_size()/2.,-Tomography::get_instance()->get_XY_size()/2.,Tomography::get_instance()->get_XY_size()/2.,z_det, bench_angle);
 	TH2D * background = new TH2D(acceptanceEstimation.plot_PhiTheta(nbins,-phi_max,phi_max,nbins,bench_angle-phi_max,bench_angle+phi_max,mult));
 	if(c4 == 0) c4 = new TCanvas("fluxMap_background","fluxMap_background");
 	c4->cd();

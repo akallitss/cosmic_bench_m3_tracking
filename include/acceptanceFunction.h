@@ -26,7 +26,7 @@ class acceptanceFunction{
 
 class FreeSkyFunction{
 	public:
-		FreeSkyFunction(double x_min_,double x_max_,double y_min_,double y_max_,vector<double> z_);
+		FreeSkyFunction(double x_min_,double x_max_,double y_min_,double y_max_,vector<double> z_, double bench_angle_);
 		~FreeSkyFunction();
 		void plot_3D();
 		TH2D plot_PhiTheta(int nbin_phi,double phi1,double phy22,int nbin_theta,double theta1,double theta2,unsigned int mult);
@@ -36,6 +36,7 @@ class FreeSkyFunction{
 		double x_max;
 		double y_min;
 		double y_max;
+		double bench_angle;
 		set<double> z;
 };
 
