@@ -1849,6 +1849,7 @@ void Analyse::AbsorptionFluxMapNormTheoAngle(double bench_angle, int mult, TCanv
 			if(ray_it->get_chiSquare_X()>-1 && ray_it->get_chiSquare_Y()>-1 && ((ray_it->get_chiSquare_X()+ray_it->get_chiSquare_Y())/ray_it->get_clus_n())<chisquare_threshold){
 				fluxMapZ->Fill(ATan(ray_it->get_slope_X()),bench_angle+ATan(ray_it->get_slope_Y()));
 			}
+			++ray_it;
 		}
 		delete current_rays;
 		jentry++;
@@ -1889,7 +1890,7 @@ void Analyse::AbsorptionFluxMapNormTheoAngle(double bench_angle, int mult, TCanv
 
 	//MT_display << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << eventReconstructed << "\n";
 	MT_display->stop();
-	
+
 	TH2D * copy = new TH2D(*fluxMapZ);
 	copy->SetNameTitle("fluxMapDiff","fluxMapDiff");
 	copy->SetStats(0);
