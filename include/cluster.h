@@ -32,6 +32,7 @@ class Cluster{
 		int find_det(const vector<Detector*> det_array) const;
 		bool is_in_det(const Detector * const det) const;
 		int get_n_in_tree() const;
+		string print() const;
 		virtual Cluster * Clone() const = 0;
 	protected:
 		Cluster();

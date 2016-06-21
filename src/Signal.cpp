@@ -527,6 +527,34 @@ void Signal::SignalOverNoiseDisplay(){
 	}
 }
 
+void Signal::DebugHoles(long event_nb){
+	TCanvas * cDisplay = new TCanvas("cDisplay","cDisplay",800,600);
+	cDisplay->Divide(1,get_det_N_tot());
+	long nentries = fChain->GetEntriesFast();
+	if(event_nb<0 || event_nb>=nentries){
+		cout << "invalid event number" << endl;
+		return;
+	}
+	LoadTree(event_nb);
+	GetEntry(event_nb);
+	
+	for(unsigned int i=0;i<detectors.size();i++){
+		Event * current_event = detectors[i]->build_event(get_ampl<double>(detectors[i]->get_type(),detectors[i]->get_n_in_tree()),Nevent,evttime);
+		TH1D * current_TOT_hist = current_event->get_TOT_hist();
+		current_event->MultiCluster();
+		vector<Cluster*> current_cluster = current_event->get_clusters();
+		delete current_event;
+		for(vector<Cluster*>::iterator clus_it=current_cluster.begin();clus_it!=current_cluster.end();++clus_it){
+			cout << (*clus_it)->print() << endl;
+			delete *clus_it;
+		}
+		cDisplay->cd(i+1);
+		current_TOT_hist->Draw();
+	}
+	cDisplay->Modified();
+	cDisplay->Update();
+}
+
 void Signal::EventDisplay(int evn_min, int evn_max, Tomography::signal_type signal_correction){
 	int column_nb = CeilNint((get_det_N_tot())/2.);
 	TCanvas * cDisplay = new TCanvas("cDisplay","cDisplay",800,600);

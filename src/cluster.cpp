@@ -5,9 +5,11 @@
 
 #include <TMath.h>
 #include <iostream>
+#include <sstream>
 
 using std::cout;
 using std::endl;
+using std::ostringstream;
 
 using TMath::Min;
 using TMath::Tan;
@@ -152,6 +154,18 @@ Cluster::Cluster(const Detector * const det, int number_, double pos_, double si
 	TOT = TOT_;
 	t = t_;
 	n_in_tree = det->get_n_in_tree();
+}
+string Cluster::print() const{
+	ostringstream oss;
+	oss << "{";
+	oss << " type : " << type;
+	oss << " n : " << n_in_tree;
+	oss << " number : " << number;
+	oss << " pos : " << pos;
+	oss << " size : " << size;
+	oss << " TOT : " << TOT;
+	oss << " }";
+	return oss.str();
 }
 Tomography::det_type Cluster::get_type() const{
 	return type;

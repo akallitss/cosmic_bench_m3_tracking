@@ -31,6 +31,7 @@ class Signal: public Tsignal_R, public CosmicBench{
 		map<Tomography::det_type,map<int,TProfile*> > SignalOverNoise();
 		void SignalOverNoiseDisplay();
 		void SignalDispersion();
+		void DebugHoles(long event_nb);
 	protected:
 		string analyseTree;
 		bool use_srf;

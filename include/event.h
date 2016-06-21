@@ -43,6 +43,7 @@ class Event{
 		Detector * get_det() const;
 		double get_StripPitch() const;
 		virtual TH1D * get_ampl_hist() const = 0;
+		virtual TH1D * get_TOT_hist() const = 0;
 		virtual Event * Clone() const = 0;
 	protected:
 		struct StripInfo {
@@ -81,6 +82,7 @@ class CM_Event: public Event{
 		void HoughCluster();
 		void set_strip_ampl(vector<vector<double> > strip_ampl_);
 		TH1D * get_ampl_hist() const;
+		TH1D * get_TOT_hist() const;
 		Event * Clone() const;
 };
 
@@ -95,6 +97,7 @@ class CM_Demux_Event: public Event{
 		void MultiCluster();
 		void HoughCluster();
 		TH1D * get_ampl_hist() const;
+		TH1D * get_TOT_hist() const;
 		Event * Clone() const;
 };
 
@@ -111,6 +114,7 @@ class MG_Event: public Event{
 		void MultiCluster();
 		void HoughCluster();
 		TH1D * get_ampl_hist() const;
+		TH1D * get_TOT_hist() const;
 		Event * Clone() const;
 	protected:
 		bool use_srf;
@@ -129,6 +133,7 @@ class MGv2_Event: public Event{
 		void MultiCluster();
 		void HoughCluster();
 		TH1D * get_ampl_hist() const;
+		TH1D * get_TOT_hist() const;
 		Event * Clone() const;
 	protected:
 		bool use_srf;

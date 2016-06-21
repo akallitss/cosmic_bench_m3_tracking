@@ -289,6 +289,11 @@ TH1D * CM_Event::get_ampl_hist() const{
 	name << "ampl_CM_det_" << detector->get_n_in_tree() << "_evn_" << evn;
 	return new TH1D(name.str().c_str(),name.str().c_str(),1024,-CM_Detector::size/2.,CM_Detector::size/2.);
 }
+TH1D * CM_Event::get_TOT_hist() const{
+	ostringstream name;
+	name << "TOT_CM_det_" << detector->get_n_in_tree() << "_evn_" << evn;
+	return new TH1D(name.str().c_str(),name.str().c_str(),1024,-CM_Detector::size/2.,CM_Detector::size/2.);
+}
 Event * CM_Event::Clone() const{
 	return new CM_Event(*this);
 }
@@ -353,6 +358,11 @@ Event * CM_Demux_Event::Clone() const{
 TH1D * CM_Demux_Event::get_ampl_hist() const{
 	ostringstream name;
 	name << "ampl_CM_det_" << detector->get_n_in_tree() << "_evn_" << evn;
+	return new TH1D(name.str().c_str(),name.str().c_str(),1024,-CM_Detector::size/2.,CM_Detector::size/2.);
+}
+TH1D * CM_Demux_Event::get_TOT_hist() const{
+	ostringstream name;
+	name << "TOT_CM_det_" << detector->get_n_in_tree() << "_evn_" << evn;
 	return new TH1D(name.str().c_str(),name.str().c_str(),1024,-CM_Detector::size/2.,CM_Detector::size/2.);
 }
 CM_Demux_Event::~CM_Demux_Event(){
@@ -898,6 +908,36 @@ TH1D * MG_Event::get_ampl_hist() const{
 			histo->Fill(strip*MG_Detector::StripPitch - MG_Detector::size/2.,*max_element(strip_ampl[channel].begin(),strip_ampl[channel].end()));
 			is_used[strip] = true;
 		}
+	}
+	return histo;
+}
+TH1D * MG_Event::get_TOT_hist() const{
+	ostringstream name;
+	name << "TOT_MG_det_" << detector->get_n_in_tree() << "_evn_" << evn;
+	TH1D * histo = new TH1D(name.str().c_str(),name.str().c_str(),1024,0,1024);
+	vector<pair<int,int> > cluster_edges;
+	
+	double sigma = Tomography::get_instance()->get_sigma();
+	int SampleMin = Tomography::get_instance()->get_SampleMin();
+	int SampleMax = Tomography::get_instance()->get_SampleMax();
+	int p = 61;
+	int n = 1024;
+	map<int,int> Channels_TOT;
+	for(int i=0;i<p;i++){
+		StripInfo current_strip;
+		current_strip.MaxAmpl = 0;
+		current_strip.MaxSample = 0;
+		current_strip.TOT = 0;
+		current_strip.Time = 0;
+		for(int j=SampleMin;j<SampleMax;j++){
+			if(strip_ampl[i][j]>(sigma*(detector->get_RMS(i)))){
+				current_strip.TOT++;
+			}
+		}
+		Channels_TOT.insert(pair<int,int>(i,current_strip.TOT));
+	}
+	for(int i=0;i<n;i++){
+		histo->Fill(i,Channels_TOT[MG_Detector::StripToChannel_a[i]]);
 	}
 	return histo;
 }
@@ -1464,6 +1504,36 @@ TH1D * MGv2_Event::get_ampl_hist() const{
 			histo->Fill(strip*MGv2_Detector::StripPitch - MGv2_Detector::size/2.,*max_element(strip_ampl[channel].begin(),strip_ampl[channel].end()));
 			is_used[strip] = true;
 		}
+	}
+	return histo;
+}
+TH1D * MGv2_Event::get_TOT_hist() const{
+	ostringstream name;
+	name << "TOT_MGv2_det_" << detector->get_n_in_tree() << "_evn_" << evn;
+	TH1D * histo = new TH1D(name.str().c_str(),name.str().c_str(),1037,0,1037);
+	vector<pair<int,int> > cluster_edges;
+	
+	double sigma = Tomography::get_instance()->get_sigma();
+	int SampleMin = Tomography::get_instance()->get_SampleMin();
+	int SampleMax = Tomography::get_instance()->get_SampleMax();
+	int p = 61;
+	int n = 1037;
+	map<int,int> Channels_TOT;
+	for(int i=0;i<p;i++){
+		StripInfo current_strip;
+		current_strip.MaxAmpl = 0;
+		current_strip.MaxSample = 0;
+		current_strip.TOT = 0;
+		current_strip.Time = 0;
+		for(int j=SampleMin;j<SampleMax;j++){
+			if(strip_ampl[i][j]>(sigma*(detector->get_RMS(i)))){
+				current_strip.TOT++;
+			}
+		}
+		Channels_TOT.insert(pair<int,int>(i,current_strip.TOT));
+	}
+	for(int i=0;i<n;i++){
+		histo->Fill(i,Channels_TOT[MG_Detector::StripToChannel_a[i]]);
 	}
 	return histo;
 }

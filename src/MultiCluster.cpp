@@ -29,6 +29,7 @@ int main(int argc, char ** argv){
 	//string EtA = "EtA";
 	string display = "display";
 	string dispersion = "dispersion";
+	string debug = "debug";
 	bool is_interactive = true;
 	if(argv[2] == multicluster){
 		blah->MultiCluster();
@@ -48,6 +49,14 @@ int main(int argc, char ** argv){
 		}
 		int event_nb = atoi(argv[3]);
 		blah->HoughTracking(event_nb);
+	}
+	else if(argv[2] == debug){
+		if(argc<4){
+			cout << "you must indicate an event number" << endl;
+			return 1;
+		}
+		int event_nb = atoi(argv[3]);
+		blah->DebugHoles(event_nb);
 	}
 	else if(argv[2] == display){
 		if(argc<6){
