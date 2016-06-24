@@ -47,6 +47,7 @@ int main(int argc, char ** argv){
 	string acceptance = "acceptance";
 	string watto = "watto";
 	string scanpyramids = "scanpyramids";
+	string rays = "rays";
 	if(argv[2] == efficacity){
 		blah->Efficacity();
 	}
@@ -57,6 +58,15 @@ int main(int argc, char ** argv){
 	}
 	else if(argv[2] == eff2D){
 		blah->Residus_ref_2D();
+	}
+	else if(argv[2] == rays){
+		if(argc<4){
+			cout << "you must indicate the ray file name" << endl;
+			Tomography::Quit();
+			delete blah;
+			return 1;
+		}
+		blah->ExportAbsorptionRays(argv[3]);
 	}
 	else if(argv[2] == fluxMap){
 		if(argc<4){
