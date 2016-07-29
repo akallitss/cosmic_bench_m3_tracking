@@ -75,7 +75,6 @@ liveDisplay::liveDisplay(string config_file){
 		det_n_by_asic[child.second.get<int>("asic_n")] = child.second.get<int>("mg_n");
 	}
 	if(CM_N!=0) cout << "warning, CosMultis are not fully supported !" << endl;
-	use_srf = config_tree.get<bool>("use_SRF");
 	electronic_type = Tomography::str_to_elec(config_tree.get<string>("electronic_type"));
 	data_file_basename = config_tree.get<string>("data_file_basename");
 	ifstream pedFile((config_tree.get<string>("Ped")).c_str());

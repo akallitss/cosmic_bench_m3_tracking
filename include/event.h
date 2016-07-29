@@ -106,9 +106,9 @@ class MG_Event: public Event{
 		MG_Event();
 		MG_Event(const MG_Event& other);
 		MG_Event& operator=(const MG_Event& other);
-		MG_Event(Tanalyse_R * treeObject,const MG_Detector * const det, long entry, bool use_srf_ = false);
-		MG_Event(const Tanalyse_R * const treeObject,const MG_Detector * const det, bool use_srf_ = false);
-		MG_Event(const MG_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, double evttime_, bool use_srf_ = false);
+		MG_Event(Tanalyse_R * treeObject,const MG_Detector * const det, long entry);
+		MG_Event(const Tanalyse_R * const treeObject,const MG_Detector * const det);
+		MG_Event(const MG_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, double evttime_);
 		void set_strip_ampl(vector<vector<double> > strip_ampl_);
 		~MG_Event();
 		void MultiCluster();
@@ -116,8 +116,6 @@ class MG_Event: public Event{
 		TH1D * get_ampl_hist() const;
 		TH1D * get_TOT_hist() const;
 		Event * Clone() const;
-	protected:
-		bool use_srf;
 };
 
 class MGv2_Event: public Event{
@@ -125,9 +123,9 @@ class MGv2_Event: public Event{
 		MGv2_Event();
 		MGv2_Event(const MGv2_Event& other);
 		MGv2_Event& operator=(const MGv2_Event& other);
-		MGv2_Event(Tanalyse_R * treeObject,const MGv2_Detector * const det, long entry, bool use_srf_ = false);
-		MGv2_Event(const Tanalyse_R * const treeObject,const MGv2_Detector * const det, bool use_srf_ = false);
-		MGv2_Event(const MGv2_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, double evttime_, bool use_srf_ = false);
+		MGv2_Event(Tanalyse_R * treeObject,const MGv2_Detector * const det, long entry);
+		MGv2_Event(const Tanalyse_R * const treeObject,const MGv2_Detector * const det);
+		MGv2_Event(const MGv2_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, double evttime_);
 		void set_strip_ampl(vector<vector<double> > strip_ampl_);
 		~MGv2_Event();
 		void MultiCluster();
@@ -135,8 +133,6 @@ class MGv2_Event: public Event{
 		TH1D * get_ampl_hist() const;
 		TH1D * get_TOT_hist() const;
 		Event * Clone() const;
-	protected:
-		bool use_srf;
 };
 
 //Group events objects of a same event

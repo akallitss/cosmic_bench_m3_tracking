@@ -372,19 +372,16 @@ CM_Demux_Event::~CM_Demux_Event(){
 MG_Event::MG_Event(): Event(){
 	type = Tomography::MG;
 	detector = new MG_Detector();
-	use_srf = false;
 }
 MG_Event::MG_Event(const MG_Event& other): Event(other){
 	type = Tomography::MG;
-	use_srf = false;
 }
 MG_Event& MG_Event::operator=(const MG_Event& other){
 	Event::operator=(other);
 	type = Tomography::MG;
-	use_srf = other.use_srf;
 	return *this;
 }
-MG_Event::MG_Event(Tanalyse_R * treeObject, const MG_Detector * const det,long entry, bool use_srf_): Event(treeObject,det,entry){
+MG_Event::MG_Event(Tanalyse_R * treeObject, const MG_Detector * const det,long entry): Event(treeObject,det,entry){
 	if(entry>-1){
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);
@@ -396,11 +393,10 @@ MG_Event::MG_Event(Tanalyse_R * treeObject, const MG_Detector * const det,long e
 			clusters.pop_back();
 		}
 	}
-	use_srf = use_srf_;
 	has_spark = (treeObject->Spark[Tomography::MG][detector->get_n_in_tree()]==1) ? true : false;
 	type = Tomography::MG;
 }
-MG_Event::MG_Event(const Tanalyse_R * const treeObject, const MG_Detector * const det, bool use_srf_): Event(treeObject,det){
+MG_Event::MG_Event(const Tanalyse_R * const treeObject, const MG_Detector * const det): Event(treeObject,det){
 	for(int i=0;i<treeObject->NClus.find(Tomography::MG)->second[detector->get_n_in_tree()];i++){
 		clusters.push_back(new MG_Cluster(treeObject,i,det));
 		if(!(det->is_suitable(clusters.back()))){
@@ -408,17 +404,15 @@ MG_Event::MG_Event(const Tanalyse_R * const treeObject, const MG_Detector * cons
 			clusters.pop_back();
 		}
 	}
-	use_srf = use_srf_;
 	has_spark = (treeObject->Spark.find(Tomography::MG)->second[detector->get_n_in_tree()]==1) ? true : false;
 	type = Tomography::MG;
 }
-MG_Event::MG_Event(const MG_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, double evttime_, bool use_srf_): Event(detector_,evn_, evttime_){
+MG_Event::MG_Event(const MG_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, double evttime_): Event(detector_,evn_, evttime_){
 	if(strip_ampl_.size()!=MG_Detector::Nchannel){
 		cout << "problem in size" << endl;
 		return;
 	}
 	strip_ampl = strip_ampl_;
-	use_srf = use_srf_;
 	type = Tomography::MG;
 }
 void MG_Event::MultiCluster(){
@@ -812,9 +806,6 @@ void MG_Event::HoughCluster(){
 	//third loop : store the clusters and their caracteristics
 	//NClus = cluster_list.size();
 	for(unsigned int i=0;i<cluster_list.size();i++){
-		TF1 * SRFfit = new TF1("SRFfit",dynamic_cast<MG_Detector*>(detector),&MG_Detector::SRF_fit,0,1024,2,"MG_Detector","SRF_fit");
-		TGraphErrors * SRFgraph = new TGraphErrors();
-		int graph_point_n = 0;
 		double ClusSize = 1 + cluster_list[i].second - cluster_list[i].first;
 		double ClusPos = 0;
 		double ClusAmpl = 0;
@@ -836,48 +827,8 @@ void MG_Event::HoughCluster(){
 				//ClusTOT[i] = current_strip.TOT;
 			}
 			if(current_strip.TOT>ClusTOT) ClusTOT = current_strip.TOT;
-			SRFgraph->SetPoint(graph_point_n,j,effective_ampl);
-			SRFgraph->SetPointError(graph_point_n,0.5*MG_Detector::StripPitch,detector->get_RMS(MG_Detector::StripToChannel_a[j]));
-			graph_point_n++;
 		}
 
-		if(graph_point_n>2 && use_srf){
-			for(int iPoint=0;iPoint<graph_point_n;iPoint++){
-				double x_current = -1;
-				double y_current = -1;
-				SRFgraph->GetPoint(iPoint,x_current,y_current);
-				y_current /= ClusMaxStripAmpl;
-				//y_current = strip_ampl[MG_Detector::StripToChannel_a[static_cast<int>(x_current)]][static_cast<int>(ClusMaxSample)]/ClusMaxStripAmpl;
-				SRFgraph->SetPoint(iPoint,x_current,y_current);
-				SRFgraph->SetPointError(iPoint,MG_Detector::StripPitch,(SRFgraph->GetEY())[iPoint]/ClusMaxStripAmpl);
-			}
-			SRFfit->SetParameter(0,ClusPos);
-			SRFfit->SetParLimits(0,ClusPos-0.5*ClusSize,ClusPos+0.5*ClusSize);
-			SRFfit->SetParameter(1,0.25*ClusSize);
-			SRFfit->SetParLimits(1,0,ClusSize);
-			SRFgraph->Fit(SRFfit,"QN");
-			/*
-			if(detector.get_n_in_tree() == 0 && i == 0){
-				TCanvas * cSRF = new TCanvas();
-				TLine * posLine = new TLine(ClusPos[i],0,ClusPos[i],1);
-				posLine->SetLineStyle(2);
-				posLine->SetLineColor(4);
-				cSRF->cd();
-				SRFgraph->Draw("AP");
-				SRFfit->Draw("same");
-				posLine->Draw();
-				cSRF->Modified();
-				cSRF->Update();
-				cout << graph_point_n << " " << SRFfit->GetChisquare() << endl;
-				gROOT->GetApplication()->Run(true);
-				delete posLine;
-				delete cSRF;
-			}
-			*/
-			ClusPos = SRFfit->GetParameter(0);
-			ClusSize = SRFfit->GetParameter(1);
-		}
-		delete SRFfit; delete SRFgraph;
 		clusters.push_back(new MG_Cluster(detector,i,ClusPos,ClusSize,ClusAmpl,ClusMaxSample,ClusMaxStripAmpl,ClusTOT,ClusT,ClusMaxStrip));
 	}
 }
@@ -951,19 +902,16 @@ MG_Event::~MG_Event(){
 MGv2_Event::MGv2_Event(): Event(){
 	type = Tomography::MGv2;
 	detector = new MGv2_Detector();
-	use_srf = false;
 }
 MGv2_Event::MGv2_Event(const MGv2_Event& other): Event(other){
 	type = Tomography::MGv2;
-	use_srf = false;
 }
 MGv2_Event& MGv2_Event::operator=(const MGv2_Event& other){
 	Event::operator=(other);
 	type = Tomography::MGv2;
-	use_srf = other.use_srf;
 	return *this;
 }
-MGv2_Event::MGv2_Event(Tanalyse_R * treeObject, const MGv2_Detector * const det,long entry, bool use_srf_): Event(treeObject,det,entry){
+MGv2_Event::MGv2_Event(Tanalyse_R * treeObject, const MGv2_Detector * const det,long entry): Event(treeObject,det,entry){
 	if(entry>-1){
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);
@@ -975,11 +923,10 @@ MGv2_Event::MGv2_Event(Tanalyse_R * treeObject, const MGv2_Detector * const det,
 			clusters.pop_back();
 		}
 	}
-	use_srf = use_srf_;
 	has_spark = (treeObject->Spark[Tomography::MGv2][detector->get_n_in_tree()]==1) ? true : false;
 	type = Tomography::MGv2;
 }
-MGv2_Event::MGv2_Event(const Tanalyse_R * const treeObject, const MGv2_Detector * const det, bool use_srf_): Event(treeObject,det){
+MGv2_Event::MGv2_Event(const Tanalyse_R * const treeObject, const MGv2_Detector * const det): Event(treeObject,det){
 	for(int i=0;i<treeObject->NClus.find(Tomography::MGv2)->second[detector->get_n_in_tree()];i++){
 		clusters.push_back(new MGv2_Cluster(treeObject,i,det));
 		if(!(det->is_suitable(clusters.back()))){
@@ -987,17 +934,15 @@ MGv2_Event::MGv2_Event(const Tanalyse_R * const treeObject, const MGv2_Detector 
 			clusters.pop_back();
 		}
 	}
-	use_srf = use_srf_;
 	has_spark = (treeObject->Spark.find(Tomography::MGv2)->second[detector->get_n_in_tree()]==1) ? true : false;
 	type = Tomography::MGv2;
 }
-MGv2_Event::MGv2_Event(const MGv2_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, double evttime_, bool use_srf_): Event(detector_,evn_,evttime_){
+MGv2_Event::MGv2_Event(const MGv2_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, double evttime_): Event(detector_,evn_,evttime_){
 	if(strip_ampl_.size()!=MGv2_Detector::Nchannel){
 		cout << "problem in size" << endl;
 		return;
 	}
 	strip_ampl = strip_ampl_;
-	use_srf = use_srf_;
 	type = Tomography::MGv2;
 }
 void MGv2_Event::MultiCluster(){

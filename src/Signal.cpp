@@ -85,7 +85,6 @@ Signal::Signal(string configFilePath){
 		cout << "Waring, signal file is missing !" << endl;
 	}
 	analyseTree = config_tree.get<string>("Tree");
-	use_srf = config_tree.get<bool>("use_SRF");
 }
 
 Signal::Signal(ptree config_tree){
@@ -113,7 +112,6 @@ Signal::Signal(ptree config_tree){
 		cout << "Waring, signal file is missing !" << endl;
 	}
 	analyseTree = config_tree.get<string>("Tree");
-	use_srf = config_tree.get<bool>("use_SRF");
 }
 
 Signal::~Signal(){
@@ -556,9 +554,9 @@ void Signal::DebugHoles(long event_nb){
 }
 
 void Signal::EventDisplay(int evn_min, int evn_max, Tomography::signal_type signal_correction){
-	int column_nb = CeilNint((get_det_N_tot())/2.);
+	int column_nb = CeilNint(2*Sqrt((get_det_N_tot())/3.));
 	TCanvas * cDisplay = new TCanvas("cDisplay","cDisplay",800,600);
-	cDisplay->Divide(column_nb,2);
+	cDisplay->Divide(column_nb,1+(get_det_N_tot()/column_nb));
 	map<pair<Tomography::det_type,int>,vector<TGraph*> > signal_shape;
 	map<pair<Tomography::det_type,int>,vector<TF1*> > rising_fit;
 	for(vector<Detector*>::const_iterator det_it = detectors.begin();det_it!=detectors.end();++det_it){

@@ -22,9 +22,6 @@
 	"signal_file" : "root_files/test_signal.root", // signal tree containing ADC values for each strip and each sample
 	"RMSPed" : "root_files/test_RMSPed.dat", // RMS of the noise for each strip
 	"Ped" : "root_files/test_Ped.dat", // mean value of the noise for each strip
-	"use_SRF" : false, // use Strip Response Function for clustering (kind of deprecated : leave "false" if you don't know what to do)
-	"total_CM_N" : 0, // total number of CosMultis used for the run (used to crosscheck)
-	"total_MG_N" : 8, // total number of Multigens used for the run (used to crosscheck)
 	"FEU": //only needed for DREAM electronic, inform of the conversion between id (present in DREAM packet) and n (present in the fdf file name)
 	[
 		{
@@ -56,13 +53,6 @@
 				"ClusMaxSampleCut_Min": 7, // minimum cut for ClusMaxSample
 				"ClusMaxSampleCut_Max": 26, // maximum cut for ClusMaxSample
 				"ClusSizeCut_Min": 3, // minimum cut for Clus Size
-				"SRF": // Strip Response function caracteristics (kind of deprecated) : (offset + ((1-ratio)*gaussian(x,gauss)/(ratio*lorentzian(x,lorentz)))/(1+offset)
-				{
-					"offset": 0.116671,
-					"gauss": 0.704171,
-					"lorentz": 3.30772,
-					"ratio": 0.996261
-				},
 				"clustering_holes": 0, // maximal number of strip without signal allowed in a cluster
 				"asic_n": 4 // number of the asic the detector was connected to
 			},
@@ -82,13 +72,6 @@
 				"ClusMaxSampleCut_Min": 7,
 				"ClusMaxSampleCut_Max": 26,
 				"ClusSizeCut_Min": 2,
-				"SRF":
-				{
-					"offset": 0.0894346,
-					"gauss": 0.273847,
-					"lorentz": 2.51475,
-					"ratio": 0.982658
-				},
 				"clustering_holes": 0,
 				"asic_n": 5
 			},
@@ -108,13 +91,6 @@
 				"ClusMaxSampleCut_Min": 7,
 				"ClusMaxSampleCut_Max": 26,
 				"ClusSizeCut_Min": 3,
-				"SRF":
-				{
-					"offset": 0.162069,
-					"gauss": 0.762977,
-					"lorentz": 4.0527,
-					"ratio": 0.99394
-				},
 				"clustering_holes": 0,
 				"asic_n": 3
 			},
@@ -134,13 +110,6 @@
 				"ClusMaxSampleCut_Min": 7,
 				"ClusMaxSampleCut_Max": 26,
 				"ClusSizeCut_Min": 2,
-				"SRF":
-				{
-					"offset": 0.0705705,
-					"gauss": 0.769743,
-					"lorentz": 2.09386,
-					"ratio": 0.877587
-				},
 				"clustering_holes": 0,
 				"asic_n": 0
 			},
@@ -160,13 +129,6 @@
 				"ClusMaxSampleCut_Min": 7,
 				"ClusMaxSampleCut_Max": 26,
 				"ClusSizeCut_Min": 3,
-				"SRF":
-				{
-					"offset": 0.259024,
-					"gauss": 1.76264,
-					"lorentz": 3.72808,
-					"ratio": 0.942179
-				},
 				"clustering_holes": 0,
 				"asic_n": 1
 			},
@@ -186,13 +148,6 @@
 				"ClusMaxSampleCut_Min": 7,
 				"ClusMaxSampleCut_Max": 26,
 				"ClusSizeCut_Min": 2,
-				"SRF":
-				{
-					"offset": 0.115348,
-					"gauss": 0.55603,
-					"lorentz": 2.24473,
-					"ratio": 0.943647
-				},
 				"clustering_holes": 0,
 				"asic_n": 2
 			},
@@ -212,13 +167,6 @@
 				"ClusMaxSampleCut_Min": 7,
 				"ClusMaxSampleCut_Max": 26,
 				"ClusSizeCut_Min": 3,
-				"SRF":
-				{
-					"offset": 0.124388,
-					"gauss": 0.049117,
-					"lorentz": 4.12641,
-					"ratio": 0.999976
-				},
 				"clustering_holes": 0,
 				"asic_n": 6
 			},
@@ -238,13 +186,6 @@
 				"ClusMaxSampleCut_Min": 7,
 				"ClusMaxSampleCut_Max": 26,
 				"ClusSizeCut_Min": 2,
-				"SRF":
-				{
-					"offset": 0.132331,
-					"gauss": 1.07635,
-					"lorentz": 2.27167,
-					"ratio": 0.742001
-				},
 				"clustering_holes": 0,
 				"asic_n": 7
 			}
