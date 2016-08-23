@@ -26,6 +26,7 @@ SoB : use this option to display signal and noise amplitude
 dispersion : use this option to display some correlation between the detectors signal  
 display : use this option to display the signal shape for each detector for a signal type (raw,ped or corr) from event 0 to n (n being the additional option)  
 hough : use this option to study hough tracking style for event n (n being the additional option)
+conv : use this option to study convolution clustering
 
 * tracking
 

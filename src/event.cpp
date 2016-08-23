@@ -274,6 +274,9 @@ CM_Event::CM_Event(const CM_Detector * const detector_, vector<vector<double> > 
 void CM_Event::MultiCluster(){
 	// TODO : implement multicluster for CM
 }
+void CM_Event::ConvCluster(){
+	// TODO : implement convcluster for CM
+}
 void CM_Event::HoughCluster(){
 	// TODO : implement houghcluster for CM
 }
@@ -341,6 +344,9 @@ CM_Demux_Event::CM_Demux_Event(const CM_Event& rawEvent): Event(rawEvent.detecto
 }
 void CM_Demux_Event::MultiCluster(){
 	// TODO : implement multicluster for CM
+}
+void CM_Demux_Event::ConvCluster(){
+	// TODO : implement convcluster for CM
 }
 void CM_Demux_Event::HoughCluster(){
 	// TODO : implement houghcluster for CM
@@ -705,6 +711,82 @@ void MG_Event::MultiCluster(){
 		clusters.push_back(new MG_Cluster(detector,i,ClusPos,ClusSize,ClusAmpl,ClusMaxSample,ClusMaxStripAmpl,ClusTOT,ClusT,ClusMaxStrip));
 		//clusters.push_back(MG_Cluster(&detector,i,pos_TPC,ClusSize,ClusAmpl,ClusMaxSample,ClusMaxStripAmpl,ClusTOT,ClusT,ClusMaxStrip));
 	}
+}
+void MG_Event::ConvCluster(){
+	const double sigma_gaus = 2;
+	TH1D * convHist = new TH1D("convHist","convHist",MG_Detector::Nstrip,0,MG_Detector::Nstrip);
+	double sigma = Tomography::get_instance()->get_sigma();
+	int SampleMin = Tomography::get_instance()->get_SampleMin();
+	int SampleMax = Tomography::get_instance()->get_SampleMax();
+	int TOTCut = Tomography::get_instance()->get_TOTCut();
+	map<int,StripInfo> allChannels;
+	for(int i=0;i<MG_Detector::Nchannel;i++){
+		StripInfo current_strip;
+		current_strip.MaxAmpl = 0;
+		current_strip.MaxSample = 0;
+		current_strip.TOT = 0;
+		current_strip.Time = 0;
+		for(int j=SampleMin;j<SampleMax;j++){
+			if(strip_ampl[i][j]>current_strip.MaxAmpl){
+				current_strip.MaxAmpl = strip_ampl[i][j];
+				current_strip.MaxSample = j;
+				/*
+				if(j>0 && j<31){
+					double a = 0.5*strip_ampl[i][j+1] - 2*strip_ampl[i][j] + strip_ampl[i][j-1];
+					double b = strip_ampl[i][j] - strip_ampl[i][j-1] - a*((2*j)-1);
+					current_strip.Time = -0.5*b/a;
+				}
+				else current_strip.Time = 0;
+				*/
+			}
+			if(strip_ampl[i][j]>sigma*(detector->get_RMS(i))) current_strip.TOT++;
+		}
+
+		if(current_strip.TOT>2){
+			int k=current_strip.MaxSample;
+			double mean_xx = 0;
+			double mean_xy = 0;
+			double mean_x = 0;
+			double mean_y = 0;
+			while(k>=SampleMin && strip_ampl[i][k]>(sigma*(detector->get_RMS(i)))){
+				mean_xx += k*k;
+				mean_x += k;
+				mean_xy += k*strip_ampl[i][k];
+				mean_y += strip_ampl[i][k];
+				k--;
+			}
+			int point_n = current_strip.MaxSample - k;
+			mean_xx /= point_n;
+			mean_xy /= point_n;
+			mean_y /= point_n;
+			mean_x /= point_n;
+			//double slope = (mean_xy - mean_x*mean_y)/(mean_xx - mean_x*mean_x);
+			//double intercept = mean_y - slope*mean_x;
+			current_strip.Time = mean_x - mean_y*(mean_xx - mean_x*mean_x)/(mean_xy - mean_x*mean_y);
+		}
+		else current_strip.Time = 0;
+
+		allChannels.insert(pair<int,StripInfo>(i,current_strip));
+	}
+
+
+	for(int i=0;i<MG_Detector::Nstrip;i++){
+		for(int j=0;j<MG_Detector::Nstrip;j++){
+			convHist->Fill(i,(allChannels[MG_Detector::StripToChannel_a[j]].MaxAmpl)*TMath::Gaus(j,i,sigma_gaus));
+		}
+	}
+	double current_derivative = 0;
+	double old_derivative = 0;
+	int clus_n = 0;
+	for(int i=1;i<MG_Detector::Nstrip;i++){
+		current_derivative = convHist->GetBinContent(i+1) - convHist->GetBinContent(i);
+		if(old_derivative>0 && current_derivative<0){
+			clusters.push_back(new MG_Cluster(detector,clus_n,i-1,sigma_gaus,convHist->GetBinContent(i),allChannels[MG_Detector::StripToChannel_a[i-1]].MaxSample,allChannels[MG_Detector::StripToChannel_a[i-1]].MaxAmpl,allChannels[MG_Detector::StripToChannel_a[i-1]].TOT,allChannels[MG_Detector::StripToChannel_a[i-1]].Time,i-1));
+			clus_n++;
+		}
+		old_derivative = current_derivative;
+	}
+
 }
 void MG_Event::HoughCluster(){
 	for(vector<Cluster*>::iterator clus_it = clusters.begin();clus_it != clusters.end();++clus_it){
@@ -1254,6 +1336,82 @@ void MGv2_Event::MultiCluster(){
 		clusters.push_back(new MGv2_Cluster(detector,i,ClusPos,ClusSize,ClusAmpl,ClusMaxSample,ClusMaxStripAmpl,ClusTOT,ClusT,ClusMaxStrip));
 		//clusters.push_back(MGv2_Cluster(&detector,i,pos_TPC,ClusSize,ClusAmpl,ClusMaxSample,ClusMaxStripAmpl,ClusTOT,ClusT,ClusMaxStrip));
 	}
+}
+void MGv2_Event::ConvCluster(){
+	const double sigma_gaus = 2;
+	TH1D * convHist = new TH1D("convHist","convHist",MGv2_Detector::Nstrip,0,MGv2_Detector::Nstrip);
+	double sigma = Tomography::get_instance()->get_sigma();
+	int SampleMin = Tomography::get_instance()->get_SampleMin();
+	int SampleMax = Tomography::get_instance()->get_SampleMax();
+	int TOTCut = Tomography::get_instance()->get_TOTCut();
+	map<int,StripInfo> allChannels;
+	for(int i=0;i<MGv2_Detector::Nchannel;i++){
+		StripInfo current_strip;
+		current_strip.MaxAmpl = 0;
+		current_strip.MaxSample = 0;
+		current_strip.TOT = 0;
+		current_strip.Time = 0;
+		for(int j=SampleMin;j<SampleMax;j++){
+			if(strip_ampl[i][j]>current_strip.MaxAmpl){
+				current_strip.MaxAmpl = strip_ampl[i][j];
+				current_strip.MaxSample = j;
+				/*
+				if(j>0 && j<31){
+					double a = 0.5*strip_ampl[i][j+1] - 2*strip_ampl[i][j] + strip_ampl[i][j-1];
+					double b = strip_ampl[i][j] - strip_ampl[i][j-1] - a*((2*j)-1);
+					current_strip.Time = -0.5*b/a;
+				}
+				else current_strip.Time = 0;
+				*/
+			}
+			if(strip_ampl[i][j]>sigma*(detector->get_RMS(i))) current_strip.TOT++;
+		}
+
+		if(current_strip.TOT>2){
+			int k=current_strip.MaxSample;
+			double mean_xx = 0;
+			double mean_xy = 0;
+			double mean_x = 0;
+			double mean_y = 0;
+			while(k>=SampleMin && strip_ampl[i][k]>(sigma*(detector->get_RMS(i)))){
+				mean_xx += k*k;
+				mean_x += k;
+				mean_xy += k*strip_ampl[i][k];
+				mean_y += strip_ampl[i][k];
+				k--;
+			}
+			int point_n = current_strip.MaxSample - k;
+			mean_xx /= point_n;
+			mean_xy /= point_n;
+			mean_y /= point_n;
+			mean_x /= point_n;
+			//double slope = (mean_xy - mean_x*mean_y)/(mean_xx - mean_x*mean_x);
+			//double intercept = mean_y - slope*mean_x;
+			current_strip.Time = mean_x - mean_y*(mean_xx - mean_x*mean_x)/(mean_xy - mean_x*mean_y);
+		}
+		else current_strip.Time = 0;
+
+		allChannels.insert(pair<int,StripInfo>(i,current_strip));
+	}
+
+
+	for(int i=0;i<MGv2_Detector::Nstrip;i++){
+		for(int j=0;j<MGv2_Detector::Nstrip;j++){
+			convHist->Fill(i,(allChannels[MGv2_Detector::StripToChannel_a[j]].MaxAmpl)*TMath::Gaus(j,i,sigma_gaus));
+		}
+	}
+	double current_derivative = 0;
+	double old_derivative = 0;
+	int clus_n = 0;
+	for(int i=1;i<MGv2_Detector::Nstrip;i++){
+		current_derivative = convHist->GetBinContent(i+1) - convHist->GetBinContent(i);
+		if(old_derivative>0 && current_derivative<0){
+			clusters.push_back(new MGv2_Cluster(detector,clus_n,i-1,sigma_gaus,convHist->GetBinContent(i),allChannels[MGv2_Detector::StripToChannel_a[i-1]].MaxSample,allChannels[MGv2_Detector::StripToChannel_a[i-1]].MaxAmpl,allChannels[MGv2_Detector::StripToChannel_a[i-1]].TOT,allChannels[MGv2_Detector::StripToChannel_a[i-1]].Time,i-1));
+			clus_n++;
+		}
+		old_derivative = current_derivative;
+	}
+
 }
 void MGv2_Event::HoughCluster(){
 	for(vector<Cluster*>::iterator clus_it = clusters.begin();clus_it != clusters.end();++clus_it){

@@ -36,6 +36,7 @@ class Event{
 		bool get_is_X() const;
 		virtual ~Event();
 		virtual void MultiCluster() = 0;
+		virtual void ConvCluster() = 0;
 		virtual void HoughCluster() = 0;
 		void do_cuts();
 		virtual void set_strip_ampl(vector<vector<double> > strip_ampl_) = 0;
@@ -79,6 +80,7 @@ class CM_Event: public Event{
 		CM_Event(const CM_Detector * const detector_, vector<vector<double> > strip_ampl_, int evn_, double evttime_);
 		~CM_Event();
 		void MultiCluster();
+		void ConvCluster();
 		void HoughCluster();
 		void set_strip_ampl(vector<vector<double> > strip_ampl_);
 		TH1D * get_ampl_hist() const;
@@ -95,6 +97,7 @@ class CM_Demux_Event: public Event{
 		void set_strip_ampl(vector<vector<double> > strip_ampl_);
 		~CM_Demux_Event();
 		void MultiCluster();
+		void ConvCluster();
 		void HoughCluster();
 		TH1D * get_ampl_hist() const;
 		TH1D * get_TOT_hist() const;
@@ -112,6 +115,7 @@ class MG_Event: public Event{
 		void set_strip_ampl(vector<vector<double> > strip_ampl_);
 		~MG_Event();
 		void MultiCluster();
+		void ConvCluster();
 		void HoughCluster();
 		TH1D * get_ampl_hist() const;
 		TH1D * get_TOT_hist() const;
@@ -129,6 +133,7 @@ class MGv2_Event: public Event{
 		void set_strip_ampl(vector<vector<double> > strip_ampl_);
 		~MGv2_Event();
 		void MultiCluster();
+		void ConvCluster();
 		void HoughCluster();
 		TH1D * get_ampl_hist() const;
 		TH1D * get_TOT_hist() const;

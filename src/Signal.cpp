@@ -873,3 +873,122 @@ void Signal::SignalDispersion(){
 	cAnalyse->Update();
 	cout << endl;
 }
+
+void Signal::ConvClusterTest(){
+
+	TH1D * pos_diff = new TH1D("pos_diff","pos_diff",500,-250,250);
+	TH1D * max_ampl_diff = new TH1D("max_ampl_diff","max_ampl_diff",500,0,1000);
+	TH1D * ampl_track_diff = new TH1D("ampl_track_diff","ampl_track_diff",500,0,1000);
+	TH1D * pos_track_diff = new TH1D("pos_track_diff","pos_track_diff",500,-250,250);
+
+	TCanvas * cTest = new TCanvas();
+	cTest->Divide(2,2);
+
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
+	fChain->SetBranchStatus("*",0);
+	fChain->SetBranchStatus("Nevent",1);
+	fChain->SetBranchStatus("evttime",1);
+	fChain->SetBranchStatus("StripAmpl_*_corr",1);
+	for(long i=0;i<nentries && Tomography::get_instance()->get_can_continue();i++){
+		LoadTree(i);
+		GetEntry(i);
+		vector<Event*> events_mult;
+		vector<Event*> events_conv;
+		map<Tomography::det_type,map<int,vector<Cluster*> > > clusters_mult;
+		map<Tomography::det_type,map<int,vector<Cluster*> > > clusters_conv;
+		map<Tomography::det_type,map<int,double> > max_ampl_conv;
+
+		for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
+			events_mult.push_back((*it)->build_event(get_ampl<double>((*it)->get_type(),(*it)->get_n_in_tree()),Nevent,evttime));
+			(events_mult.back())->MultiCluster();
+			clusters_mult[(*it)->get_type()][(*it)->get_n_in_tree()] = (events_mult.back())->get_clusters();
+			events_conv.push_back((*it)->build_event(get_ampl<double>((*it)->get_type(),(*it)->get_n_in_tree()),Nevent,evttime));
+			(events_conv.back())->ConvCluster();
+			clusters_conv[(*it)->get_type()][(*it)->get_n_in_tree()] = (events_conv.back())->get_clusters();
+			double first_ampl = 0;
+			double second_ampl = 0;
+			for(vector<Cluster*>::iterator clus_it = clusters_conv[(*it)->get_type()][(*it)->get_n_in_tree()].begin();clus_it!=clusters_conv[(*it)->get_type()][(*it)->get_n_in_tree()].end();++clus_it){
+				if((*clus_it)->get_ampl() > first_ampl) first_ampl = (*clus_it)->get_ampl();
+				else if((*clus_it)->get_ampl() > second_ampl) second_ampl = (*clus_it)->get_ampl();
+			}
+			max_ampl_diff->Fill(first_ampl - second_ampl);
+			max_ampl_conv[(*it)->get_type()][(*it)->get_n_in_tree()] = first_ampl;
+			vector<Cluster*> clusters_conv_tmp = clusters_conv[(*it)->get_type()][(*it)->get_n_in_tree()];
+			for(vector<Cluster*>::iterator mult_it = clusters_mult[(*it)->get_type()][(*it)->get_n_in_tree()].begin();mult_it!=clusters_mult[(*it)->get_type()][(*it)->get_n_in_tree()].end();++mult_it){
+				vector<Cluster*>::iterator best_conv_cluster = clusters_conv_tmp.end();
+				double shorter_dist = 600;
+				for(vector<Cluster*>::iterator clus_it = clusters_conv_tmp.begin();clus_it!=clusters_conv_tmp.end();++clus_it){
+					double current_dist = (*clus_it)->get_pos_mm() - (*mult_it)->get_pos_mm();
+					if(Abs(current_dist) < Abs(shorter_dist)){
+						shorter_dist = current_dist;
+						best_conv_cluster = clus_it;
+					}
+				}
+				if(best_conv_cluster!=clusters_conv_tmp.end()){
+					pos_diff->Fill(shorter_dist);
+					clusters_conv_tmp.erase(best_conv_cluster);
+				}
+				delete *mult_it;
+			}
+		}
+		CosmicBenchEvent * CBE_mult = new CosmicBenchEvent(this,events_mult);
+		vector<Ray> current_rays = CBE_mult->get_absorption_rays();
+		for(vector<Ray>::iterator ray_it = current_rays.begin();ray_it!=current_rays.end();++ray_it){
+			vector<Cluster*> current_clusters = ray_it->get_clus();
+			for(vector<Cluster*>::iterator clus_it=current_clusters.begin();clus_it!=current_clusters.end();++clus_it){
+				int det_id = (*clus_it)->find_det(detectors);
+				double min_pos = 500;
+				double min_ampl = 0;
+				for(vector<Cluster*>::iterator conv_it = clusters_conv[detectors[det_id]->get_type()][detectors[det_id]->get_n_in_tree()].begin();conv_it != clusters_conv[detectors[det_id]->get_type()][detectors[det_id]->get_n_in_tree()].end();++conv_it){
+					double current_pos = Abs((*conv_it)->get_pos_mm() - (*clus_it)->get_pos_mm());
+					if(current_pos < min_pos){
+						min_pos = current_pos;
+						min_ampl = (*conv_it)->get_ampl();
+					}
+				}
+				pos_track_diff->Fill(min_pos);
+				ampl_track_diff->Fill(max_ampl_conv[detectors[det_id]->get_type()][detectors[det_id]->get_n_in_tree()] - min_ampl);
+			}
+		}
+		
+		if(i%100 == 0) cout << "\r" << i << "/" << nentries << flush;
+		if(i%5000 == 0){
+			cTest->cd(1);
+			pos_diff->Draw();
+			cTest->cd(2);
+			max_ampl_diff->Draw();
+			cTest->cd(3);
+			pos_track_diff->Draw();
+			cTest->cd(4);
+			ampl_track_diff->Draw();
+			cTest->Modified();
+			cTest->Update();
+		}
+		for(vector<Event*>::iterator ev_it = events_mult.begin();ev_it!=events_mult.end();++ev_it){
+			delete *ev_it;
+		}
+		for(vector<Event*>::iterator ev_it = events_conv.begin();ev_it!=events_conv.end();++ev_it){
+			delete *ev_it;
+		}
+		delete CBE_mult;
+		for(map<Tomography::det_type,map<int,vector<Cluster*> > >::iterator type_it=clusters_conv.begin();type_it!=clusters_conv.end();++type_it){
+			for(map<int,vector<Cluster*> >::iterator det_it=(type_it->second).begin();det_it!=(type_it->second).end();++det_it){
+				for(vector<Cluster*>::iterator clus_it=(det_it->second).begin();clus_it!=(det_it->second).end();++clus_it){
+					delete *clus_it;
+				}
+			}
+		}
+	}
+	cout << "\r" << nentries << "/" << nentries << endl;
+	fChain->SetBranchStatus("*",1);
+	cTest->cd(1);
+	pos_diff->Draw();
+	cTest->cd(2);
+	max_ampl_diff->Draw();
+	cTest->cd(3);
+	pos_track_diff->Draw();
+	cTest->cd(4);
+	ampl_track_diff->Draw();
+	cTest->Modified();
+	cTest->Update();
+}

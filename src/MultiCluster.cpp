@@ -30,6 +30,7 @@ int main(int argc, char ** argv){
 	string display = "display";
 	string dispersion = "dispersion";
 	string debug = "debug";
+	string conv = "conv";
 	bool is_interactive = true;
 	if(argv[2] == multicluster){
 		blah->MultiCluster();
@@ -41,6 +42,9 @@ int main(int argc, char ** argv){
 	}
 	else if(argv[2] == SoB){
 		blah->SignalOverNoiseDisplay();
+	}
+	else if(argv[2] == conv){
+		blah->ConvClusterTest();
 	}
 	else if(argv[2] == hough){
 		if(argc<4){
