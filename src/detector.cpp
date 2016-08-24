@@ -205,7 +205,7 @@ CM_Detector::~CM_Detector(){
 
 }
 Detector * CM_Detector::build_det(const ptree::value_type& child) const{
-	CM_Detector * current_det  = new CM_Detector(child.second.get<double>("z"),child.second.get<bool>("is_X"),child.second.get<bool>("layer"),child.second.get<int>("cm_n"),child.second.get<bool>("use_thin_strip"),child.second.get<bool>("is_ref"),child.second.get<double>("offset"),child.second.get<bool>("direction"),child.second.get<double>("angle_x"),child.second.get<double>("angle_y"),child.second.get<double>("angle_z"),child.second.get<int>("asic_n"), child.second.get<bool>("connector_direction"));
+	CM_Detector * current_det  = new CM_Detector(child.second.get<double>("z"),child.second.get<bool>("is_X"),child.second.get<int>("layer"),child.second.get<int>("cm_n"),child.second.get<bool>("use_thin_strip"),child.second.get<bool>("is_ref"),child.second.get<double>("offset"),child.second.get<bool>("direction"),child.second.get<double>("angle_x"),child.second.get<double>("angle_y"),child.second.get<double>("angle_z"),child.second.get<int>("asic_n"), child.second.get<bool>("connector_direction"));
 	current_det->set_ClusTOTCut_Min(child.second.get<double>("ClusTOTCut_Min"));
 	current_det->set_ClusMaxSampleCut_Min(child.second.get<double>("ClusMaxSampleCut_Min"));
 	current_det->set_ClusMaxSampleCut_Max(child.second.get<double>("ClusMaxSampleCut_Max"));
@@ -329,7 +329,7 @@ MG_Detector::~MG_Detector(){
 
 }
 Detector * MG_Detector::build_det(const ptree::value_type& child) const{
-	MG_Detector * current_det = new MG_Detector(child.second.get<double>("z"),child.second.get<bool>("is_X"),child.second.get<bool>("layer"),child.second.get<int>("mg_n"),child.second.get<bool>("is_ref"),child.second.get<double>("offset"),child.second.get<bool>("direction"),child.second.get<double>("angle_x"),child.second.get<double>("angle_y"),child.second.get<double>("angle_z"),child.second.get<int>("2D_perp_n"),child.second.get<int>("clustering_holes"),child.second.get<int>("asic_n"), child.second.get<bool>("connector_direction"));
+	MG_Detector * current_det = new MG_Detector(child.second.get<double>("z"),child.second.get<bool>("is_X"),child.second.get<int>("layer"),child.second.get<int>("mg_n"),child.second.get<bool>("is_ref"),child.second.get<double>("offset"),child.second.get<bool>("direction"),child.second.get<double>("angle_x"),child.second.get<double>("angle_y"),child.second.get<double>("angle_z"),child.second.get<int>("2D_perp_n"),child.second.get<int>("clustering_holes"),child.second.get<int>("asic_n"), child.second.get<bool>("connector_direction"));
 	current_det->set_ClusTOTCut_Min(child.second.get<double>("ClusTOTCut_Min"));
 	current_det->set_ClusMaxSampleCut_Min(child.second.get<double>("ClusMaxSampleCut_Min"));
 	current_det->set_ClusMaxSampleCut_Max(child.second.get<double>("ClusMaxSampleCut_Max"));
@@ -496,7 +496,7 @@ MGv2_Detector::~MGv2_Detector(){
 
 }
 Detector * MGv2_Detector::build_det(const ptree::value_type& child) const{
-	MGv2_Detector * current_det = new MGv2_Detector(child.second.get<double>("z"),child.second.get<bool>("is_X"),child.second.get<bool>("layer"),child.second.get<int>("mg_n"),child.second.get<bool>("is_ref"),child.second.get<double>("offset"),child.second.get<bool>("direction"),child.second.get<double>("angle_x"),child.second.get<double>("angle_y"),child.second.get<double>("angle_z"),child.second.get<int>("2D_perp_n"),child.second.get<int>("clustering_holes"),child.second.get<int>("asic_n"),child.second.get<bool>("connector_direction"));
+	MGv2_Detector * current_det = new MGv2_Detector(child.second.get<double>("z"),child.second.get<bool>("is_X"),child.second.get<int>("layer"),child.second.get<int>("mg_n"),child.second.get<bool>("is_ref"),child.second.get<double>("offset"),child.second.get<bool>("direction"),child.second.get<double>("angle_x"),child.second.get<double>("angle_y"),child.second.get<double>("angle_z"),child.second.get<int>("2D_perp_n"),child.second.get<int>("clustering_holes"),child.second.get<int>("asic_n"),child.second.get<bool>("connector_direction"));
 	current_det->set_ClusTOTCut_Min(child.second.get<double>("ClusTOTCut_Min"));
 	current_det->set_ClusMaxSampleCut_Min(child.second.get<double>("ClusMaxSampleCut_Min"));
 	current_det->set_ClusMaxSampleCut_Max(child.second.get<double>("ClusMaxSampleCut_Max"));
