@@ -2119,7 +2119,7 @@ void Analyse::StoreRayPairs(string outFileName){
 		bool is_suitable = true;	
 		for(vector<Detector*>::const_iterator it = detectors.begin();it!=detectors.end();++it){
 			if(currentCBEvent->get_clus_N_by_det(*it)<1) is_suitable = false;
-			if((*it)->get_is_up()){
+			if(Tomography::get_instance()->get_is_up((*it)->get_layer())){
 				if((*it)->get_is_X()){
 					nclus_xh_h->Fill(currentCBEvent->get_clus_N_by_det(*it));
 				}

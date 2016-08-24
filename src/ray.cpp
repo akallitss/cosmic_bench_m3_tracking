@@ -543,13 +543,13 @@ RayPair::RayPair(const Ray& ray1, const Ray& ray2){
 	delta_y = 0;
 	delta_theta_x = 0;
 	delta_theta_y = 0;
-	bool is_1_up = (*(ray1.clusters.begin()))->get_is_up();
+	bool is_1_up = Tomography::get_instance()->get_is_up((*(ray1.clusters.begin()))->get_layer());
 	for(vector<Cluster*>::const_iterator it = ray1.clusters.begin()+1;it!=ray1.clusters.end();++it){
-		if((*it)->get_is_up() != is_1_up) return;
+		if(Tomography::get_instance()->get_is_up((*it)->get_layer()) != is_1_up) return;
 	}
-	bool is_2_up = (*(ray2.clusters.begin()))->get_is_up();
+	bool is_2_up = Tomography::get_instance()->get_is_up((*(ray2.clusters.begin()))->get_layer());
 	for(vector<Cluster*>::const_iterator it = ray2.clusters.begin()+1;it!=ray2.clusters.end();++it){
-		if((*it)->get_is_up() != is_2_up) return;
+		if(Tomography::get_instance()->get_is_up((*it)->get_layer()) != is_2_up) return;
 	}
 	if(!(is_1_up != is_2_up)) return;
 	upRay = (is_1_up) ? Ray(ray1) : Ray(ray2);

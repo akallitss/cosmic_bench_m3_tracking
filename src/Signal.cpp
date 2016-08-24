@@ -216,7 +216,7 @@ void Signal::HoughTracking(long event_nb){
 	}
 	LoadTree(event_nb);
 	GetEntry(event_nb);
-	map<bool,map<double,vector<Cluster*> > > all_cluster;
+	map<bool,map<int,vector<Cluster*> > > all_cluster;
 	vector<Event*> events;
 	double max_z = -10000;
 	double min_z = 10000;
@@ -233,7 +233,7 @@ void Signal::HoughTracking(long event_nb){
 			else ++clus_it;
 		}
 		cout << "number of suitable cluster for " << (*it)->get_type() << "_" << (*it)->get_n_in_tree() << " : " << current_cluster.size();
-		all_cluster[(*it)->get_is_X()][(*it)->get_z()].insert(all_cluster[(*it)->get_is_X()][(*it)->get_z()].end(),current_cluster.begin(),current_cluster.end());
+		all_cluster[(*it)->get_is_X()][(*it)->get_layer()].insert(all_cluster[(*it)->get_is_X()][(*it)->get_z()].end(),current_cluster.begin(),current_cluster.end());
 		current_event->MultiCluster();
 		cout << " (" << current_event->get_NClus() << ")" << endl;
 		events.push_back(current_event);
@@ -250,12 +250,12 @@ void Signal::HoughTracking(long event_nb){
 	int suitable_clus_n = 0;
 	//draw clusters in hough space
 	bin_n = 2*bin_n;
-	map<bool,map<double,int> > sizes;
-	for(map<bool,map<double,vector<Cluster*> > >::iterator jt = all_cluster.begin();jt!=all_cluster.end();++jt){
-		for(map<double,vector<Cluster*> >::iterator kt = (jt->second).begin();kt!=(jt->second).end();++kt){
+	map<bool,map<int,int> > sizes;
+	for(map<bool,map<int,vector<Cluster*> > >::iterator jt = all_cluster.begin();jt!=all_cluster.end();++jt){
+		for(map<int,vector<Cluster*> >::iterator kt = (jt->second).begin();kt!=(jt->second).end();++kt){
 			for(vector<Cluster*>::iterator it=(kt->second).begin();it!=(kt->second).end();++it){
 				suitable_clus_n++;
-				if(!(*it)->get_is_up()){
+				if(!(Tomography::get_instance()->get_is_up((*it)->get_layer()))){
 					for(int i=0;i<bin_n;i++){
 						double current_coord_up = min_coord +i*(max_coord-min_coord)/bin_n;
 						double current_coord_down = current_coord_up + ((*it)->get_pos_mm() - current_coord_up)*(min_z-max_z)/((*it)->get_z()-max_z);
@@ -295,25 +295,25 @@ void Signal::HoughTracking(long event_nb){
 	int_Y->SetMarkerColor(2);
 	map<bool,Point_2D> hough_ray;
 	for(int drop = 0;drop<2;drop++){
-		for(map<bool,map<double,vector<Cluster*> > >::iterator jt = all_cluster.begin();jt!=all_cluster.end();++jt){
+		for(map<bool,map<int,vector<Cluster*> > >::iterator jt = all_cluster.begin();jt!=all_cluster.end();++jt){
 			if(hough_ray.count(jt->first)>0) continue;
-			vector<map<double,int> > comb = CosmicBenchEvent::combinaisons(sizes[jt->first], (drop>0));
+			vector<map<int,int> > comb = CosmicBenchEvent::combinaisons(sizes[jt->first], (drop>0));
 			double smallest_distance = numeric_limits<double>::max();
 			bool found = false;
 			Point_2D best_intersection;
-			for(vector<map<double,int> >::iterator kt = comb.begin();kt!=comb.end();++kt){
+			for(vector<map<int,int> >::iterator kt = comb.begin();kt!=comb.end();++kt){
 				vector<Point_2D> intersections;
-				for(map<double,int>::iterator map_it = kt->begin();map_it!=kt->end();++map_it){
+				for(map<int,int>::iterator map_it = kt->begin();map_it!=kt->end();++map_it){
 					Line_2D first_line;
 					Cluster * first_cluster = (jt->second)[map_it->first][map_it->second];
-					if(!(first_cluster->get_is_up())) first_line = Line_2D(Point_2D(min_coord + (first_cluster->get_pos_mm() - min_coord)*(min_z-max_z)/(first_cluster->get_z()-max_z),min_coord),Point_2D(max_coord + (first_cluster->get_pos_mm() - max_coord)*(min_z-max_z)/(first_cluster->get_z()-max_z),max_coord));
+					if(!(Tomography::get_instance()->get_is_up(first_cluster->get_layer()))) first_line = Line_2D(Point_2D(min_coord + (first_cluster->get_pos_mm() - min_coord)*(min_z-max_z)/(first_cluster->get_z()-max_z),min_coord),Point_2D(max_coord + (first_cluster->get_pos_mm() - max_coord)*(min_z-max_z)/(first_cluster->get_z()-max_z),max_coord));
 					else first_line = Line_2D(Point_2D(min_coord,min_coord + (first_cluster->get_pos_mm() - min_coord)*(max_z-min_z)/(first_cluster->get_z()-min_z)),Point_2D(max_coord,max_coord + (first_cluster->get_pos_mm() - max_coord)*(max_z-min_z)/(first_cluster->get_z()-min_z)));
-					map<double,int>::iterator map_jt = map_it;
+					map<int,int>::iterator map_jt = map_it;
 					map_jt++;
 					while(map_jt!=kt->end()){
 						Line_2D second_line;
 						Cluster * second_cluster = (jt->second)[map_jt->first][map_jt->second];
-						if(!(second_cluster->get_is_up())) second_line = Line_2D(Point_2D(min_coord + (second_cluster->get_pos_mm() - min_coord)*(min_z-max_z)/(second_cluster->get_z()-max_z),min_coord),Point_2D(max_coord + (second_cluster->get_pos_mm() - max_coord)*(min_z-max_z)/(second_cluster->get_z()-max_z),max_coord));
+						if(!(Tomography::get_instance()->get_is_up(second_cluster->get_layer()))) second_line = Line_2D(Point_2D(min_coord + (second_cluster->get_pos_mm() - min_coord)*(min_z-max_z)/(second_cluster->get_z()-max_z),min_coord),Point_2D(max_coord + (second_cluster->get_pos_mm() - max_coord)*(min_z-max_z)/(second_cluster->get_z()-max_z),max_coord));
 						else second_line = Line_2D(Point_2D(min_coord,min_coord + (second_cluster->get_pos_mm() - min_coord)*(max_z-min_z)/(second_cluster->get_z()-min_z)),Point_2D(max_coord,max_coord + (second_cluster->get_pos_mm() - max_coord)*(max_z-min_z)/(second_cluster->get_z()-min_z)));
 						intersections.push_back(first_line.intersection(second_line));
 						++map_jt;
@@ -366,8 +366,8 @@ void Signal::HoughTracking(long event_nb){
 		delete *ev_it;
 	}
 	events.clear();
-	for(map<bool,map<double,vector<Cluster*> > >::iterator coord_it=all_cluster.begin();coord_it!=all_cluster.end();++coord_it){
-		for(map<double,vector<Cluster*> >::iterator alt_it=(coord_it->second).begin();alt_it!=(coord_it->second).end();++alt_it){
+	for(map<bool,map<int,vector<Cluster*> > >::iterator coord_it=all_cluster.begin();coord_it!=all_cluster.end();++coord_it){
+		for(map<int,vector<Cluster*> >::iterator alt_it=(coord_it->second).begin();alt_it!=(coord_it->second).end();++alt_it){
 			for(vector<Cluster*>::iterator clus_it=(alt_it->second).begin();clus_it!=(alt_it->second).end();++clus_it){
 				delete *clus_it;
 			}

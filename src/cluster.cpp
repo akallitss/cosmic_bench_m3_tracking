@@ -29,7 +29,7 @@ Cluster::Cluster(){
 	t = -1;
 	z = -1;
 	is_X = -1;
-	is_up = -1;
+	layer = -1;
 	offset = 0;
 	direction = false;
 	perp_pos_mm = -1;
@@ -52,7 +52,7 @@ Cluster::Cluster(const Cluster& other){
 	t = other.t;
 	z = other.z;
 	is_X = other.is_X;
-	is_up = other.is_up;
+	layer = other.layer;
 	offset = other.offset;
 	direction = other.direction;
 	perp_pos_mm = other.perp_pos_mm;
@@ -75,7 +75,7 @@ Cluster& Cluster::operator=(const Cluster& other){
 	t = other.t;
 	z = other.z;
 	is_X = other.is_X;
-	is_up = other.is_up;
+	layer = other.layer;
 	offset = other.offset;
 	direction = other.direction;
 	perp_pos_mm = other.perp_pos_mm;
@@ -102,7 +102,7 @@ Cluster::Cluster(Tanalyse_R * treeObject,int number_,const Detector * const det,
 	t = -1;
 	z = det->get_z();
 	is_X = det->get_is_X();
-	is_up = det->get_is_up();
+	layer = det->get_layer();
 	offset = det->get_offset();
 	direction = det->get_direction();
 	perp_pos_mm = -1;
@@ -124,7 +124,7 @@ Cluster::Cluster(const Tanalyse_R * const treeObject,int number_,const Detector 
 	t = -1;
 	z = det->get_z();
 	is_X = det->get_is_X();
-	is_up = det->get_is_up();
+	layer = det->get_layer();
 	offset = det->get_offset();
 	direction = det->get_direction();
 	perp_pos_mm = -1;
@@ -140,7 +140,7 @@ Cluster::Cluster(const Detector * const det, int number_, double pos_, double si
 	size = size_;
 	z = det->get_z();
 	is_X = det->get_is_X();
-	is_up = det->get_is_up();
+	layer = det->get_layer();
 	offset = det->get_offset();
 	direction = det->get_direction();
 	perp_pos_mm = -1;
@@ -164,7 +164,7 @@ string Cluster::print() const{
 	oss << " pos : " << pos;
 	oss << " size : " << size;
 	oss << " TOT : " << TOT;
-	oss << " }";
+	oss << "}";
 	return oss.str();
 }
 Tomography::det_type Cluster::get_type() const{
@@ -197,8 +197,8 @@ double Cluster::get_maxStripAmpl() const{
 int Cluster::get_maxStrip() const{
 	return maxStrip;
 }
-bool Cluster::get_is_up() const{
-	return is_up;
+int Cluster::get_layer() const{
+	return layer;
 }
 int Cluster::get_n_in_tree() const{
 	return n_in_tree;
@@ -377,7 +377,7 @@ CM_Demux_Cluster::CM_Demux_Cluster(const CM_Cluster& thinStrip_clus, const CM_Cl
 	n_in_tree = thinStrip_clus.n_in_tree;
 	z = thinStrip_clus.z;
 	is_X = thinStrip_clus.is_X;
-	is_up = thinStrip_clus.is_up;
+	layer = thinStrip_clus.layer;
 	number = thinStrip_clus.number;
 	offset = thinStrip_clus.offset;
 	direction = thinStrip_clus.direction;
@@ -401,7 +401,7 @@ CM_Demux_Cluster::CM_Demux_Cluster(const CM_Cluster& wideStrip_clus){
 	n_in_tree = wideStrip_clus.n_in_tree;
 	z = wideStrip_clus.z;
 	is_X = wideStrip_clus.is_X;
-	is_up = wideStrip_clus.is_up;
+	layer = wideStrip_clus.layer;
 	number = wideStrip_clus.number;
 	offset = wideStrip_clus.offset;
 	direction = wideStrip_clus.direction;

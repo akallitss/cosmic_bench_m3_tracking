@@ -88,6 +88,7 @@ class Tomography{
 		int get_SampleMin() const;
 		int get_SampleMax() const;
 		int get_TOTCut() const;
+		bool get_is_up(int layer) const;
 		double get_sigma() const;
 		double get_noise_RMS() const;
 		double get_chisquare_threshold() const;
@@ -115,6 +116,7 @@ class Tomography{
 		int SampleMax;
 		double sigma;
 		int TOTCut;
+		int first_down_layer;
 		double noise_RMS;
 		double chisquare_threshold;
 		bool live_graphic_display; // toggle updating of canvas during calculation

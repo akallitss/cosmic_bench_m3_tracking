@@ -16,7 +16,7 @@ class Cluster{
 		virtual double get_pos_mm() const = 0;
 		virtual double correct_strip_nb(int strip_nb) const = 0;
 		bool get_is_X() const;
-		bool get_is_up() const;
+		int get_layer() const;
 		virtual double get_z() const = 0;
 		double get_ampl() const;
 		double get_size() const;
@@ -55,7 +55,7 @@ class Cluster{
 		Tomography::det_type type;
 		double z;
 		bool is_X;
-		bool is_up;
+		int layer;
 		double offset;
 		bool direction;
 		double angle_x;

@@ -125,6 +125,7 @@ Tomography::Tomography(){
 	SampleMin = -1;
 	SampleMax = -1;
 	sigma = 0;
+	first_down_layer = -1;
 	TOTCut = -1;
 	noise_RMS = ADC_max+1;
 	chisquare_threshold = 0;
@@ -162,6 +163,7 @@ Tomography::Tomography(ptree config_tree_){
 	SampleMin = config_tree.get<int>("SampleMin");
 	SampleMax = config_tree.get<int>("SampleMax");
 	sigma = config_tree.get<double>("sigma");
+	first_down_layer = config_tree.get<int>("first_down_layer");
 	TOTCut = config_tree.get<int>("TOTCut");
 	noise_RMS = config_tree.get<double>("noise_RMS");
 	chisquare_threshold = config_tree.get<double>("chisquare_threshold");
@@ -251,6 +253,9 @@ int Tomography::get_SampleMax() const{
 }
 int Tomography::get_TOTCut() const{
 	return TOTCut;
+}
+bool Tomography::get_is_up(int layer) const{
+	return (layer < first_down_layer);
 }
 double Tomography::get_chisquare_threshold() const{
 	return chisquare_threshold;

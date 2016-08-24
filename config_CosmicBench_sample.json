@@ -7,6 +7,7 @@
 	"sigma" : 4, //significance needed for the signal to be considered in clustering
 	"TOTCut" : 3, //signal min TOT to be considered in clustering
 	"noise_RMS" : 4096, //channel with noise RMS greater than this value will be treated differently during clustering
+	"first_down_layer" : 2
 	"chisquare_threshold" : 100, //quality cut of tracks
 	"live_graphic_display" : true, //set true if you want the plot to be updated during processing, if false, the plot will only be shown at the end of the process
 	"batch" : false, //set true if you don't want any graphic display
@@ -42,7 +43,7 @@
 				"2D_perp_n": 1, // number of the detector which measure the perpendicular coordinate of this detector (put a negative number for 1D detectors)
 				"z": 1270, // altitude of the detector
 				"is_X" : false, // true if this detector is measuring the X coordinate, false if he measure the Y one
-				"is_up": true, // true if this detector is above the deviation tomography scanned volume
+				"layer": 0, // layer number in the direction of propagation of muons
 				"is_ref" : true, //true if this detector can be used for tracking
 				"offset": 0.27, //translation alignement value, in the direction of the measured coordinate
 				"direction": true, //switch to false if the detector is upside down
@@ -61,7 +62,7 @@
 				"2D_perp_n": 0,
 				"z": 1270,
 				"is_X" : true,
-				"is_up": true,
+				"layer": 0,
 				"is_ref" : true,
 				"offset": 0.13,
 				"direction": true,
@@ -80,7 +81,7 @@
 				"2D_perp_n": 3,
 				"z": 1155,
 				"is_X" : false,
-				"is_up": true,
+				"layer": 1,
 				"is_ref" : true,
 				"offset": 0.48,
 				"direction": true,
@@ -99,7 +100,7 @@
 				"2D_perp_n": 2,
 				"z": 1155,
 				"is_X" : true,
-				"is_up": true,
+				"layer": 1,
 				"is_ref" : true,
 				"offset": 0.03,
 				"direction": true,
@@ -118,7 +119,7 @@
 				"2D_perp_n": 5,
 				"z": 115,
 				"is_X" : false,
-				"is_up": false,
+				"layer": 2,
 				"is_ref" : false,
 				"offset": -0.63,
 				"direction": true,
@@ -137,7 +138,7 @@
 				"2D_perp_n": 4,
 				"z": 115,
 				"is_X" : true,
-				"is_up": false,
+				"layer": 2,
 				"is_ref" : false,
 				"offset": 0.82,
 				"direction": true,
@@ -156,7 +157,7 @@
 				"2D_perp_n": 7,
 				"z": 0,
 				"is_X" : false,
-				"is_up": false,
+				"layer": 3,
 				"is_ref" : true,
 				"offset": 0,
 				"direction": true,
@@ -175,7 +176,7 @@
 				"2D_perp_n": 6,
 				"z": 0,
 				"is_X" : true,
-				"is_up": false,
+				"layer": 3,
 				"is_ref" : true,
 				"offset": 0,
 				"direction": true,

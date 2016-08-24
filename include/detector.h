@@ -26,7 +26,7 @@ class Detector{
 		//getters
 		double get_z() const;
 		bool get_is_X() const;
-		bool get_is_up() const;
+		int get_layer() const;
 		bool get_is_ref() const;
 		virtual Tomography::det_type get_type() const = 0;
 		virtual Tomography::det_type get_perp_type() const;
@@ -62,10 +62,10 @@ class Detector{
 		Detector();	
 		Detector(const Detector& other);
 		Detector& operator=(const Detector& other);
-		Detector(double z_, bool is_X_, bool is_up_,int det_n, bool is_ref_, double offset_, bool direction_, double angle_x_, double angle_y_, double angle_z_, int perp_n_, int clustering_holes_, vector<pair<int,bool> > asic_n_);
+		Detector(double z_, bool is_X_, int layer_,int det_n, bool is_ref_, double offset_, bool direction_, double angle_x_, double angle_y_, double angle_z_, int perp_n_, int clustering_holes_, vector<pair<int,bool> > asic_n_);
 		double z; //altitude inside cosmic bench
 		bool is_X;//coordinate measured by the detector
-		bool is_up;//bloc (up|down) which the detector is part of
+		int layer;//layer which the detector is part of
 		bool is_ref; //used to test detectors
 		double offset; //used for alignement
 		bool direction; // direction of the axis
@@ -86,7 +86,7 @@ class CM_Detector: public Detector{
 		CM_Detector();
 		CM_Detector(const CM_Detector& other);
 		CM_Detector& operator=(const CM_Detector& other);
-		CM_Detector(double z_, bool is_X_, bool is_up_, int cm_n, bool use_thin_strip_, bool is_ref_, double offset_, bool direction_, double angle_x_, double angle_y_, double angle_z_, int asic_n_, bool connector_direction = true);
+		CM_Detector(double z_, bool is_X_, int layer_, int cm_n, bool use_thin_strip_, bool is_ref_, double offset_, bool direction_, double angle_x_, double angle_y_, double angle_z_, int asic_n_, bool connector_direction = true);
 		~CM_Detector();
 		Detector * build_det(const ptree::value_type& child) const;
 		//CosMulti general charac
@@ -137,7 +137,7 @@ class MG_Detector: public Detector{
 		MG_Detector();
 		MG_Detector(const MG_Detector& other);
 		MG_Detector& operator=(const MG_Detector& other);
-		MG_Detector(double z_, bool is_X_, bool is_up_, int mg_n, bool is_ref_, double offset_, bool direction_, double angle_x_, double angle_y_, double angle_z_, int perp_n_, int clustering_holes_, int asic_n_, bool connector_direction = true);
+		MG_Detector(double z_, bool is_X_, int layer_, int mg_n, bool is_ref_, double offset_, bool direction_, double angle_x_, double angle_y_, double angle_z_, int perp_n_, int clustering_holes_, int asic_n_, bool connector_direction = true);
 		~MG_Detector();
 		Detector * build_det(const ptree::value_type& child) const;
 		unsigned int StripToChannel(unsigned int i) const;
@@ -193,7 +193,7 @@ class MGv2_Detector: public Detector{
 		MGv2_Detector();
 		MGv2_Detector(const MGv2_Detector& other);
 		MGv2_Detector& operator=(const MGv2_Detector& other);
-		MGv2_Detector(double z_, bool is_X_, bool is_up_, int mg_n, bool is_ref_, double offset_, bool direction_, double angle_x_, double angle_y_, double angle_z_, int perp_n_, int clustering_holes_, int asic_n_, bool connector_direction = true);
+		MGv2_Detector(double z_, bool is_X_, int layer_, int mg_n, bool is_ref_, double offset_, bool direction_, double angle_x_, double angle_y_, double angle_z_, int perp_n_, int clustering_holes_, int asic_n_, bool connector_direction = true);
 		~MGv2_Detector();
 		Detector * build_det(const ptree::value_type& child) const;
 		unsigned int StripToChannel(unsigned int i) const;
