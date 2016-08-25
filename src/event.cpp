@@ -2323,8 +2323,8 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 	cDisplay->SetTitle(title.str().c_str());
 	cDisplay->Clear();
 	cDisplay->Divide(2);
-	map<double,TH1D*> ampl_hists_X;
-	map<double,TH1D*> ampl_hists_Y;
+	map<double,vector<TH1D*> > ampl_hists_X;
+	map<double,vector<TH1D*> > ampl_hists_Y;
 	map<double,vector<double> > clus_pos_X;
 	map<double,vector<double> > clus_pos_Y;
 	//map<double,TCanvas*> cHist;
@@ -2333,13 +2333,16 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 	vector<TLine*> det_Y;
 	for(vector<Event*>::iterator event_it = events.begin();event_it!=events.end();++event_it){
 		if((*event_it)->get_is_X()){
-			for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
+			for(map<double,vector<TH1D*> >::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
 				if(Abs(map_it->first - (*event_it)->get_z())<min_dist) min_dist = Abs(map_it->first - (*event_it)->get_z());
 			}
+			ampl_hists_X[(*event_it)->get_z()].push_back((*event_it)->get_ampl_hist());
+			/*
 			if(!ampl_hists_X.insert(pair<double,TH1D*>((*event_it)->get_z(),(*event_it)->get_ampl_hist())).second){
 				cout << "problem in events" << endl;
 				return;
 			}
+			*/
 			vector<Cluster*> current_clusters = (*event_it)->get_clusters();
 			for(vector<Cluster*>::iterator clus_it = current_clusters.begin();clus_it!=current_clusters.end();++clus_it){
 				//clus_pos_X[(*event_it)->get_z()].push_back((*clus_it)->get_pos()*(*event_it)->get_StripPitch() - Tomography::get_instance()->get_XY_size()/2.);
@@ -2350,13 +2353,16 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 			(det_X.back())->SetLineColor(detector_color);
 		}
 		else{
-			for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
+			for(map<double,vector<TH1D*> >::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
 				if(Abs(map_it->first - (*event_it)->get_z())<min_dist) min_dist = Abs(map_it->first - (*event_it)->get_z());
 			}
+			ampl_hists_Y[(*event_it)->get_z()].push_back((*event_it)->get_ampl_hist());
+			/*
 			if(!ampl_hists_Y.insert(pair<double,TH1D*>((*event_it)->get_z(),(*event_it)->get_ampl_hist())).second){
 				cout << "problem in events" << endl;
 				return;
 			}
+			*/
 			vector<Cluster*> current_clusters = (*event_it)->get_clusters();
 			for(vector<Cluster*>::iterator clus_it = current_clusters.begin();clus_it!=current_clusters.end();++clus_it){
 				//clus_pos_Y[(*event_it)->get_z()].push_back((*clus_it)->get_pos()*(*event_it)->get_StripPitch() - Tomography::get_instance()->get_XY_size()/2.);
@@ -2368,45 +2374,49 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 		}
 	}
 	double scale_factor = 1;
-	for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
-		//cout << map_it->first << " : " << map_it->second->GetMaximum() << endl;
-		if(map_it->second->GetMaximum()>scale_factor) scale_factor = map_it->second->GetMaximum();
-		//cHist[map_it->first] = new TCanvas();
-		//cHist[map_it->first]->Divide(2);
+	for(map<double,vector<TH1D*> >::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
+		for(vector<TH1D*>::iterator hist_it = (map_it->second).begin();hist_it != (map_it->second).end();++hist_it){
+			//cout << map_it->first << " : " << (*hist_it)->GetMaximum() << endl;
+			if((*hist_it)->GetMaximum()>scale_factor) scale_factor = (*hist_it)->GetMaximum();
+		}
 	}
-	for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
-		//cout << map_it->first << " : " << map_it->second->GetMaximum() << endl;
-		if(map_it->second->GetMaximum()>scale_factor) scale_factor = map_it->second->GetMaximum();
+	for(map<double,vector<TH1D*> >::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
+		for(vector<TH1D*>::iterator hist_it = (map_it->second).begin();hist_it != (map_it->second).end();++hist_it){
+			//cout << map_it->first << " : " << (*hist_it)->GetMaximum() << endl;
+			if((*hist_it)->GetMaximum()>scale_factor) scale_factor = (*hist_it)->GetMaximum();
+		}
 	}
 	double scale = 1.1;
 	scale_factor *= scale;
 	scale_factor = min_dist/scale_factor;
-	for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
-		//map_it->second->Scale(scale_factor);
-		if(map_it->second->GetMaximum() > 0) map_it->second->Scale(min_dist/(scale*map_it->second->GetMaximum()));
-		TF1 * offset = new TF1("offset","[0]",-Tomography::get_instance()->get_XY_size()/2.,Tomography::get_instance()->get_XY_size()/2.);
-		offset->SetParameter(0,map_it->first);
-		map_it->second->Add(offset);
-		delete offset;
-		//cHist[map_it->first]->cd(1);
-		//map_it->second->Draw();
+	for(map<double,vector<TH1D*> >::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
+		for(vector<TH1D*>::iterator hist_it = (map_it->second).begin();hist_it != (map_it->second).end();++hist_it){
+			//(*hist_it)->Scale(scale_factor);
+			if((*hist_it)->GetMaximum() > 0) (*hist_it)->Scale(min_dist/(scale*(*hist_it)->GetMaximum()));
+			TF1 * offset = new TF1("offset","[0]",-Tomography::get_instance()->get_XY_size()/2.,Tomography::get_instance()->get_XY_size()/2.);
+			offset->SetParameter(0,map_it->first);
+			(*hist_it)->Add(offset);
+			delete offset;
+			//cHist[map_it->first]->cd(1);
+			//(*hist_it)->Draw();
+		}
 	}
-	for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
-		//map_it->second->Scale(scale_factor);
-		if(map_it->second->GetMaximum() > 0) map_it->second->Scale(min_dist/(scale*map_it->second->GetMaximum()));
-		TF1 * offset = new TF1("offset","[0]",-Tomography::get_instance()->get_XY_size()/2.,Tomography::get_instance()->get_XY_size()/2.);
-		offset->SetParameter(0,map_it->first);
-		map_it->second->Add(offset);
-		delete offset;
-		//cHist[map_it->first]->cd(2);
-		//map_it->second->Draw();
-		//cHist[map_it->first]->Modified();
-		//cHist[map_it->first]->Update();
+	for(map<double,vector<TH1D*> >::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
+		for(vector<TH1D*>::iterator hist_it = (map_it->second).begin();hist_it != (map_it->second).end();++hist_it){
+			//(*hist_it)->Scale(scale_factor);
+			if((*hist_it)->GetMaximum() > 0) (*hist_it)->Scale(min_dist/(scale*(*hist_it)->GetMaximum()));
+			TF1 * offset = new TF1("offset","[0]",-Tomography::get_instance()->get_XY_size()/2.,Tomography::get_instance()->get_XY_size()/2.);
+			offset->SetParameter(0,map_it->first);
+			(*hist_it)->Add(offset);
+			delete offset;
+			//cHist[map_it->first]->cd(1);
+			//(*hist_it)->Draw();
+		}
 	}
 	vector<TLine*> clus_X;
 	vector<TLine*> clus_Y;
-	double min_z = Min(ampl_hists_X.begin()->first,ampl_hists_Y.begin()->first);
-	double max_z = Max((--(ampl_hists_X.end()))->first,(--(ampl_hists_Y.end()))->first);
+	double min_z = Min(clus_pos_X.begin()->first,clus_pos_Y.begin()->first);
+	double max_z = Max((--(clus_pos_X.end()))->first,(--(clus_pos_Y.end()))->first);
 	double diff_z = max_z-min_z;
 	min_z -= 0.1*diff_z;
 	max_z += 0.1*diff_z;
@@ -2457,9 +2467,11 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 	bg_Y->SetDirectory(0);
 	cDisplay->cd(1);
 	bg_X->Draw("AXIS");
-	for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
-		map_it->second->SetDirectory(0);
-		map_it->second->Draw("SAME ][");
+	for(map<double,vector<TH1D*> >::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
+		for(vector<TH1D*>::iterator hist_it = (map_it->second).begin();hist_it != (map_it->second).end();++hist_it){
+			(*hist_it)->SetDirectory(0);
+			(*hist_it)->Draw("SAME ][");
+		}
 	}
 	for(vector<TLine*>::iterator line_it = clus_X.begin();line_it!=clus_X.end();++line_it){
 		(*line_it)->Draw();
@@ -2472,9 +2484,11 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 	}
 	cDisplay->cd(2);
 	bg_Y->Draw("AXIS");
-	for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
-		map_it->second->SetDirectory(0);
-		map_it->second->Draw("SAME ][");
+	for(map<double,vector<TH1D*> >::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
+		for(vector<TH1D*>::iterator hist_it = (map_it->second).begin();hist_it != (map_it->second).end();++hist_it){
+			(*hist_it)->SetDirectory(0);
+			(*hist_it)->Draw("SAME ][");
+		}
 	}
 	for(vector<TLine*>::iterator line_it = clus_Y.begin();line_it!=clus_Y.end();++line_it){
 		(*line_it)->Draw();
@@ -2504,11 +2518,15 @@ void CosmicBenchEvent::EventDisplay(TCanvas * c1){
 	cDisplay->Modified();
 	cDisplay->Update();
 	if(!is_null){
-		for(map<double,TH1D*>::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
-			delete map_it->second;
+		for(map<double,vector<TH1D*> >::iterator map_it = ampl_hists_X.begin();map_it!=ampl_hists_X.end();++map_it){
+			for(vector<TH1D*>::iterator hist_it = (map_it->second).begin();hist_it != (map_it->second).end();++hist_it){
+				delete (*hist_it);
+			}
 		}
-		for(map<double,TH1D*>::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
-			delete map_it->second;
+		for(map<double,vector<TH1D*> >::iterator map_it = ampl_hists_Y.begin();map_it!=ampl_hists_Y.end();++map_it){
+			for(vector<TH1D*>::iterator hist_it = (map_it->second).begin();hist_it != (map_it->second).end();++hist_it){
+				delete (*hist_it);
+			}
 		}
 		delete bg_X; delete bg_Y; delete canvas_title; delete left_pad_title; delete right_pad_title;
 		for(vector<TLine*>::iterator line_it = clus_X.begin();line_it!=clus_X.end();++line_it){
