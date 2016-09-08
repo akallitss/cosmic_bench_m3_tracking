@@ -290,6 +290,12 @@ void Analyse::Residus_time(){
 					muon_total[name.str()]->Fill(jt->eval_X((*it)->get_z()),jt->eval_Y((*it)->get_z()));
 					if(matching_cluster == current_clusters.end()) continue;
 					(*matching_cluster)->set_perp_pos_mm(*jt);
+					if((*matching_cluster)->get_is_X()){
+						correlation[name.str()]->SetPoint(point_nb[name.str()],jt->eval_X((*it)->get_z()),(*matching_cluster)->get_pos_mm());
+					}
+					else{
+						correlation[name.str()]->SetPoint(point_nb[name.str()],jt->eval_Y((*it)->get_z()),(*matching_cluster)->get_pos_mm());
+					}
 					point_nb[name.str()]++;
 					if(residu<chisquare_threshold){
 						muon_seen[name.str()]->Fill(jt->eval_X((*it)->get_z()),jt->eval_Y((*it)->get_z()));
