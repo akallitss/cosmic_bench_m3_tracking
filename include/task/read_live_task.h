@@ -21,11 +21,14 @@ class Read_Live_Task: public Input_Task{
 		bool has_new_data() const;
 		int get_status() const;
 		bool is_saturated() const;
+		string init_count() const;
+		string print_count() const;
 	protected:
 		pthread_cond_t queue_cond;
 		void * pipe_ptr;
 		int queue_id;
 		queue<data_message*> data_queue;
+		unsigned long data_count;
 		int status;
 };
 

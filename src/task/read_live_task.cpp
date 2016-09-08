@@ -11,9 +11,12 @@ extern "C" {
 #include <sys/time.h>
 
 #include <iostream>
-//#include <iomanip>
+#include <iomanip>
 using std::cout;
 using std::endl;
+using std::left;
+using std::right;
+using std::setw;
 /*
 using std::hex;
 using std::dec;
@@ -32,11 +35,14 @@ Read_Live_Task::Read_Live_Task(string pipe_name): Input_Task(-1){
 		cout << "created message queue (id : " << queue_id << ") with name " << pipe_name << endl;
 	}
 	status = 0;
+	data_count = 0;
+	Display_Thread::get_instance()->register_task(this);
 }
 Read_Live_Task::~Read_Live_Task(){
 	pthread_cond_destroy(&queue_cond);
 	if(pipe_ptr) Pipe_Delete(&pipe_ptr);
 	pipe_ptr = 0;
+	Display_Thread::get_instance()->unregister_task(this);
 }
 bool Read_Live_Task::do_task(){
 	data_message * current_data = new data_message();
@@ -55,6 +61,7 @@ bool Read_Live_Task::do_task(){
 		data_queue.push(current_data);
 		pthread_cond_signal(&queue_cond);
 		pthread_mutex_unlock(&IO_mutex);
+		data_count++;
 		//cout << "message recieved" << endl;
 		return true;
 	}
@@ -116,4 +123,15 @@ int Read_Live_Task::get_status() const{
 }
 bool Read_Live_Task::is_saturated() const{
 	return false;
+}
+
+string Read_Live_Task::init_count() const{
+	ostringstream outstring;
+	outstring << left << setw(19) << "messages read";
+	return outstring.str();
+}
+string Read_Live_Task::print_count() const{
+	ostringstream outstring;
+	outstring << right << setw(10) << data_count << " - " << left << setw(6) << data_queue.size();
+	return outstring.str();
 }

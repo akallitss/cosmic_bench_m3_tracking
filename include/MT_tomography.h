@@ -150,8 +150,8 @@ class Input_Task: public Task{
 		virtual bool can_exec() const = 0;
 		void update_task_list() const = 0;
 		virtual bool is_saturated() const = 0;
-		string init_count() const;
-		string print_count() const;
+		virtual string init_count() const;
+		virtual string print_count() const;
 		bool is_queueable() const;
 	protected:
 		pthread_mutex_t IO_mutex;
