@@ -62,9 +62,9 @@ public :
    void enable_raw_branches();
    void enable_ped_branches();
    void enable_corr_branches();
-   template<typename A> void fillTree_raw(int evn_, double evttime_, map<Tomography::det_type,vector<vector<vector<A> > > > ampl);
-   template<typename A> void fillTree_ped(map<Tomography::det_type,vector<vector<vector<A> > > > ampl);
-   template<typename A> void fillTree_corr(map<Tomography::det_type,vector<vector<vector<A> > > > ampl);
+   template<typename A> void fillTree_raw(int evn_, double evttime_, map<Tomography::det_type,vector<vector<vector<A> > > > const& ampl);
+   template<typename A> void fillTree_ped(map<Tomography::det_type,vector<vector<vector<A> > > > const& ampl);
+   template<typename A> void fillTree_corr(map<Tomography::det_type,vector<vector<vector<A> > > > const& ampl);
    template<typename A> map<Tomography::det_type,vector<vector<vector<A> > > > read_raw(long entry);
    template<typename A> map<Tomography::det_type,vector<vector<vector<A> > > > read_ped(long entry);
    template<typename A> map<Tomography::det_type,vector<vector<vector<A> > > > read_corr(long entry);

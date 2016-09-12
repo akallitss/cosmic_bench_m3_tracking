@@ -187,7 +187,7 @@ void Tsignal_W::CloseFile(){
    saveFile->Close();
 }
 template<typename A>
-void Tsignal_W::fillTree_raw(int evn_, double evttime_, map<Tomography::det_type,vector<vector<vector<A> > > > ampl){
+void Tsignal_W::fillTree_raw(int evn_, double evttime_, map<Tomography::det_type,vector<vector<vector<A> > > > const& ampl){
    Nevent = evn_;
    T->GetBranch("Nevent")->Fill();
    evttime = evttime_;
@@ -282,11 +282,11 @@ void Tsignal_W::fillTree_raw(int evn_, double evttime_, map<Tomography::det_type
    */
    T->SetEntries((T->GetEntries())+1);
 }
-template void Tsignal_W::fillTree_raw(int evn_, double evttime_, map<Tomography::det_type,vector<vector<vector<float> > > > ampl);
-template void Tsignal_W::fillTree_raw(int evn_, double evttime_, map<Tomography::det_type,vector<vector<vector<double> > > > ampl);
+template void Tsignal_W::fillTree_raw(int evn_, double evttime_, map<Tomography::det_type,vector<vector<vector<float> > > > const& ampl);
+template void Tsignal_W::fillTree_raw(int evn_, double evttime_, map<Tomography::det_type,vector<vector<vector<double> > > > const& ampl);
 
 template<typename A>
-void Tsignal_W::fillTree_ped(map<Tomography::det_type,vector<vector<vector<A> > > > ampl){
+void Tsignal_W::fillTree_ped(map<Tomography::det_type,vector<vector<vector<A> > > > const& ampl){
    for(typename map<Tomography::det_type,vector<vector<vector<A> > > >::const_iterator type_it=ampl.begin();type_it!=ampl.end();++type_it){
       if(det_N.count(type_it->first)==0){
          cout << "detector type mismatch : " << type_it->first << endl;
@@ -376,11 +376,11 @@ void Tsignal_W::fillTree_ped(map<Tomography::det_type,vector<vector<vector<A> > 
    if(det_N.count(Tomography::CM)>0) T->GetBranch("StripAmpl_CM_ped")->Fill();
    */
 }
-template void Tsignal_W::fillTree_ped(map<Tomography::det_type,vector<vector<vector<float> > > > ampl);
-template void Tsignal_W::fillTree_ped(map<Tomography::det_type,vector<vector<vector<double> > > > ampl);
+template void Tsignal_W::fillTree_ped(map<Tomography::det_type,vector<vector<vector<float> > > > const& ampl);
+template void Tsignal_W::fillTree_ped(map<Tomography::det_type,vector<vector<vector<double> > > > const& ampl);
 
 template<typename A>
-void Tsignal_W::fillTree_corr(map<Tomography::det_type,vector<vector<vector<A> > > > ampl){
+void Tsignal_W::fillTree_corr(map<Tomography::det_type,vector<vector<vector<A> > > > const& ampl){
    for(typename map<Tomography::det_type,vector<vector<vector<A> > > >::const_iterator type_it=ampl.begin();type_it!=ampl.end();++type_it){
       if(det_N.count(type_it->first)==0){
          cout << "detector type mismatch : " << type_it->first << endl;
@@ -470,8 +470,8 @@ void Tsignal_W::fillTree_corr(map<Tomography::det_type,vector<vector<vector<A> >
    if(det_N.count(Tomography::CM)>0) T->GetBranch("StripAmpl_CM_corr")->Fill();
    */
 }
-template void Tsignal_W::fillTree_corr(map<Tomography::det_type,vector<vector<vector<float> > > > ampl);
-template void Tsignal_W::fillTree_corr(map<Tomography::det_type,vector<vector<vector<double> > > > ampl);
+template void Tsignal_W::fillTree_corr(map<Tomography::det_type,vector<vector<vector<float> > > > const& ampl);
+template void Tsignal_W::fillTree_corr(map<Tomography::det_type,vector<vector<vector<double> > > > const& ampl);
 
 void Tsignal_W::Reset_raw(){
    for(map<Tomography::det_type,unsigned short>::const_iterator type_it=det_N.begin();type_it!=det_N.end();++type_it){
