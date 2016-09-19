@@ -446,16 +446,20 @@ void Analyse::Amplitude_time(){
 	map<string,TProfile*> amplitude_time;
 	map<string,TH1D*> ampl_h;
 	map<string,TH2D*> ampl_time_h;
-	int n_bins = 800;
+	int n_bins_adc = 800;
+	int n_bins_time = nentries/100;
 	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
 		ostringstream name;
 		name << (*it)->get_type() << "_" << (*it)->get_n_in_tree();
-		amplitude_time[name.str()] = new TProfile((name.str()+"_amplitude_time").c_str(),(name.str()+"_amplitude_time").c_str(),nentries/50,evttime_min,evttime_max);
-		ampl_h[name.str()] = new TH1D((name.str()+"_ampl_h").c_str(),(name.str()+"_ampl_h").c_str(),n_bins,0,4096);
-		ampl_time_h[name.str()] = new TH2D((name.str()+"_ampl_time_h").c_str(),(name.str()+"_ampl_time_h").c_str(),n_bins/2,0,4096,nentries/50,evttime_min,evttime_max);
+		amplitude_time[name.str()] = new TProfile((name.str()+"_amplitude_time").c_str(),(name.str()+"_amplitude_time").c_str(),n_bins_time,evttime_min,evttime_max);
+		ampl_h[name.str()] = new TH1D((name.str()+"_ampl_h").c_str(),(name.str()+"_ampl_h").c_str(),n_bins_adc,0,4096);
+		ampl_time_h[name.str()] = new TH2D((name.str()+"_ampl_time_h").c_str(),(name.str()+"_ampl_time_h").c_str(),n_bins_adc/2,0,4096,n_bins_time,evttime_min,evttime_max);
 	}
 	TCanvas * c0 = new TCanvas("stats","stats");
-	TProfile * freq_time = new TProfile("freq_time","freq_time",nentries/50,evttime_min,evttime_max);
+	c0->Divide(3);
+	TProfile * freq_time = new TProfile("freq_time","freq_time",n_bins_time,evttime_min,evttime_max);
+	TH1D * freq_h = new TH1D("freq_h","freq_h",200,0,20*(evttime_max-evttime_min)/nentries);
+	TH2D * freq_time_h = new TH2D("freq_time_h","freq_time_h",200,0,20*(evttime_max-evttime_min)/nentries,n_bins_time,evttime_min,evttime_max);
 	if (fChain == 0) return;
 	cout << setw(20) << "total processed" << endl;
 	double evttime_last = evttime_min;
@@ -465,6 +469,8 @@ void Analyse::Amplitude_time(){
 		fChain->GetEntry(jentry);
 		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,-1);
 		freq_time->Fill(evttime,evttime - evttime_last);
+		freq_h->Fill(evttime - evttime_last);
+		freq_time_h->Fill(evttime - evttime_last,evttime);
 		evttime_last = evttime;
 		for(vector<Event*>::iterator it = (currentCBEvent->events).begin();it!=(currentCBEvent->events).end();++it){
 			ostringstream name;
@@ -495,8 +501,12 @@ void Analyse::Amplitude_time(){
 			}
 			c_MM->Modified();
 			c_MM->Update();
-			c0->cd();
+			c0->cd(1);
 			freq_time->Draw();
+			c0->cd(2);
+			freq_h->Draw();
+			c0->cd(3);
+			freq_time_h->Draw();
 			c0->Modified();
 			c0->Update();
 		}
@@ -516,8 +526,12 @@ void Analyse::Amplitude_time(){
 	}
 	c_MM->Modified();
 	c_MM->Update();
-	c0->cd();
+	c0->cd(1);
 	freq_time->Draw();
+	c0->cd(2);
+	freq_h->Draw();
+	c0->cd(3);
+	freq_time_h->Draw();
 	c0->Modified();
 	c0->Update();
 }
