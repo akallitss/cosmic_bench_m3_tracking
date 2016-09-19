@@ -63,6 +63,7 @@ using TMath::Min;
 using TMath::Pi;
 using TMath::Sin;
 using TMath::Cos;
+using TMath::Power;
 
 Analyse::Analyse(string configFilePath){
 	ptree config_tree;
@@ -457,9 +458,20 @@ void Analyse::Amplitude_time(){
 	}
 	TCanvas * c0 = new TCanvas("stats","stats");
 	c0->Divide(3);
+	int n_bin_log = 200;
+	double * bin_edges = new double[n_bin_log+1];
+	double log_max = 20*(evttime_max-evttime_min)/nentries;
+	for(int i=0;i<=n_bin_log;i++){
+		bin_edges[i] = Power(log_max,i/static_cast<double>(n_bin_log));
+	}
+
+
 	TProfile * freq_time = new TProfile("freq_time","freq_time",n_bins_time,evttime_min,evttime_max);
-	TH1D * freq_h = new TH1D("freq_h","freq_h",200,0,20*(evttime_max-evttime_min)/nentries);
-	TH2D * freq_time_h = new TH2D("freq_time_h","freq_time_h",200,0,20*(evttime_max-evttime_min)/nentries,n_bins_time,evttime_min,evttime_max);
+	TH1D * freq_h = new TH1D("freq_h","freq_h",n_bin_log,bin_edges);
+	TH2D * freq_time_h = new TH2D("freq_time_h","freq_time_h",n_bin_log,bin_edges,n_bins_time,evttime_min,evttime_max);
+	c0->GetPad(2)->SetLogx();
+	c0->GetPad(3)->SetLogx();
+	delete bin_edges;
 	if (fChain == 0) return;
 	cout << setw(20) << "total processed" << endl;
 	double evttime_last = evttime_min;
