@@ -428,6 +428,92 @@ void Analyse::Residus_time(){
 	c0->Modified();
 	c0->Update();
 }
+void Analyse::Amplitude_time(){
+	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
+	LoadTree(0);
+	fChain->GetEntry(0);
+	double evttime_min = evttime;
+	LoadTree(nentries-1);
+	fChain->GetEntry(nentries-1);
+	double evttime_max = evttime;
+
+
+	gStyle->SetPalette(55,0);
+	gStyle->SetNumberContours(512);
+	TCanvas * c_MM = new TCanvas();
+	int column_nb = CeilNint(2*Sqrt((2*get_det_N_tot())/3.));
+	c_MM->Divide(column_nb,1+(2*get_det_N_tot()/column_nb));
+	map<string,TProfile*> amplitude_time;
+	map<string,TH1D*> ampl_h;
+	int n_bins = 400;
+	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
+		ostringstream name;
+		name << (*it)->get_type() << "_" << (*it)->get_n_in_tree();
+		amplitude_time[name.str()] = new TProfile((name.str()+"_amplitude_time").c_str(),(name.str()+"_amplitude_time").c_str(),nentries/50,evttime_min,evttime_max);
+		ampl_h[name.str()] = new TH1D((name.str()+"_ampl_h").c_str(),(name.str()+"_ampl_h").c_str(),n_bins,0,4096);
+	}
+	TCanvas * c0 = new TCanvas("stats","stats");
+	TProfile * freq_time = new TProfile("freq_time","freq_time",nentries/50,evttime_min,evttime_max);
+	if (fChain == 0) return;
+	cout << setw(20) << "total processed" << endl;
+	double evttime_last = evttime_min;
+	for (Long64_t jentry=0; jentry<nentries && Tomography::get_instance()->get_can_continue();jentry++){
+		Long64_t ientry = LoadTree(jentry);
+		if (ientry < 0) break;
+		fChain->GetEntry(jentry);
+		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,-1);
+		freq_time->Fill(evttime,evttime - evttime_last);
+		evttime_last = evttime;
+		for(vector<Event*>::iterator it = (currentCBEvent->events).begin();it!=(currentCBEvent->events).end();++it){
+			ostringstream name;
+			name <<(*it)->get_type() << "_" << (*it)->get_n_in_tree();
+			vector<Cluster*> current_clusters = (*it)->get_clusters();
+			double biggest_ampl = 0;
+			for(vector<Cluster*>::iterator kt = current_clusters.begin();kt!=current_clusters.end();++kt){
+				double current_ampl = (*kt)->get_maxStripAmpl();
+				if(current_ampl>biggest_ampl) biggest_ampl = current_ampl;
+				ampl_h[name.str()]->Fill(current_ampl);
+				delete *kt;
+			}
+			amplitude_time[name.str()]->Fill(evttime,biggest_ampl);
+		}
+		delete currentCBEvent;
+		if(jentry%500 == 0) cout << "\r" << setw(20) << jentry << flush;
+		if(jentry%5000 == 0 && Tomography::get_instance()->get_live_graphic_display()){
+			int pad_id= 1;
+			for(map<string,TProfile*>::iterator it = amplitude_time.begin();it!=amplitude_time.end();++it){
+				c_MM->cd(pad_id);
+				it->second->Draw();
+				pad_id++;
+				c_MM->cd(pad_id);
+				ampl_h[it->first]->Draw();
+				pad_id++;
+			}
+			c_MM->Modified();
+			c_MM->Update();
+			c0->cd();
+			freq_time->Draw();
+			c0->Modified();
+			c0->Update();
+		}
+	}
+	cout << "\r" << setw(20) << nentries << endl;
+	int pad_id= 1;
+	for(map<string,TProfile*>::iterator it = amplitude_time.begin();it!=amplitude_time.end();++it){
+		c_MM->cd(pad_id);
+		it->second->Draw();
+		pad_id++;
+		c_MM->cd(pad_id);
+		ampl_h[it->first]->Draw();
+		pad_id++;
+	}
+	c_MM->Modified();
+	c_MM->Update();
+	c0->cd();
+	freq_time->Draw();
+	c0->Modified();
+	c0->Update();
+}
 void Analyse::Residus_ref(){
 	double chisquare_threshold = 10;
 	/*

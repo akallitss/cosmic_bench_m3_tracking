@@ -36,6 +36,7 @@ int main(int argc, char ** argv){
 	string eff2D = "eff2D";
 	string residus = "residus";
 	string restime = "restime";
+	string ampltime = "ampltime";
 	string fluxMap = "fluxmap";
 	string tomoAbs = "tomoAbs";
 	string raypairs = "raypairs";
@@ -59,6 +60,9 @@ int main(int argc, char ** argv){
 	}
 	else if(argv[2] == restime){
 		blah->Residus_time();
+	}
+	else if(argv[2] == ampltime){
+		blah->Amplitude_time();
 	}
 	else if(argv[2] == eff2D){
 		blah->Residus_ref_2D();
