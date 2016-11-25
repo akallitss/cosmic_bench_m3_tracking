@@ -216,24 +216,24 @@ void Signal::HoughTracking(long event_nb){
 	}
 	LoadTree(event_nb);
 	GetEntry(event_nb);
-	vector<map<bool,map<int,vector<Cluster*> > > > all_cluster;
-	vector<vector<Event*> > events;
+	int max_hole_nb = 5;
+	vector<map<bool,map<int,vector<Cluster*> > > > all_cluster(max_hole_nb);
+	vector<vector<Event*> > events(max_hole_nb);
 	double max_z = -10000;
 	double min_z = 10000;
-	int max_hole_nb = 5;
 	int bin_n = 500;
 	double min_coord = -10*Tomography::get_instance()->get_XY_size()/10.;
 	double max_coord = 10*Tomography::get_instance()->get_XY_size()/10.;
-	vector<TH2D*> hough_space_X;
-	vector<TH2D*> hough_space_Y;
+	vector<TH2D*> hough_space_X(max_hole_nb);
+	vector<TH2D*> hough_space_Y(max_hole_nb);
 	gStyle->SetPalette(55,0);
 	gStyle->SetNumberContours(512);
 	TCanvas * cHough = new TCanvas();
-	cHough->Divide(2,max_hole_nb);
-	vector<TGraph*> int_X;
-	vector<TGraph*> int_Y;
-	vector<int> X_int_nb;
-	vector<int> Y_int_nb;
+	cHough->Divide(4,max_hole_nb/2);
+	vector<TGraph*> int_X(max_hole_nb);
+	vector<TGraph*> int_Y(max_hole_nb);
+	vector<int> X_int_nb(max_hole_nb,0);
+	vector<int> Y_int_nb(max_hole_nb,0);
 	for(int i = 0; i<max_hole_nb; i++){
 		cout << "--- Hole number : " << i << " ---" << endl;
 		for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
