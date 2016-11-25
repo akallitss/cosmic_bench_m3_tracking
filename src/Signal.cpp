@@ -217,7 +217,6 @@ void Signal::HoughTracking(long event_nb){
 	LoadTree(event_nb);
 	GetEntry(event_nb);
 	int max_hole_nb = 10;
-	vector<map<bool,map<int,vector<Cluster*> > > > all_cluster(max_hole_nb);
 	double max_z = -10000;
 	double min_z = 10000;
 	int bin_n = 500;
@@ -235,6 +234,7 @@ void Signal::HoughTracking(long event_nb){
 	vector<int> Y_int_nb(max_hole_nb,0);
 	for(int i = 0; i<max_hole_nb; i++){
 		cout << "--- Hole number : " << i << " ---" << endl;
+		map<bool,map<int,vector<Cluster*> > > all_cluster;
 		for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
 			Event * current_event = (*it)->build_event(get_ampl<double>((*it)->get_type(),(*it)->get_n_in_tree()),Nevent,evttime);
 			current_event->HoughCluster(i);
@@ -248,7 +248,7 @@ void Signal::HoughTracking(long event_nb){
 				else ++clus_it;
 			}
 			cout << "number of suitable cluster for " << (*it)->get_type() << "_" << (*it)->get_n_in_tree() << " : " << current_cluster.size();
-			all_cluster[i][(*it)->get_is_X()][(*it)->get_layer()].insert(all_cluster[i][(*it)->get_is_X()][(*it)->get_z()].end(),current_cluster.begin(),current_cluster.end());
+			all_cluster[(*it)->get_is_X()][(*it)->get_layer()].insert(all_cluster[(*it)->get_is_X()][(*it)->get_z()].end(),current_cluster.begin(),current_cluster.end());
 			current_event->MultiCluster();
 			cout << " (" << current_event->get_NClus() << ")" << endl;
 			delete current_event;
@@ -265,7 +265,7 @@ void Signal::HoughTracking(long event_nb){
 		//draw clusters in hough space
 		bin_n = 2*bin_n;
 		map<bool,map<int,int> > sizes;
-		for(map<bool,map<int,vector<Cluster*> > >::iterator jt = all_cluster[i].begin();jt!=all_cluster[i].end();++jt){
+		for(map<bool,map<int,vector<Cluster*> > >::iterator jt = all_cluster.begin();jt!=all_cluster.end();++jt){
 			for(map<int,vector<Cluster*> >::iterator kt = (jt->second).begin();kt!=(jt->second).end();++kt){
 				for(vector<Cluster*>::iterator it=(kt->second).begin();it!=(kt->second).end();++it){
 					suitable_clus_n++;
@@ -274,10 +274,10 @@ void Signal::HoughTracking(long event_nb){
 							double current_coord_up = min_coord +j*(max_coord-min_coord)/bin_n;
 							double current_coord_down = current_coord_up + ((*it)->get_pos_mm() - current_coord_up)*(min_z-max_z)/((*it)->get_z()-max_z);
 							if((*it)->get_is_X()){
-								hough_space_X[i]->Fill(current_coord_down,current_coord_up,(*it)->get_size());// possible wieght : it->get_ampl()
+								hough_space_X[i]->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
 							}
 							else{
-								hough_space_Y[i]->Fill(current_coord_down,current_coord_up,(*it)->get_size());// possible wieght : it->get_ampl()
+								hough_space_Y[i]->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
 							}
 						}
 					}
@@ -286,10 +286,10 @@ void Signal::HoughTracking(long event_nb){
 							double current_coord_down = min_coord +j*(max_coord-min_coord)/bin_n;
 							double current_coord_up = current_coord_down + ((*it)->get_pos_mm() - current_coord_down)*(max_z-min_z)/((*it)->get_z()-min_z);
 							if((*it)->get_is_X()){
-								hough_space_X[i]->Fill(current_coord_down,current_coord_up,(*it)->get_size());// possible wieght : it->get_ampl()
+								hough_space_X[i]->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
 							}
 							else{
-								hough_space_Y[i]->Fill(current_coord_down,current_coord_up,(*it)->get_size());// possible wieght : it->get_ampl()
+								hough_space_Y[i]->Fill(current_coord_down,current_coord_up);// possible wieght : it->get_ampl()
 							}
 						}
 					}
@@ -309,7 +309,7 @@ void Signal::HoughTracking(long event_nb){
 		int_Y[i]->SetMarkerColor(2);
 		map<bool,Point_2D> hough_ray;
 		for(int drop = 0;drop<2;drop++){
-			for(map<bool,map<int,vector<Cluster*> > >::iterator jt = all_cluster[i].begin();jt!=all_cluster[i].end();++jt){
+			for(map<bool,map<int,vector<Cluster*> > >::iterator jt = all_cluster.begin();jt!=all_cluster.end();++jt){
 				if(hough_ray.count(jt->first)>0) continue;
 				vector<map<int,int> > comb = CosmicBenchEvent::combinaisons(sizes[jt->first], (drop>0));
 				double smallest_distance = numeric_limits<double>::max();
@@ -372,7 +372,7 @@ void Signal::HoughTracking(long event_nb){
 			}
 		}
 		cout << "total number of suitable cluster : " << suitable_clus_n << endl;
-		for(map<bool,map<int,vector<Cluster*> > >::iterator coord_it=all_cluster[i].begin();coord_it!=all_cluster[i].end();++coord_it){
+		for(map<bool,map<int,vector<Cluster*> > >::iterator coord_it=all_cluster.begin();coord_it!=all_cluster.end();++coord_it){
 			for(map<int,vector<Cluster*> >::iterator alt_it=(coord_it->second).begin();alt_it!=(coord_it->second).end();++alt_it){
 				for(vector<Cluster*>::iterator clus_it=(alt_it->second).begin();clus_it!=(alt_it->second).end();++clus_it){
 					delete *clus_it;
@@ -381,9 +381,8 @@ void Signal::HoughTracking(long event_nb){
 			}
 			(coord_it->second).clear();
 		}
-		all_cluster[i].clear();
+		all_cluster.clear();
 	}
-	all_cluster.clear();
 	//draw "normal" ray in hough space
 	vector<Event*> current_events;
 	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
