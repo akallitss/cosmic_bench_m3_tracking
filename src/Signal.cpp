@@ -216,9 +216,8 @@ void Signal::HoughTracking(long event_nb){
 	}
 	LoadTree(event_nb);
 	GetEntry(event_nb);
-	int max_hole_nb = 5;
+	int max_hole_nb = 10;
 	vector<map<bool,map<int,vector<Cluster*> > > > all_cluster(max_hole_nb);
-	vector<vector<Event*> > events(max_hole_nb);
 	double max_z = -10000;
 	double min_z = 10000;
 	int bin_n = 500;
@@ -252,7 +251,7 @@ void Signal::HoughTracking(long event_nb){
 			all_cluster[i][(*it)->get_is_X()][(*it)->get_layer()].insert(all_cluster[i][(*it)->get_is_X()][(*it)->get_z()].end(),current_cluster.begin(),current_cluster.end());
 			current_event->MultiCluster();
 			cout << " (" << current_event->get_NClus() << ")" << endl;
-			events[i].push_back(current_event);
+			delete current_event;
 			if((*it)->get_z()>max_z) max_z = (*it)->get_z();
 			if((*it)->get_z()<min_z) min_z = (*it)->get_z();
 		}
@@ -386,9 +385,17 @@ void Signal::HoughTracking(long event_nb){
 	}
 	all_cluster.clear();
 	//draw "normal" ray in hough space
-	CosmicBenchEvent * thisEvent = new CosmicBenchEvent(this,events[0]);
+	vector<Event*> current_events;
+	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
+		current_events.push_back((*it)->build_event(get_ampl<double>((*it)->get_type(),(*it)->get_n_in_tree()),Nevent,evttime));
+		(current_events.back())->MultiCluster();
+	}
+	CosmicBenchEvent * thisEvent = new CosmicBenchEvent(this,current_events);
 	vector<Ray> rays = thisEvent->get_absorption_rays();
 	delete thisEvent;
+	for(vector<Event*>::iterator ev_it=current_events.begin();ev_it!=current_events.end();++ev_it){
+		delete *ev_it;
+	}
 	TGraph * rays_X = new TGraph();
 	TGraph * rays_Y = new TGraph();
 	int X_point_nb = 0;
@@ -406,9 +413,6 @@ void Signal::HoughTracking(long event_nb){
 	cout << "number of reconstructed rays : " << rays.size() << endl;
 	
 	for(int i=0;i<max_hole_nb;i++){
-		for(vector<Event*>::iterator ev_it=events[i].begin();ev_it!=events[i].end();++ev_it){
-			delete *ev_it;
-		}
 		cHough->cd((2*i)+1);
 		hough_space_X[i]->Draw("colz");
 		if(rays.size()>0) rays_X->Draw("sameP");
@@ -418,7 +422,6 @@ void Signal::HoughTracking(long event_nb){
 		if(rays.size()>0) rays_Y->Draw("sameP");
 		if(Y_int_nb[i]>0) int_Y[i]->Draw("sameP");
 	}
-	events.clear();
 	cHough->Modified();
 	cHough->Update();
 }
