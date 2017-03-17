@@ -1021,7 +1021,6 @@ void Signal::NoiseLevels(){
 	int bin_n = 500;
 	int sample_min = 1;
 	int sample_max = Tomography::get_instance()->get_Nsample()-1;//Min(Nsample,4);
-	Long64_t tot_event = 1000;
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 	map<Tomography::det_type,vector<vector<TH1F*> > > ampl_hist_raw;
 	map<Tomography::det_type,vector<vector<TH1F*> > > ampl_hist_ped;
@@ -1036,7 +1035,10 @@ void Signal::NoiseLevels(){
 		int j = (*det_it)->get_n_in_tree();
 		Tomography::det_type current_type = (*det_it)->get_type();
 		tot_chan += ((*det_it)->get_Nchannel());
-		for(unsigned int i=0;i<((*det_it)->get_Nchannel());i++){
+		ampl_hist_raw[current_type].push_back(vector<TH1F*>(((*det_it)->get_Nchannel()),NULL));
+		ampl_hist_ped[current_type].push_back(vector<TH1F*>(((*det_it)->get_Nchannel()),NULL));
+		ampl_hist_corr[current_type].push_back(vector<TH1F*>(((*det_it)->get_Nchannel()),NULL));
+		for(int i=0;i<((*det_it)->get_Nchannel());i++){
 			ostringstream name;
 			name << "ampl_hist_" << current_type << j << "_" << i << "_";
 			ampl_hist_raw[current_type][j][i] = new TH1F((name.str() + "raw").c_str(),(name.str() + "raw").c_str(),bin_n,Ymin,Ymax);
