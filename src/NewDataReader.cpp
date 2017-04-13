@@ -44,6 +44,7 @@ int main(int argc, char ** argv){
 		analysis,
 		pyramids,
 		pyrarays,
+		mcube,
 		live,
 		read
 	};
@@ -68,6 +69,9 @@ int main(int argc, char ** argv){
 			operation = pyramids;
 		}
 		else if(argv[i] == string("pyrarays")){
+			operation = pyrarays;
+		}
+		else if(argv[i] == string("mcube")){
 			operation = pyrarays;
 		}
 	}
@@ -126,14 +130,14 @@ int main(int argc, char ** argv){
 		delete analysisFile;
 		delete bench;
 	}
-	else if((operation == pyramids) || (operation == pyrarays) || (operation == live)){
+	else if((operation == pyramids) || (operation == pyrarays) || (operation == live) || (operation == mcube)){
 		CosmicBench * bench = new CosmicBench(config_tree);
+		Tsignal_W * signalFile = NULL;
 		Tanalyse_W * analysisFile = NULL;
 		Tray * raysFile = NULL;
 		DataReader * blah = new DataReader(config_tree,false,true);
 		blah->read_ped();
 		map<Tomography::det_type,vector<vector<float> > > current_ped = blah->get_Ped();
-		Tsignal_W * signalFile = new Tsignal_W(config_tree.get<string>("signal_file"),bench->get_det_N());
 
 		Output_Task<event_data> * to_write_analyse = NULL;
 		Output_Task<ray_data> * to_write_rays = NULL;
@@ -146,20 +150,24 @@ int main(int argc, char ** argv){
 		else{
 
 		}
-		Output_Task<raw_data> * to_write_signal;
+		Output_Task<raw_data> * to_write_signal = NULL;
+		Typed_Task<raw_data> * follow_up_task = NULL;
 		if(operation!=live){
 			analysisFile = new Tanalyse_W(config_tree.get<string>("Tree"),bench->get_det_N());
-			if(operation == pyrarays) to_write_analyse = new Write_Analyse_Task(analysisFile, new Tracking_Abs_Task(bench,to_write_rays));
-			else to_write_analyse = new Write_Analyse_Task(analysisFile);
+			to_write_analyse = new Write_Analyse_Task(analysisFile, new Tracking_Abs_Task(bench,to_write_rays));
 			threads.push_back(new Writer_Thread(to_write_analyse));
-			to_write_signal = new Write_Signal_Task<raw_data>(signalFile,new Ped_Corr_Task(current_ped,new Multicluster_Task(bench,to_write_analyse)));
+			follow_up_task = new Ped_Corr_Task(current_ped,new Multicluster_Task(bench,to_write_analyse));
+		}
+		Input_Task * to_do = NULL;
+		if(operation!=mcube){
+			signalFile = new Tsignal_W(config_tree.get<string>("signal_file"),bench->get_det_N());
+			to_write_signal = new Write_Signal_Task<raw_data>(signalFile,follow_up_task);
+			threads.push_back(new Writer_Thread(to_write_signal));
+			to_do = new Read_Elec_Task(blah,to_write_signal);
 		}
 		else{
-			to_write_signal = new Write_Signal_Task<raw_data>(signalFile);
+			to_do = new Read_Elec_Task(blah,follow_up_task);
 		}
-		threads.push_back(new Writer_Thread(to_write_signal));
-
-		Input_Task * to_do = new Read_Elec_Task(blah,to_write_signal);
 		threads.push_back(new Reader_Thread(to_do));
 		for(vector<Thread*>::reverse_iterator thread_it=threads.rbegin();thread_it!=threads.rend();++thread_it){
 			(*thread_it)->start();
