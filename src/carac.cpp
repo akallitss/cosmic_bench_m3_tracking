@@ -62,7 +62,7 @@ Carac::~Carac(){
 	//delete f;
 }
 
-void Carac::Residus_ref(){
+void Carac::Residus_ref(const double theta_max){
 	const double chisquare_threshold = 10;
 	gStyle->SetPalette(55,0);
 	gStyle->SetNumberContours(512);
@@ -248,6 +248,7 @@ void Carac::Residus_ref(){
 							resVSangle[name.str()]->Fill(jt->get_slope_X(),residu);
 							absResVSabsAngle[name.str()]->Fill(Abs(jt->get_slope_X()),Abs(residu));
 							resVSanglePerp[name.str()]->Fill(jt->get_slope_Y(),residu);
+							if(Abs(jt->get_slope_X())< theta_max) MM_residus[name.str()]->Fill(residu);
 						}
 						else{
 							correlation[name.str()]->SetPoint(point_nb[name.str()],jt->eval_Y((*it)->get_z()),(*matching_cluster)->get_pos_mm());
@@ -256,9 +257,10 @@ void Carac::Residus_ref(){
 							resVSangle[name.str()]->Fill(jt->get_slope_Y(),residu);
 							absResVSabsAngle[name.str()]->Fill(Abs(jt->get_slope_Y()),Abs(residu));
 							resVSanglePerp[name.str()]->Fill(jt->get_slope_X(),residu);
+							if(Abs(jt->get_slope_Y())< theta_max) MM_residus[name.str()]->Fill(residu);
 						}
 						point_nb[name.str()]++;
-						MM_residus[name.str()]->Fill(residu);
+						//MM_residus[name.str()]->Fill(residu);
 						resVStime[name.str()]->Fill((*matching_cluster)->get_t(),residu);
 						resVSampl[name.str()]->Fill((*matching_cluster)->get_ampl(),residu);
 						resVStot[name.str()]->Fill((*matching_cluster)->get_TOT(),residu);

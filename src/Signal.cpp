@@ -1048,10 +1048,10 @@ void Signal::NoiseLevels(){
 		(sep_raw.back())->SetLineColor(2);
 		det_order << " " << current_type << "_" << j << " |";
 	}
-	TProfile * ampl_prof_raw = new TProfile("prof_raw","prof_raw",tot_chan,0,tot_chan,0,4096);
+	TProfile * ampl_prof_raw = new TProfile("prof_raw","prof_raw",tot_chan,0,tot_chan);
 	//ampl_prof_raw->SetTitle(det_order.str().c_str());
-	TProfile * ampl_prof_ped = new TProfile("prof_ped","prof_ped",tot_chan,0,tot_chan,-800,1500);
-	TProfile * ampl_prof_corr = new TProfile("prof_corr","prof_corr",tot_chan,0,tot_chan,-500,500);
+	TProfile * ampl_prof_ped = new TProfile("prof_ped","prof_ped",tot_chan,0,tot_chan);
+	TProfile * ampl_prof_corr = new TProfile("prof_corr","prof_corr",tot_chan,0,tot_chan);
 	TGraph * RMS_raw = new TGraph();
 	//RMS_raw->SetTitle(det_order.str().c_str());
 	TGraph * RMS_ped = new TGraph();
@@ -1088,6 +1088,7 @@ void Signal::NoiseLevels(){
 				TFitResultPtr res = (type_it->second)[i][j]->Fit("gaus","SQN");
 				if(res->IsEmpty()){
 					RMS_raw->SetPoint(n_chan,n_chan,-1);
+					cout << "problem fitting raw channel " << type_it->first << "_" << i << "_" << j << endl;
 				}
 				else{
 					RMS_raw->SetPoint(n_chan,n_chan,res->Parameter(2));
@@ -1103,6 +1104,7 @@ void Signal::NoiseLevels(){
 				TFitResultPtr res = (type_it->second)[i][j]->Fit("gaus","SQN");
 				if(res->IsEmpty()){
 					RMS_ped->SetPoint(n_chan,n_chan,-1);
+					cout << "problem fitting ped channel " << type_it->first << "_" << i << "_" << j << endl;
 				}
 				else{
 					RMS_ped->SetPoint(n_chan,n_chan,res->Parameter(2));
@@ -1118,6 +1120,7 @@ void Signal::NoiseLevels(){
 				TFitResultPtr res = (type_it->second)[i][j]->Fit("gaus","SQN");
 				if(res->IsEmpty()){
 					RMS_corr->SetPoint(n_chan,n_chan,-1);
+					cout << "problem fitting corr channel " << type_it->first << "_" << i << "_" << j << endl;
 				}
 				else{
 					RMS_corr->SetPoint(n_chan,n_chan,res->Parameter(2));
@@ -1135,8 +1138,8 @@ void Signal::NoiseLevels(){
 	
 	c_prof->cd(1);
 	ampl_prof_raw->Draw();
-	double current_min = ampl_prof_raw->GetYaxis()->GetXmin();
-	double current_max = ampl_prof_raw->GetYaxis()->GetXmax();
+	double current_min = ampl_prof_raw->GetMinimum();
+	double current_max = ampl_prof_raw->GetMaximum();
 	for(vector<TLine*>::iterator line_it=sep_raw.begin();line_it!=sep_raw.end();++line_it){
 		(*line_it)->SetY1(current_min);
 		(*line_it)->SetY2(current_max);
@@ -1153,8 +1156,8 @@ void Signal::NoiseLevels(){
 	}
 	c_prof->cd(2);
 	ampl_prof_ped->Draw();
-	current_min = ampl_prof_ped->GetYaxis()->GetXmin();
-	current_max = ampl_prof_ped->GetYaxis()->GetXmax();
+	current_min = ampl_prof_ped->GetMinimum();
+	current_max = ampl_prof_ped->GetMaximum();
 	for(vector<TLine*>::iterator line_it=sep_raw.begin();line_it!=sep_raw.end();++line_it){
 		(*line_it)->SetY1(current_min);
 		(*line_it)->SetY2(current_max);
@@ -1171,8 +1174,8 @@ void Signal::NoiseLevels(){
 	}
 	c_prof->cd(3);
 	ampl_prof_corr->Draw();
-	current_min = ampl_prof_corr->GetYaxis()->GetXmin();
-	current_max = ampl_prof_corr->GetYaxis()->GetXmax();
+	current_min = ampl_prof_corr->GetMinimum();
+	current_max = ampl_prof_corr->GetMaximum();
 	for(vector<TLine*>::iterator line_it=sep_raw.begin();line_it!=sep_raw.end();++line_it){
 		(*line_it)->SetY1(current_min);
 		(*line_it)->SetY2(current_max);

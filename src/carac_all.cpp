@@ -26,7 +26,12 @@ int main(int argc, char ** argv){
 	string residus = "residus";
 	if(argv[2] == residus){
 		//blah->Residus();
-		blah->Residus_ref();
+		if(argc<3) blah->Residus_ref();
+		else{
+			double theta_max = atof(argv[3]);
+			cout << "using track with tan(theta) < " << theta_max << endl;
+			blah->Residus_ref(theta_max);
+		}
 	}
 	else{
 		cout << "function not found" << endl;

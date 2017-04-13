@@ -599,12 +599,12 @@ void MG_Event::MultiCluster(){
 		double ClusT = 0;
 		double ClusTOT = 0;
 		//Micro TPC
-		
+		/*
 		vector<double> pos_TPC(Tomography::get_instance()->get_Nsample(),0);
 		vector<double> ampl_TPC(Tomography::get_instance()->get_Nsample(),0);
 		vector<bool> used_sample_TPC(Tomography::get_instance()->get_Nsample(),false);
 		double first_time = numeric_limits<double>::max();
-
+		*/
 		//--
 		for(int j = cluster_list[i].first;j<((cluster_list[i].second)+1);j++){
 			StripInfo current_strip = allChannels[MG_Detector::StripToChannel_a[j]];
@@ -613,7 +613,7 @@ void MG_Event::MultiCluster(){
 			ClusAmpl += effective_ampl;
 
 			//Micro TPC
-			
+			/*
 			if(current_strip.Time < first_time && current_strip.TOT>0) first_time = current_strip.Time;
 
 			for(int k=SampleMin;k<SampleMax;k++){
@@ -623,7 +623,7 @@ void MG_Event::MultiCluster(){
 				ampl_TPC[k] += current_ampl;
 				used_sample_TPC[k] = true;
 			}
-			
+			*/
 			// --
 
 			if(effective_ampl>ClusMaxStripAmpl){
@@ -644,6 +644,7 @@ void MG_Event::MultiCluster(){
 		}
 
 		//Micro TPC
+		/*
 		double mean_xx = 0;
 		double mean_xy = 0;
 		double mean_x = 0;
@@ -668,6 +669,7 @@ void MG_Event::MultiCluster(){
 			ClusPos = mean_y + (first_time - mean_x)*(mean_xy - mean_x*mean_y)/(mean_xx - mean_x*mean_x);
 			ClusT = first_time;
 		}
+		*/
 		//--
 		/*
 		if(graph_point_n>2 && use_srf){
@@ -1233,12 +1235,12 @@ void MGv2_Event::MultiCluster(){
 		double ClusT = 0;
 		double ClusTOT = 0;
 		//Micro TPC
-		
+		/*
 		vector<double> pos_TPC(Tomography::get_instance()->get_Nsample(),0);
 		vector<double> ampl_TPC(Tomography::get_instance()->get_Nsample(),0);
 		vector<bool> used_sample_TPC(Tomography::get_instance()->get_Nsample(),false);
 		double first_time = numeric_limits<double>::max();
-
+		*/
 		//--
 		for(int j = cluster_list[i].first;j<((cluster_list[i].second)+1);j++){
 			StripInfo current_strip = allChannels[MGv2_Detector::StripToChannel_a[j]];
@@ -1247,7 +1249,7 @@ void MGv2_Event::MultiCluster(){
 			ClusAmpl += effective_ampl;
 
 			//Micro TPC
-			
+			/*
 			if(current_strip.Time < first_time && current_strip.TOT>0) first_time = current_strip.Time;
 
 			for(int k=SampleMin;k<SampleMax;k++){
@@ -1257,6 +1259,7 @@ void MGv2_Event::MultiCluster(){
 				ampl_TPC[k] += current_ampl;
 				used_sample_TPC[k] = true;
 			}
+			*/
 			// --
 
 			if(effective_ampl>ClusMaxStripAmpl){
@@ -1277,6 +1280,7 @@ void MGv2_Event::MultiCluster(){
 		}
 
 		//Micro TPC
+		/*
 		double mean_xx = 0;
 		double mean_xy = 0;
 		double mean_x = 0;
@@ -1301,6 +1305,7 @@ void MGv2_Event::MultiCluster(){
 			ClusPos = mean_y + (first_time - mean_x)*(mean_xy - mean_x*mean_y)/(mean_xx - mean_x*mean_x);
 			ClusT = first_time;
 		}
+		*/
 		//--
 
 		/*

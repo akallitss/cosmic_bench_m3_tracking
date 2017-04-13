@@ -18,7 +18,7 @@ class Carac: public Tanalyse_R{
 		~Carac();
 		//void Efficacity();
 		//void Residus();
-		void Residus_ref();
+		void Residus_ref(const double theta_max = 10000000);
 		//double Residus_ref_cost();
 		//void Residus_ref_2D();
 	protected:
