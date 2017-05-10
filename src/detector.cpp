@@ -357,7 +357,7 @@ unsigned int MG_Detector::StripToChannel(unsigned int i) const{
 vector<unsigned int> MG_Detector::ChannelToStrip(unsigned int channel_nb){
 	vector<unsigned int> channel_list;
 	if(channel_nb>=61) return channel_list;
-	int p=61; int n=1024;
+	const int p=61; const int n=1024;
 	int MultiplexSeries[]={30,10,15,19,5,20,27,22,11,24,18,12,9,6,3,4,1,16,8,2,23,21,7,25,14,28,17,26,13,29};
 	unsigned int Detector[n]; // strip to channel correspondance
 	for(int i=0;i<(p-1)/2;i++){
@@ -524,7 +524,7 @@ unsigned int MGv2_Detector::StripToChannel(unsigned int i) const{
 vector<unsigned int> MGv2_Detector::ChannelToStrip(unsigned int channel_nb){
 	vector<unsigned int> channel_list;
 	if(channel_nb>=61) return channel_list;
-	int p=61; int n=1037;
+	const int p=61; const int n=1037;
 	int MultiplexSeries[]={30,10,15,19,5,20,27,22,11,24,18,12,9,6,3,4,1,16,8,2,23,21,7,25,14,28,17,26,13,29};
 	unsigned int Detector[n]; // strip to channel correspondance
 	for(int i=0;i<(p-1)/2;i++){

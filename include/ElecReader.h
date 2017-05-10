@@ -3,6 +3,7 @@
 #include "tomography.h"
 #include <string>
 #include <map>
+#include <utility>
 #include <fstream>
 #include <stdint.h>
 #include "MT_tomography.h"
@@ -11,6 +12,7 @@
 
 using std::string;
 using std::map;
+using std::pair;
 using std::ifstream;
 
 
@@ -122,14 +124,14 @@ class LiveElecReader: public ElecReader{
 class DreamElecReader: public ElecReader{
 	public:
 		DreamElecReader();
-		~DreamElecReader();
+		virtual ~DreamElecReader();
 		DreamElecReader(string base_name_,vector<FeuInfo> feu_info,int first_index_,int last_index_);
 		DreamElecReader(const DreamElecReader& other);
 		DreamElecReader& operator=(const DreamElecReader& other);
 		void read_next_event();
 		double get_data(int asic_n,int channel_n,int sample_n); // asic_n = 8*feu_n + asic_n_in_feu
-		long get_event_n();
-		double get_evttime();
+		virtual long get_event_n();
+		virtual double get_evttime();
 		bool is_end() const;
 		bool is_end_feu(int feu_id) const;
 	protected:
@@ -137,10 +139,29 @@ class DreamElecReader: public ElecReader{
 		void reset_data(int feu_id);
 		void read_next_event_file(int feu_id);
 		void seek_next_EOE(int feu_id);
-		void check_file(int feu_id);
-		void open_file(int feu_id);
+		virtual void check_file(int feu_id);
+		virtual void open_file(int feu_id);
 		map<int,FeuData> feu_data;
 		map<int,int> feu_id_to_n;
+};
+
+class DreamElecWattoReader: public DreamElecReader{
+	public:
+		DreamElecWattoReader();
+		~DreamElecWattoReader();
+		DreamElecWattoReader(string directory,vector<FeuInfo> feu_info);
+		DreamElecWattoReader(const DreamElecWattoReader& other);
+		DreamElecWattoReader& operator=(const DreamElecWattoReader& other);
+		long get_event_n();
+		double get_evttime();
+	protected:
+		void check_file(int feu_id);
+		void open_file(int feu_id);
+		void change_run();
+		map<unsigned long,pair<string,int> > timestamp_to_filename;
+		map<unsigned long,pair<string,int> >::iterator reading_status;
+		long event_n_offset;
+		double evttime_offset;
 };
 
 class FeminosElecReader: public ElecReader{

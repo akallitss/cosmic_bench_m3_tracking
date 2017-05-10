@@ -8,6 +8,7 @@ ROOTGLIBS     = $(shell root-config --glibs)
 
 # Linux with egcs
 WARNINGS      = -Wall -Wextra -Wchar-subscripts -Wundef -Wshadow -Wwrite-strings -Wsign-compare -Wunused -Wunused-parameter -Wuninitialized -Winit-self -Wpointer-arith -Wredundant-decls -Wformat-nonliteral -Wformat-zero-length -Wmissing-format-attribute -Wsequence-point -Wparentheses -Wmissing-declarations
+WARNINGS     += -Wcast-align -Wformat=2 -Winline -Wmissing-include-dirs -Wunknown-pragmas -Wno-long-long -Wno-unused-function -std=gnu++11 -pedantic -pipe -fPIE -fstack-protector -fvisibility=hidden
 CXX           = g++
 CGNU          = gcc
 #CXXFLAGS      = -O2 -Wall -Wextra -fexceptions -fPIC  $(ROOTCFLAGS) -fopenmp -I$(IDIR) -DUNIX -DLINUX
@@ -15,7 +16,7 @@ CXXFLAGS      = -g -O $(WARNINGS) -fexceptions -fPIC  $(ROOTCFLAGS) -I$(IDIR) -D
 CFLAGS        = -g -O2 $(WARNINGS) -I$(IDIR) -pthread
 LD            = g++
 LIBS          = $(ROOTLIBS) -lNetx -lm -ldl -rdynamic 
-GLIBS         = $(ROOTGLIBS) -L/usr/X11R6/lib -lXpm -lX11 -lm -ldl -rdynamic -lpthread -lMinuit2
+GLIBS         = $(ROOTGLIBS) -L/usr/X11R6/lib -lXpm -lX11 -lm -ldl -rdynamic -lpthread -lMinuit2 -lboost_system -lboost_filesystem
 LDFLAGS       =  $(GLIBS)
 
 #Colors

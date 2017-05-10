@@ -38,7 +38,7 @@ class Ped_Corr_Task: public Typed_Task<raw_data>{
 		//Ped_Corr_Task(map<Tomography::det_type,vector<vector<double> > > ped_);
 		template<typename A> Ped_Corr_Task(map<Tomography::det_type,vector<vector<A> > > ped_, Typed_Task<corr_data> * next_task_);
 		~Ped_Corr_Task();
-		bool do_task();;
+		bool do_task();
 		void update_task_list() const;
 		bool is_queueable() const;
 	protected:

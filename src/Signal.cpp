@@ -216,7 +216,7 @@ void Signal::HoughTracking(long event_nb){
 	}
 	LoadTree(event_nb);
 	GetEntry(event_nb);
-	int max_hole_nb = 10;
+	const int max_hole_nb = 11;
 	double max_z = -10000;
 	double min_z = 10000;
 	int bin_n = 500;

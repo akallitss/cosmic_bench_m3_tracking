@@ -16,7 +16,7 @@ int main(int argc, char ** argv){
 		cout << "You must indicate a config file which contains the Cosmic Bench caracs and what you want to plot" << endl;
 		return 1;
 	}
-	int n = 100;
+	const int n = 100;
 	char path[n];
 	ostringstream config_file;
 	config_file << getcwd(path,n) << "/" << argv[1];

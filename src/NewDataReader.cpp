@@ -46,6 +46,7 @@ int main(int argc, char ** argv){
 		pyrarays,
 		mcube,
 		live,
+		watto,
 		read
 	};
 	process_type operation = read;
@@ -74,6 +75,9 @@ int main(int argc, char ** argv){
 		else if(argv[i] == string("mcube")){
 			operation = mcube;
 		}
+		else if(argv[i] == string("watto")){
+			operation = watto;
+		}
 	}
 	string config_file = argv[1];
 	ptree config_tree;
@@ -84,10 +88,12 @@ int main(int argc, char ** argv){
 		blah->process();
 		delete blah;
 	}
-	else if(operation == analysis){
+	else if((operation == analysis) || (operation == watto)){
 		CosmicBench * bench = new CosmicBench(config_tree);
 		Tanalyse_W * analysisFile = new Tanalyse_W(config_tree.get<string>("Tree"),bench->get_det_N());
-		DataReader * blah = new DataReader(config_tree,false);
+		DataReader * blah = NULL;
+		if(operation==analysis) blah = new DataReader(config_tree,false);
+		else blah = new DataReader(config_tree,"./");
 		blah->read_ped();
 		map<Tomography::det_type,vector<vector<float> > > current_ped = blah->get_Ped();
 

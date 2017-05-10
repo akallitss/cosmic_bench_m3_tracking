@@ -68,11 +68,11 @@ class Tomography{
 		};
 		static elec_type str_to_elec(string str);
 
-		static const double ADC_max = 4096;
-		static const int Nchannel = 64;
-		static const int Nasic_FEU = 8;
-		static const int Nasic_Feminos = 4;
-		static const int Max_Nsample = 512;
+		static constexpr const double ADC_max = 4096;
+		static constexpr const int Nchannel = 64;
+		static constexpr const int Nasic_FEU = 8;
+		static constexpr const int Nasic_Feminos = 4;
+		static constexpr const int Max_Nsample = 512;
 		static const string DreamExt;
 		static const string FeminosExt;
 		//TODO : make this map const
@@ -92,6 +92,7 @@ class Tomography{
 		double get_sigma() const;
 		double get_noise_RMS() const;
 		double get_chisquare_threshold() const;
+		double get_clock_rate() const;
 		bool get_live_graphic_display() const;
 		bool get_is_batch() const;
 		bool get_can_continue() const;
@@ -117,6 +118,7 @@ class Tomography{
 		double sigma;
 		int TOTCut;
 		int first_down_layer;
+		double clock_rate;
 		double noise_RMS;
 		double chisquare_threshold;
 		bool live_graphic_display; // toggle updating of canvas during calculation

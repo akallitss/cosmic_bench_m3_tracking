@@ -42,4 +42,7 @@
 
 char *rootfilename(char *fullfilename);
 
-#endif // #ifndef H_Platform
+#endif 
+/*
+ * #ifndef H_Platform
+*/

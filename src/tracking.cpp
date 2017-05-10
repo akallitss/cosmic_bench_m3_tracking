@@ -26,7 +26,7 @@ int main(int argc, char ** argv){
 		cout << "You must indicate a config file which contains the Cosmic Bench caracs and what you want to plot" << endl;
 		return 1;
 	}
-	int n = 100;
+	const int n = 100;
 	char path[n];
 	ostringstream config_file;
 	config_file << getcwd(path,n) << "/" << argv[1];
@@ -86,13 +86,21 @@ int main(int argc, char ** argv){
 		else{
 			float z = atof(argv[3]);
 			float y_angle = 0;
+			int nbins = -1;
 			if(argc>4){
 				y_angle = atof(argv[4]);
+			}
+			if(argc>5){
+				nbins = atoi(argv[5]);
 			}
 			cout << "flux map param : " << endl;
 			cout << "   z : " << z << "mm" << endl;
 			cout << "   y_angle : " << y_angle << "°" << endl;
-			blah->AbsorptionFluxMap(z,0,y_angle*Pi()/180.);
+			cout << "   nbins : ";
+			if(nbins>0) cout << nbins;
+			else cout << "auto";
+			cout << endl;
+			blah->AbsorptionFluxMap(z,0,y_angle*Pi()/180.,nbins);
 		}
 	}
 	else if(argv[2] == tomoAbs){

@@ -1726,7 +1726,7 @@ void Analyse::ExportAbsorptionRays(string outFileName){
 	rayTree->Write();
 	rayTree->CloseFile();
 }
-TH2D * Analyse::AbsorptionFluxMap(double z, TCanvas * c1, double y_angle){
+TH2D * Analyse::AbsorptionFluxMap(double z, TCanvas * c1, double y_angle, int nbins){
 	long eventReconstructed = 0;
 	long eventSuitable = 0;
 	double chisquare_threshold = 100;
@@ -1779,7 +1779,10 @@ TH2D * Analyse::AbsorptionFluxMap(double z, TCanvas * c1, double y_angle){
 	//if (fChain == 0) return fluxMapZ;
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 
-	TH2D * fluxMapZ = new TH2D("fluxMapZ","fluxMapZ",Sqrt(0.02*nentries),x_min,x_max,Sqrt(0.02*nentries),y_min,y_max);
+	int nbins_2D = 0;
+	if(nbins>0) nbins_2D = nbins;
+	else nbins = Sqrt(0.02*nentries);
+	TH2D * fluxMapZ = new TH2D("fluxMapZ","fluxMapZ",nbins_2D,x_min,x_max,nbins_2D,y_min,y_max);
 	fluxMapZ->SetStats(0);
 
 	cout <<  setw(20) << "rays" <<  "|" << setw(20) << "suitable" <<  "|" << setw(20) << "total processed" << endl;
@@ -2737,9 +2740,9 @@ void Analyse::CalcStripResponseFunction(int bin_nb){
 	TCanvas * d;
 	TF1 * SRF;
 
-	TCanvas * c_coord[bin_nb];
-	TProfile * SRH_coord[bin_nb];
-	TF1 * SRF_coord[bin_nb];
+	TCanvas ** c_coord = new TCanvas*[bin_nb];
+	TProfile ** SRH_coord = new TProfile*[bin_nb];
+	TF1 ** SRF_coord = new TF1*[bin_nb];
 	TCanvas * c_param;
 	TGraphErrors * gauss_width_graph;
 	TGraphErrors * lorentz_width_graph;

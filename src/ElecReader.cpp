@@ -19,6 +19,21 @@ using std::endl;
 
 using TMath::Ldexp;
 
+#include <set>
+using std::set;
+#include <boost/filesystem.hpp>
+using boost::filesystem::is_directory;
+using boost::filesystem::exists;
+using boost::filesystem::path;
+using boost::filesystem::directory_entry;
+using boost::filesystem::directory_iterator;
+using boost::filesystem::is_regular_file;
+#include <regex>
+using std::regex;
+using std::smatch;
+using std::regex_match;
+#include <time.h>
+
 RawData::RawData(){
 
 }
@@ -472,7 +487,7 @@ DreamElecReader::DreamElecReader(string base_name_,vector<FeuInfo> feu_info,int 
 		feu_data[feu_it->id].evttime = 0;
 		feu_data[feu_it->id].current_index = first_index;
 		feu_data[feu_it->id].file = new ifstream();
-		open_file(feu_it->id);
+		this->open_file(feu_it->id);
 		feu_data[feu_it->id].dream_mask = 0;
 		for(int i=0;i<Tomography::Nasic_FEU;i++){
 			feu_data[feu_it->id].dream_mask |= (((feu_it->dream_mask)[i]) ? 0x1 : 0x0) << i;
@@ -504,10 +519,10 @@ void DreamElecReader::read_next_event(){
 	do{
 		for(map<int,FeuData>::iterator evn_it = feu_data.begin();evn_it!=feu_data.end();++evn_it){
 			if(is_sync[evn_it->first]) continue;
-			read_next_event_file(evn_it->first);
+			this->read_next_event_file(evn_it->first);
 			while((evn_it->second).Nevent < 0 && !is_end_feu(evn_it->first)){
-				seek_next_EOE(evn_it->first);
-				read_next_event_file(evn_it->first);
+				this->seek_next_EOE(evn_it->first);
+				this->read_next_event_file(evn_it->first);
 			}
 		}
 		current_Nevent = ((feu_data.begin())->second).Nevent;
@@ -550,7 +565,7 @@ void DreamElecReader::read_next_event_file(int feu_id){
 	reset_data(feu_id);
 	DataLineDream current_data;
 	while(feu_data[feu_id].current_index <= last_index){
-		check_file(feu_id);
+		this->check_file(feu_id);
 		(feu_data[feu_id].file)->read((char*)&current_data,sizeof(current_data));
 		current_data.ntohs_();
 		while((feu_data[feu_id].file)->good()){
@@ -700,7 +715,7 @@ void DreamElecReader::seek_next_EOE(int feu_id){
 	reset_data(feu_id);
 	DataLineDream current_data;
 	while(feu_data[feu_id].current_index <= last_index && !eoe_reached){
-		check_file(feu_id);
+		this->check_file(feu_id);
 		/*
 		(feu_data[feu_id].file)->read((char*)&current_data,sizeof(current_data));
 		current_data.ntohs_();
@@ -727,7 +742,7 @@ void DreamElecReader::check_file(int feu_id){
 		}
 		(feu_data[feu_id].file)->close();
 		feu_data[feu_id].current_index++;
-		open_file(feu_id);
+		this->open_file(feu_id);
 	}
 }
 void DreamElecReader::open_file(int feu_id){
@@ -802,6 +817,188 @@ bool DreamElecReader::is_end_feu(int feu_id) const{
 	if(!((((feu_data.find(feu_id))->second).file)->is_open())) return true;
 	if(!((((feu_data.find(feu_id))->second).file)->eof())) return false;
 	return true;
+}
+
+DreamElecWattoReader::DreamElecWattoReader(): DreamElecReader(){
+	event_n_offset = 0;
+	evttime_offset = 0;
+}
+DreamElecWattoReader::~DreamElecWattoReader(){
+	timestamp_to_filename.clear();
+}
+DreamElecWattoReader::DreamElecWattoReader(string directory,vector<FeuInfo> feu_info): DreamElecReader(){
+	event_n_offset = 0;
+	evttime_offset = 0;
+	set<int> feu_n_list;
+	map<pair<string,int>,set<int> > feu_list_by_file;
+	for(vector<FeuInfo>::iterator feu_it=feu_info.begin();feu_it!=feu_info.end();++feu_it){
+		feu_n_list.insert(feu_it->n);
+	}
+
+	path directory_p(directory);
+
+	if(!exists(directory_p)){
+		cout << "directory : " << directory << " does not exist" << endl;
+		return;
+	}
+	if(!is_directory(directory_p)){
+		cout << "directory : " << directory << " is not a directory" << endl;
+		return;
+	}
+	for(directory_iterator file_it = directory_iterator(directory_p);file_it!=directory_iterator();++file_it){
+		path current_path = *file_it;
+		if(current_path.extension() != ".fdf") continue;
+		regex time_regexp(".*([0-9]{2})([0-9]{2})([0-9]{2})_([0-9]{2})H([0-9]{2})_([0-9]{3})_([0-9]{2}).*");
+		smatch string_match;
+		regex_match(current_path.string(),string_match,time_regexp);
+		if(string_match.size()!=8){
+			cout << "problem parsing filename : " << current_path << endl;
+			continue;
+		}
+		struct tm current_tm;
+		strptime(("20"+string_match[1].str()+string_match[2].str()+string_match[3].str()+string_match[4].str()+string_match[5].str()+"00").c_str(),"%Y%m%d%H%M%S",&current_tm);
+		unsigned int current_timestamp = mktime(&current_tm);
+		string base_file_name = current_path.string().substr(0,current_path.string().size()-10);
+		int file_index = atoi(string_match[6].str().c_str());
+		int current_feu_n = atoi(string_match[7].str().c_str());
+		if(feu_n_list.count(current_feu_n) == 0){
+			cout << "file : " << current_path.string() << " is not associated with any known FEU" << endl;
+			continue;
+		}
+		if(timestamp_to_filename.count(current_timestamp) > 0){
+			timestamp_to_filename[current_timestamp] = pair<string,int>(base_file_name,file_index);
+		}
+		else if(timestamp_to_filename[current_timestamp].second < file_index){
+			timestamp_to_filename[current_timestamp].second = file_index;
+		}
+		if(feu_list_by_file.count(pair<string,int>(base_file_name,file_index))>0){
+			feu_list_by_file[pair<string,int>(base_file_name,file_index)].insert(current_feu_n);
+		}
+		else{
+			feu_list_by_file[pair<string,int>(base_file_name,file_index)] = set<int>();
+			feu_list_by_file[pair<string,int>(base_file_name,file_index)].insert(current_feu_n);
+		}
+	}
+
+	reading_status = timestamp_to_filename.begin();
+	while(reading_status != timestamp_to_filename.end()){
+		bool is_good = true;
+		for(int i=0;i<((reading_status->second).second);i++){
+			if(feu_list_by_file[reading_status->second] != feu_n_list){
+				cout << "file missing for some FEU" << endl;
+				is_good = false;
+				if(i>0){
+					cout << "    stopping " << (reading_status->second).first << " at index " << i-1 << endl;
+					(reading_status->second).second = i-1;
+					++reading_status;
+				}
+				else{
+					cout << "    dropping : " << (reading_status->second).first << endl;
+					reading_status = timestamp_to_filename.erase(reading_status);
+				}
+				break;
+			}
+		}
+		if(is_good) ++reading_status;
+	}
+
+	reading_status = timestamp_to_filename.begin();
+	first_index = 0;
+	last_index = (reading_status->second).second;
+	
+	for(vector<FeuInfo>::iterator feu_it=feu_info.begin();feu_it!=feu_info.end();++feu_it){
+		feu_id_to_n[feu_it->id] = feu_it->n;
+		feu_data[feu_it->id].Nevent = 1;
+		feu_data[feu_it->id].evttime = 0;
+		feu_data[feu_it->id].current_index = 0;
+		feu_data[feu_it->id].file = new ifstream();
+		this->open_file(feu_it->id);
+		feu_data[feu_it->id].dream_mask = 0;
+		for(int i=0;i<Tomography::Nasic_FEU;i++){
+			feu_data[feu_it->id].dream_mask |= (((feu_it->dream_mask)[i]) ? 0x1 : 0x0) << i;
+			for(int j=0;j<Tomography::Nchannel;j++){
+				for(int k=0;k<Tomography::get_instance()->get_Nsample();k++){
+					feu_data[feu_it->id].data[i][j][k] = 0;
+				}
+			}
+		}
+	}
+}
+DreamElecWattoReader::DreamElecWattoReader(const DreamElecWattoReader& other): DreamElecReader(other){
+	timestamp_to_filename = other.timestamp_to_filename;
+	reading_status = other.reading_status;
+	event_n_offset = other.event_n_offset;
+	evttime_offset = other.evttime_offset;
+
+}
+DreamElecWattoReader& DreamElecWattoReader::operator=(const DreamElecWattoReader& other){
+	ElecReader::operator=(other);
+	timestamp_to_filename = other.timestamp_to_filename;
+	reading_status = other.reading_status;
+	event_n_offset = other.event_n_offset;
+	evttime_offset = other.evttime_offset;
+	return *this;
+}
+void DreamElecWattoReader::check_file(int feu_id){
+	if((feu_data[feu_id].file)->eof()){
+		if(feu_data[feu_id].current_index == last_index){
+			cout << "end of data for FEU : " << feu_id_to_n[feu_id] << " for run " << (reading_status->second).first << endl;
+			change_run();
+			return;
+		}
+		(feu_data[feu_id].file)->close();
+		feu_data[feu_id].current_index++;
+		this->open_file(feu_id);
+	}
+}
+void DreamElecWattoReader::open_file(int feu_id){
+	while(!((feu_data[feu_id].file)->is_open()) && feu_data[feu_id].current_index <= last_index){
+		ostringstream current_name;
+		current_name << (reading_status->second).first << setw(3) << setfill('0') << feu_data[feu_id].current_index << "_" << setw(2) << setfill('0') << feu_id_to_n[feu_id] << "." << Tomography::DreamExt;
+		feu_data[feu_id].file->open(current_name.str().c_str(),ifstream::binary);
+		if((feu_data[feu_id].file)->is_open()) cout << "\n" << current_name.str() << " loaded !" << endl;
+		else{
+			cout << "\ncan't load : " << current_name.str() << endl;
+			feu_data[feu_id].current_index++;
+			reset_data(feu_id);
+		}
+	}
+	if((feu_data[feu_id].file)->is_open()) change_run();
+}
+long DreamElecWattoReader::get_event_n(){
+	long current_Nevent = ((feu_data.begin())->second).Nevent;
+	bool desync = false;
+	for(map<int,FeuData>::iterator event_it = feu_data.begin();event_it!=feu_data.end();++event_it){
+		if((event_it->second).Nevent != current_Nevent) desync = true;
+		if((event_it->second).Nevent > current_Nevent) current_Nevent = (event_it->second).Nevent;
+	}
+	if(desync) cout << "Warning ! Event ID desync detected ! Returned event ID might be inaccurate" << endl;
+	return (current_Nevent + event_n_offset);
+}
+double DreamElecWattoReader::get_evttime(){
+	return (((feu_data.begin())->second).evttime + evttime_offset);
+}
+void DreamElecWattoReader::change_run(){
+	long current_Nevent = ((feu_data.begin())->second).Nevent;
+	double current_evttime = ((feu_data.begin())->second).evttime;
+	for(map<int,FeuData>::iterator event_it = feu_data.begin();event_it!=feu_data.end();++event_it){
+		if((event_it->second).Nevent > current_Nevent){
+			current_Nevent = (event_it->second).Nevent;
+			current_evttime = (event_it->second).evttime;
+		}
+	}
+	reset_data();
+	++reading_status;
+	if(reading_status==timestamp_to_filename.end()) return;
+	last_index = (reading_status->second).second;
+	event_n_offset = event_n_offset + current_Nevent + 1;
+	evttime_offset = ((reading_status->first) - ((timestamp_to_filename.begin())->first))*(Tomography::get_instance()->get_clock_rate());
+
+	for(map<int,FeuData>::iterator feu_it=feu_data.begin();feu_it!=feu_data.end();++feu_it){
+		(feu_it->second).current_index = 0;
+		this->open_file(feu_it->first);
+	}
+
 }
 
 FeminosElecReader::FeminosElecReader(): ElecReader(){

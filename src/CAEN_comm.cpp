@@ -191,7 +191,7 @@ map<int,map<int,string> > CAEN_Comm::get_Ch_name(){
 	CAENHVRESULT ret;
 	for(map<int,Board_spec>::iterator board_it = boards.begin();board_it!=boards.end();++board_it){
 		int current_chan_nb = (board_it->second).get_chan_nb();
-		unsigned short listChanNb[current_chan_nb];
+		unsigned short * listChanNb = new unsigned short[current_chan_nb];
 		for(int i=0;i<current_chan_nb;i++){
 			listChanNb[i] = i;
 		}
@@ -206,6 +206,7 @@ map<int,map<int,string> > CAEN_Comm::get_Ch_name(){
 				return_map[(board_it->second).get_index()][i] = listChanName[i];
 			}
 		}
+		delete listChanNb;
 	}
 	return return_map;
 }
@@ -218,7 +219,7 @@ map<int,map<int,CAEN_Ch::param_value> > CAEN_Comm::get_Ch_param(map<int,vector<i
 			cout << "Board " << ch_list_it->first << " unknown" << endl;
 			continue;
 		}
-		unsigned short listChanNb[(ch_list_it->second).size()];
+		unsigned short * listChanNb = new unsigned short[(ch_list_it->second).size()];
 		bool wrong_ch = false;
 		for(unsigned int i=0;i<(ch_list_it->second).size();i++){
 			listChanNb[i] = (ch_list_it->second)[i];
@@ -246,6 +247,7 @@ map<int,map<int,CAEN_Ch::param_value> > CAEN_Comm::get_Ch_param(map<int,vector<i
 
 		}
 		delete listChanParam;
+		delete listChanNb;
 	}
 	return return_map;
 }

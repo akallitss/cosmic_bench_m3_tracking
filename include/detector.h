@@ -92,13 +92,13 @@ class CM_Detector: public Detector{
 		~CM_Detector();
 		Detector * build_det(const ptree::value_type& child) const;
 		//CosMulti general charac
-		static const double thinStripPitch = 500./1024.; // distance between the middle of 2 adjacent thin strips
-		static const double wideStripPitch = 500./32.; // distance between the middle of 2 adjacent wide strips
-		static const int Nchannel = 64;
-		static const int Nstrip = 1024;
-		static const double size = 500.;
-		static const int CMN_div = 2;
-		static const int MaxNClus = 600;
+		static constexpr const double thinStripPitch = 500./1024.; // distance between the middle of 2 adjacent thin strips
+		static constexpr const double wideStripPitch = 500./32.; // distance between the middle of 2 adjacent wide strips
+		static constexpr const int Nchannel = 64;
+		static constexpr const int Nstrip = 1024;
+		static constexpr const double size = 500.;
+		static constexpr const int CMN_div = 2;
+		static constexpr const int MaxNClus = 600;
 		unsigned int StripToChannel(unsigned int i) const;
 		double get_size() const;
 		int get_Nchannel() const;
@@ -147,12 +147,12 @@ class MG_Detector: public Detector{
 		static const vector<unsigned int> StripToChannel_a;
 		static vector<unsigned int> ChannelToStrip(unsigned int channel_nb);
 		//MultiGen general charac
-		static const double StripPitch = 500./1024.; // distance between the middle of 2 adjacent strips
-		static const int Nchannel = 61;
-		static const int Nstrip = 1024;
-		static const double size = 500.;
-		static const int CMN_div = 2;
-		static const int MaxNClus = 300;
+		static constexpr const double StripPitch = 500./1024.; // distance between the middle of 2 adjacent strips
+		static constexpr const int Nchannel = 61;
+		static constexpr const int Nstrip = 1024;
+		static constexpr const double size = 500.;
+		static constexpr const int CMN_div = 2;
+		static constexpr const int MaxNClus = 300;
 		double get_size() const;
 		int get_Nchannel() const;
 		int get_Nstrip() const;
@@ -204,12 +204,12 @@ class MGv2_Detector: public Detector{
 		static const vector<unsigned int> StripToChannel_a;
 		static vector<unsigned int> ChannelToStrip(unsigned int channel_nb);
 		//MultiGen general charac
-		static const double StripPitch = 500./1037.; // distance between the middle of 2 adjacent strips
-		static const int Nchannel = 61;
-		static const int Nstrip = 1037;
-		static const double size = 500.;
-		static const int CMN_div = 2;
-		static const int MaxNClus = 300;
+		static constexpr const double StripPitch = 500./1037.; // distance between the middle of 2 adjacent strips
+		static constexpr const int Nchannel = 61;
+		static constexpr const int Nstrip = 1037;
+		static constexpr const double size = 500.;
+		static constexpr const int CMN_div = 2;
+		static constexpr const int MaxNClus = 300;
 		double get_size() const;
 		int get_Nchannel() const;
 		int get_Nstrip() const;

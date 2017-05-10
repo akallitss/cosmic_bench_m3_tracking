@@ -26,6 +26,7 @@ class DataReader{
 	public:
 		DataReader();
 		DataReader(ptree config_tree, bool save_to_disk, bool is_live = false);
+		DataReader(ptree config_tree, string multi_run_dir);
 		//DataReader(map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, string base_name_, map<int,int> feu_id_to_n_, int first_index_, int last_index_, string PedName_, string RMSName_);
 		//DataReader(map<int,Tomography::det_type> det_type_by_asic_, map<int,int> det_n_by_asic_, string base_name_, vector<int> fem_id,int first_index_, int last_index_, string PedName_, string RMSName_);
 		~DataReader();

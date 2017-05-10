@@ -127,6 +127,7 @@ Tomography::Tomography(){
 	sigma = 0;
 	first_down_layer = -1;
 	TOTCut = -1;
+	clock_rate = 0;
 	noise_RMS = ADC_max+1;
 	chisquare_threshold = 0;
 	live_graphic_display = false;
@@ -165,6 +166,7 @@ Tomography::Tomography(ptree config_tree_){
 	sigma = config_tree.get<double>("sigma");
 	first_down_layer = config_tree.get<int>("first_down_layer");
 	TOTCut = config_tree.get<int>("TOTCut");
+	clock_rate = config_tree.get<double>("clock_rate");
 	noise_RMS = config_tree.get<double>("noise_RMS");
 	chisquare_threshold = config_tree.get<double>("chisquare_threshold");
 	if(gROOT->IsBatch()) is_batch = true;
@@ -253,6 +255,9 @@ int Tomography::get_SampleMax() const{
 }
 int Tomography::get_TOTCut() const{
 	return TOTCut;
+}
+double Tomography::get_clock_rate() const{
+	return clock_rate;
 }
 bool Tomography::get_is_up(int layer) const{
 	return (layer < first_down_layer);

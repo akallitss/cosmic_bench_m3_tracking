@@ -171,6 +171,73 @@ DataReader::DataReader(ptree config_tree, bool save_to_disk, bool is_live){
 		}
 	}
 }
+DataReader::DataReader(ptree config_tree, string multi_run_dir){
+	CosmicBench current_CB(config_tree);
+	det_N.clear();
+	for(int i=0;i<current_CB.get_det_N_tot();i++){
+		Detector * current_det = current_CB.get_detector(i);
+		/*
+		det_type_by_asic[current_det->get_asic_n()] = current_det->get_type();
+		det_n_by_asic[current_det->get_asic_n()] = current_det->get_n_in_tree();
+		*/
+		vector<pair<int,bool> > current_det_asic_n = current_det->get_asic_n();
+		for(unsigned int j=0;j<current_det_asic_n.size();j++){
+			if(asic_list.count(current_det_asic_n[j].first)>0){
+				cout << "asic " << current_det_asic_n[j].first << " appears multiple times in config file" << endl;
+				return;
+			}
+			struct asic_carac current_asic;
+			current_asic.detector_type = current_det->get_type();
+			current_asic.detector_n = current_det->get_n_in_tree();
+			current_asic.asic_n_in_det = j;
+			current_asic.connector_direction = current_det_asic_n[j].second;
+			asic_list[current_det_asic_n[j].first] = current_asic;
+		}
+		det_N[current_det->get_type()]++;
+	}
+	DAQtype = Tomography::str_to_elec(config_tree.get<string>("electronic_type"));
+	string data_file_basename = config_tree.get<string>("data_file_basename");
+	string signalName = config_tree.get<string>("signal_file");
+	PedName = config_tree.get<string>("Ped");
+	RMSName = config_tree.get<string>("RMSPed");
+	max_event = config_tree.get<long>("max_event");
+	outTree = NULL;
+	if(DAQtype==Tomography::Dream){
+		vector<FeuInfo> all_feu_info;
+		vector<int> used_asics;
+		BOOST_FOREACH(const ptree::value_type& child, config_tree.get_child("FEU")){
+			struct FeuInfo current_feu_info;
+			current_feu_info.id = child.second.get<int>("id");
+			current_feu_info.n = child.second.get<int>("n");
+			for(int i=0;i<Tomography::Nasic_FEU;i++){
+				current_feu_info.dream_mask[i] = false;
+			}
+			BOOST_FOREACH(const ptree::value_type& grand_child, child.second.get_child("dream_mask")){
+				int current_dream = grand_child.second.get_value<int>();
+				if(current_dream<0 || current_dream>(Tomography::Nasic_FEU-1)){
+					cout << "asic number have to be between 0 and " << Tomography::Nasic_FEU-1 << " (" << current_dream << ")" << endl;
+					continue;
+				}
+				current_feu_info.dream_mask[current_dream] = true;
+				used_asics.push_back(current_dream+(8*(current_feu_info.id)));
+			}
+			all_feu_info.push_back(current_feu_info);
+		}
+		reader = new DreamElecWattoReader(multi_run_dir,all_feu_info);
+		mapping = &Dream_mapping;
+	}
+	else{
+		cout << "multi run is only available with DREAM !" << endl;
+	}
+	Nevent = -1;
+	evttime = 0;
+	for(map<Tomography::det_type,unsigned short>::iterator type_it=det_N.begin();type_it!=det_N.end();++type_it){
+		if(type_it->second > 0){
+			StripAmpl[type_it->first] = vector<vector<vector<float> > >(type_it->second,vector<vector<float> >(Tomography::Static_Detector[type_it->first]->get_Nchannel(),vector<float>(Tomography::get_instance()->get_Nsample(),0)));
+			Ped[type_it->first] = vector<vector<float> >(type_it->second,vector<float>(Tomography::Static_Detector[type_it->first]->get_Nchannel(),0));
+		}
+	}
+}
 DataReader::~DataReader(){
 	if(reader != NULL) delete reader;
 	if(outTree != NULL){
