@@ -941,6 +941,11 @@ DreamElecWattoReader& DreamElecWattoReader::operator=(const DreamElecWattoReader
 void DreamElecWattoReader::check_file(int feu_id){
 	if((feu_data[feu_id].file)->eof()){
 		if(feu_data[feu_id].current_index == last_index){
+			if(reading_status==timestamp_to_filename.end()){
+				cout << "should not be there, there is no data left to process !" << endl;
+				reset_data();
+				return;
+			}
 			cout << "end of data for FEU : " << feu_id_to_n[feu_id] << " for run " << (reading_status->second).first << endl;
 			change_run();
 			return;
@@ -970,9 +975,15 @@ double DreamElecWattoReader::get_evttime(){
 }
 void DreamElecWattoReader::change_run(){
 	reset_data();
-	if(reading_status==timestamp_to_filename.end()) return;
+	if(reading_status==timestamp_to_filename.end()){
+		last_index = -1;
+		return;
+	}
 	++reading_status;
-	if(reading_status==timestamp_to_filename.end()) return;
+	if(reading_status==timestamp_to_filename.end()){
+		last_index = -1;
+		return;
+	}
 	last_index = (reading_status->second).second;
 	evttime_offset = ((reading_status->first) - ((timestamp_to_filename.begin())->first))*(Tomography::get_instance()->get_clock_rate());
 
