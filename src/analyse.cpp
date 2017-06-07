@@ -1781,7 +1781,7 @@ TH2D * Analyse::AbsorptionFluxMap(double z, TCanvas * c1, double y_angle, int nb
 
 	int nbins_2D = 0;
 	if(nbins>0) nbins_2D = nbins;
-	else nbins = Sqrt(0.02*nentries);
+	else nbins_2D = Sqrt(0.02*nentries);
 	TH2D * fluxMapZ = new TH2D("fluxMapZ","fluxMapZ",nbins_2D,x_min,x_max,nbins_2D,y_min,y_max);
 	fluxMapZ->SetStats(0);
 
@@ -1823,7 +1823,7 @@ void Analyse::WatToFluxMap(double z,TEllipse el, TCanvas * c1, TCanvas * c2, dou
 	long eventReconstructed = 0;
 	long eventSuitable = 0;
 	double chisquare_threshold = 100;
-	unsigned int interval_length = 10000;
+	unsigned int interval_length = 50000;
 	if(Abs(y_angle)>Pi()/2.){
 		return;
 	}
@@ -1874,6 +1874,14 @@ void Analyse::WatToFluxMap(double z,TEllipse el, TCanvas * c1, TCanvas * c2, dou
 	//if (fChain == 0) return fluxMapZ;
 	long nentries = (max_event>0) ? Min(static_cast<long>(fChain->GetEntriesFast()),max_event) : fChain->GetEntriesFast();
 
+	LoadTree(0);
+	fChain->GetEntry(0);
+	double evttime_start = evttime;
+	LoadTree(nentries-1);
+	fChain->GetEntry(nentries-1);
+	double evttime_end = evttime;
+
+
 	TH2D * fluxMapZ = new TH2D("fluxMapZ","fluxMapZ",Sqrt(0.02*nentries),x_min,x_max,Sqrt(0.02*nentries),y_min,y_max);
 	fluxMapZ->SetStats(0);
 	TEllipse * this_el = new TEllipse(el);
@@ -1900,6 +1908,14 @@ void Analyse::WatToFluxMap(double z,TEllipse el, TCanvas * c1, TCanvas * c2, dou
 	TH1D * tank_tracks_norm = new TH1D("tank_tracks_norm","tank_tracks_norm",nentries/interval_length,0,nentries/interval_length);
 	TH1D * tank_tracks_norm_H = new TH1D("tank_tracks_norm_H","tank_tracks_norm_H",nentries/interval_length,0,nentries/interval_length);
 	TH1D * tank_tracks_norm_V = new TH1D("tank_tracks_norm_V","tank_tracks_norm_V",nentries/interval_length,0,nentries/interval_length);
+	TCanvas * c3 = new TCanvas("WaterMon_time","WaterMon_time");
+	c3->Divide(1,3);
+	TH1D * tank_tracks_time = new TH1D("tank_tracks_time","tank_tracks_time",Sqrt(0.02*nentries),evttime_start,evttime_end);
+	TH1D * out_tracks_time = new TH1D("out_tracks_time","out_tracks_time",Sqrt(0.02*nentries),evttime_start,evttime_end);
+	TH1D * ratio_tracks_time = new TH1D("ratio_tracks_time","ratio_tracks_time",Sqrt(0.02*nentries),evttime_start,evttime_end);
+	tank_tracks_time->Sumw2();
+	out_tracks_time->Sumw2();
+	ratio_tracks_time->Sumw2();
 	cout << setw(20) << "interval n" <<  "|" << setw(20) << "total track" <<  "|" << setw(20) << "track in ellipse" <<  "|" << setw(20) << "track in H band" <<  "|" << setw(20) << "track in V band" << endl;
 	for (Long64_t jentry=0; jentry<nentries && Tomography::get_instance()->get_can_continue();jentry++){
 		Long64_t ientry = LoadTree(jentry);
@@ -1923,6 +1939,10 @@ void Analyse::WatToFluxMap(double z,TEllipse el, TCanvas * c1, TCanvas * c2, dou
 			if(point_in_plane.is_inside(*this_el)){
 				track_in_ellipse++;
 				tank_tracks->Fill(jentry);
+				tank_tracks_time->Fill(evttime);
+			}
+			else{
+				out_tracks_time->Fill(evttime);
 			}
 			if(Abs(point_in_plane.get_Y() - this_el->GetY1()) < band_half_width) track_in_band++;
 			if(Abs(point_in_plane.get_X() - this_el->GetX1()) < vertical_band_half_width){
@@ -1992,6 +2012,15 @@ void Analyse::WatToFluxMap(double z,TEllipse el, TCanvas * c1, TCanvas * c2, dou
 			tank_tracks_norm_V->Draw("E");
 			c2->Modified();
 			c2->Update();
+			ratio_tracks_time->Divide(tank_tracks_time,out_tracks_time);
+			c3->cd(1);
+			tank_tracks_time->Draw("E");
+			c3->cd(2);
+			out_tracks_time->Draw("E");
+			c3->cd(3);
+			ratio_tracks_time->Draw("E");
+			c3->Modified();
+			c3->Update();
 		}
 	}
 	cout << setw(20) << interval_n <<  "|" << setw(20) << reconstructed_track <<  "|" << setw(20) << track_in_ellipse <<  "|" << setw(20) << track_in_band <<  "|" << setw(20) << track_in_vertical_band << endl;
@@ -2047,6 +2076,15 @@ void Analyse::WatToFluxMap(double z,TEllipse el, TCanvas * c1, TCanvas * c2, dou
 	tank_tracks_norm_V->Draw("E");
 	c2->Modified();
 	c2->Update();
+	ratio_tracks_time->Divide(tank_tracks_time,out_tracks_time);
+	c3->cd(1);
+	tank_tracks_time->Draw("E");
+	c3->cd(2);
+	out_tracks_time->Draw("E");
+	c3->cd(3);
+	ratio_tracks_time->Draw("E");
+	c3->Modified();
+	c3->Update();
 }
 void Analyse::AbsorptionFluxMapNormTheo(double z, double bench_angle, TCanvas * c1, TCanvas * c2, TCanvas * c3, TCanvas * c4){
 	long eventReconstructed = 0;
