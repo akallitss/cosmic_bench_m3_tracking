@@ -88,8 +88,9 @@ int main(int argc, char ** argv){
 	struct ntptimeval current_time, first_time;
 	ntp_gettime(&current_time);
 	first_time = current_time;
+	cout << "press Ctrl-C to stop" << endl;
 	cout << fixed << setprecision(2);
-	cout << "\rt = " << current_time.time.tv_sec << " | " << setw(7) << 0 << "%" << flush;
+	cout << "\rt = " << current_time.time.tv_sec << flush;//" | " << setw(7) << 0 << "%" << flush;
 
 	TFile * fOut = new TFile(config_tree.get<string>("filename").c_str(),"RECREATE");
 	TTree * outTree = new TTree("T","HV");
@@ -99,7 +100,7 @@ int main(int argc, char ** argv){
 	outTree->Branch("name","vector<string>",&chan_names);
 
 	map<CAEN_Ch::Param,CAEN_Ch::param_value*> channel_params;
-	bool has_IMon = false;
+	//bool has_IMon = false;
 	BOOST_FOREACH(const ptree::value_type& child, config_tree.get_child("Params")){
 		CAEN_Ch::Param current_param = CAEN_Ch::get_Param(child.second.data());
 		if(channel_params.count(current_param)>0) continue;
@@ -115,9 +116,9 @@ int main(int argc, char ** argv){
 			current_branch_name_root << "I";
 		}
 		outTree->Branch(current_branch_name.str().c_str(),channel_params[current_param],current_branch_name_root.str().c_str());
-		if(current_param == CAEN_Ch::IMon) has_IMon = true;
+		//if(current_param == CAEN_Ch::IMon) has_IMon = true;
 	}
-
+	/*
 	ofstream IMon_csv;
 	if(has_IMon){
 		remove("tmp_IMon.csv");
@@ -129,8 +130,8 @@ int main(int argc, char ** argv){
 		IMon_csv << endl;
 		IMon_csv << fixed << setprecision(3);
 	}
-	unsigned int duration = config_tree.get<int>("duration");
-	for(unsigned int i=0;(i<duration) && can_continue;i++){
+	*/
+	while(can_continue){
 		ntp_gettime(&current_time);
 		wait_time.tv_nsec = (1000000000-current_time.time.tv_usec);
 		nanosleep(&wait_time,&remaining_time);
@@ -138,7 +139,7 @@ int main(int argc, char ** argv){
 			channel_values[params_it->first] = blah->get_Ch_param(used_channel,params_it->first);
 
 		}
-		if(has_IMon) IMon_csv << current_time.time.tv_sec << " ; ";
+		//if(has_IMon) IMon_csv << current_time.time.tv_sec << " ; ";
 		for(map<CAEN_Ch::Param,map<int,map<int,CAEN_Ch::param_value> > >::iterator values_it = channel_values.begin();values_it!=channel_values.end();++values_it){
 			current_channel = 0;
 			for(map<int,vector<int> >::iterator map_it = used_channel.begin();map_it!=used_channel.end();++map_it){
@@ -146,27 +147,29 @@ int main(int argc, char ** argv){
 					CAEN_Ch::param_value current_value = (values_it->second)[map_it->first][*vec_it];
 					channel_params[values_it->first][current_channel] = current_value;
 					current_channel++;
-					if(values_it->first == CAEN_Ch::IMon) IMon_csv << current_value.real << " ; ";
+					//if(values_it->first == CAEN_Ch::IMon) IMon_csv << current_value.real << " ; ";
 				}
 			}
 		}
-		if(has_IMon) IMon_csv << endl;
+		//if(has_IMon) IMon_csv << endl;
 		outTree->Fill();
-		if((current_time.time.tv_sec - first_time.time.tv_sec)%3600 == 0){
+		if((current_time.time.tv_sec - first_time.time.tv_sec)%900 == 0){
 			fOut->cd();
 			outTree->Write();
 		}
-		cout << "\rt = " << current_time.time.tv_sec << " | " << setw(7) << 100.*(i+1)/duration << "%" << flush;
+		cout << "\rt = " << current_time.time.tv_sec << flush;//" | " << setw(7) << 100.*(i+1)/duration << "%" << flush;
 	}
 	cout << endl;
 	fOut->cd();
 	outTree->Write();
 	fOut->Close();
 	delete blah;
+	/*
 	if(has_IMon){
 		IMon_csv.close();
 		remove("tmp_IMon.csv");
 	}
+	*/
 	return 0;
 }
 
