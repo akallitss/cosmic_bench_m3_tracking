@@ -54,9 +54,9 @@ int main(int argc, char ** argv){
 		blah->Efficacity();
 	}
 	else if(argv[2] == residus){
-		//blah->Residus_ref();
+		blah->Residus_ref();
 		//blah->Residus();
-		blah->Residus_ref_MT();
+		//blah->Residus_ref_MT();
 	}
 	else if(argv[2] == restime){
 		blah->Residus_time();

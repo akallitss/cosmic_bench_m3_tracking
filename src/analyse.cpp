@@ -452,27 +452,30 @@ void Analyse::Amplitude_time(){
 	//map<string,TH2D*> ampl_time_h;
 	int n_bins_adc = 800;
 	int n_bins_time = nentries/100;
+	double clock_rate = Tomography::get_instance()->get_clock_rate();
 	for(vector<Detector*>::iterator it = detectors.begin();it!=detectors.end();++it){
 		ostringstream name;
 		name << (*it)->get_type() << "_" << (*it)->get_n_in_tree();
-		amplitude_time[(*it)->get_type()][(*it)->get_n_in_tree()] = new TProfile((name.str()+"_amplitude_time").c_str(),(name.str()+"_amplitude_time").c_str(),n_bins_time,evttime_min,evttime_max);
+		amplitude_time[(*it)->get_type()][(*it)->get_n_in_tree()] = new TProfile((name.str()+"_amplitude_time").c_str(),(name.str()+"_amplitude_time").c_str(),n_bins_time,evttime_min/clock_rate,evttime_max/clock_rate);
 		ampl_h[(*it)->get_type()][(*it)->get_n_in_tree()] = new TH1D((name.str()+"_ampl_h").c_str(),(name.str()+"_ampl_h").c_str(),n_bins_adc,0,4096);
-		ampl_time_h[(*it)->get_type()][(*it)->get_n_in_tree()] = new TH2D((name.str()+"_ampl_time_h").c_str(),(name.str()+"_ampl_time_h").c_str(),n_bins_adc/2,0,4096,n_bins_time,evttime_min,evttime_max);
+		ampl_time_h[(*it)->get_type()][(*it)->get_n_in_tree()] = new TH2D((name.str()+"_ampl_time_h").c_str(),(name.str()+"_ampl_time_h").c_str(),n_bins_adc/2,0,4096,n_bins_time,evttime_min/clock_rate,evttime_max/clock_rate);
 	}
 	TCanvas * c0 = new TCanvas("stats","stats");
 	c0->Divide(3);
 	int n_bin_log = 200;
 	double * bin_edges = new double[n_bin_log+1];
-	double log_max = 20*(evttime_max-evttime_min)/nentries;
-	double log_min = 1e4;
+	//double log_max = 20*(evttime_max-evttime_min)/nentries;
+	double log_max = clock_rate/(1e5);
+	//double log_min = 1e4;
+	double log_min = 0.1;//100*clock_rate/((evttime_max-evttime_min));
 	for(int i=0;i<=n_bin_log;i++){
 		bin_edges[i] = log_min*Power(log_max/log_min,i/static_cast<double>(n_bin_log));
 	}
 
-
-	TProfile * freq_time = new TProfile("freq_time","freq_time",n_bins_time,evttime_min,evttime_max);
+	TH1D * freq_time = new TH1D("freq_time","freq_time",n_bins_time,evttime_min/clock_rate,evttime_max/clock_rate);
+	freq_time->Sumw2();
 	TH1D * freq_h = new TH1D("freq_h","freq_h",n_bin_log,bin_edges);
-	TH2D * freq_time_h = new TH2D("freq_time_h","freq_time_h",n_bin_log,bin_edges,n_bins_time,evttime_min,evttime_max);
+	TH2D * freq_time_h = new TH2D("freq_time_h","freq_time_h",n_bin_log,bin_edges,n_bins_time,evttime_min/clock_rate,evttime_max/clock_rate);
 	c0->GetPad(2)->SetLogx();
 	c0->GetPad(2)->SetLogy();
 	c0->GetPad(3)->SetLogx();
@@ -481,14 +484,14 @@ void Analyse::Amplitude_time(){
 	if (fChain == 0) return;
 	cout << setw(20) << "total processed" << endl;
 	double evttime_last = evttime_min;
-	for (Long64_t jentry=0; jentry<nentries && Tomography::get_instance()->get_can_continue();jentry++){
+	for (Long64_t jentry=1; jentry<nentries && Tomography::get_instance()->get_can_continue();jentry++){
 		Long64_t ientry = LoadTree(jentry);
 		if (ientry < 0) break;
 		fChain->GetEntry(jentry);
 		CosmicBenchEvent * currentCBEvent = new CosmicBenchEvent(this,this,-1);
-		freq_time->Fill(evttime,evttime - evttime_last);
-		freq_h->Fill(evttime - evttime_last);
-		freq_time_h->Fill(evttime - evttime_last,evttime);
+		freq_time->Fill(evttime/clock_rate);//clock_rate/(evttime - evttime_last));
+		freq_h->Fill(clock_rate/(evttime - evttime_last));
+		freq_time_h->Fill(clock_rate/(evttime - evttime_last),evttime/clock_rate);
 		evttime_last = evttime;
 		for(vector<Event*>::iterator it = (currentCBEvent->events).begin();it!=(currentCBEvent->events).end();++it){
 			//ostringstream name;
@@ -499,8 +502,8 @@ void Analyse::Amplitude_time(){
 			for(vector<Cluster*>::iterator kt = current_clusters.begin();kt!=current_clusters.end();++kt){
 				double current_ampl = (*kt)->get_maxStripAmpl();
 				ampl_h[current_type][current_n]->Fill(current_ampl);
-				amplitude_time[current_type][current_n]->Fill(evttime,current_ampl);
-				ampl_time_h[current_type][current_n]->Fill(current_ampl,evttime);
+				amplitude_time[current_type][current_n]->Fill(evttime/clock_rate,current_ampl);
+				ampl_time_h[current_type][current_n]->Fill(current_ampl,evttime/clock_rate);
 				delete *kt;
 			}
 		}
@@ -534,6 +537,7 @@ void Analyse::Amplitude_time(){
 		}
 	}
 	cout << "\r" << setw(20) << nentries << endl;
+	freq_time->Scale(n_bins_time*clock_rate/(evttime_max-evttime_min));
 	int pad_id= 1;
 	for(map<Tomography::det_type,map<int,TProfile*> >::iterator it = amplitude_time.begin();it!=amplitude_time.end();++it){
 		for(map<int,TProfile*>::iterator jt = (it->second).begin();jt!=(it->second).end();++jt){
@@ -551,7 +555,7 @@ void Analyse::Amplitude_time(){
 	c_MM->Modified();
 	c_MM->Update();
 	c0->cd(1);
-	freq_time->Draw();
+	freq_time->Draw("E");
 	c0->cd(2);
 	freq_h->Draw();
 	c0->cd(3);
@@ -629,7 +633,7 @@ void Analyse::Residus_ref(){
 			resVSsize[name.str()] = new TProfile((name.str()+"_resVSsize").c_str(),(name.str()+"_resVSsize").c_str(),50,0,50,-5,5);
 			absResVSampl[name.str()] = new TProfile((name.str()+"_absResVSampl").c_str(),(name.str()+"_absResVSampl").c_str(),500,-100,10000,0,5);
 			absResVStime[name.str()] = new TProfile((name.str()+"_absResVStime").c_str(),(name.str()+"_absResVStime").c_str(),38,-2,34,0,5);
-			//absResVSabsAngle[name.str()] = new TProfile((name.str()+"_absResVSabsAngle").c_str(),(name.str()+"_absResVSabsAngle").c_str(),50,0,0.6,0,5);
+			absResVSabsAngle[name.str()] = new TProfile((name.str()+"_absResVSabsAngle").c_str(),(name.str()+"_absResVSabsAngle").c_str(),50,0,0.6,0,5);
 			absResVStot[name.str()] = new TProfile((name.str()+"_absResVStot").c_str(),(name.str()+"_absResVStot").c_str(),26,0,25,0,5);
 			absResVSsize[name.str()] = new TProfile((name.str()+"_absResVSsize").c_str(),(name.str()+"_absResVSsize").c_str(),50,0,50,0,5);
 			point_nb[name.str()] = 0;
@@ -734,7 +738,7 @@ void Analyse::Residus_ref(){
 						angle_alignment[name.str()]->Fill(jt->eval_Y((*it)->get_z()),residu);
 						resVSpos[name.str()]->Fill(jt->eval_X((*it)->get_z()),residu);
 						resVSangle[name.str()]->Fill(jt->get_slope_X(),residu);
-						//absResVSabsAngle[name.str()]->Fill(Abs(jt->get_slope_X()),Abs(residu));
+						absResVSabsAngle[name.str()]->Fill(Abs(jt->get_slope_X()),Abs(residu));
 						resVSanglePerp[name.str()]->Fill(jt->get_slope_Y(),residu);
 					}
 					else{
@@ -742,7 +746,7 @@ void Analyse::Residus_ref(){
 						angle_alignment[name.str()]->Fill(jt->eval_X((*it)->get_z()),residu);
 						resVSpos[name.str()]->Fill(jt->eval_Y((*it)->get_z()),residu);
 						resVSangle[name.str()]->Fill(jt->get_slope_Y(),residu);
-						//absResVSabsAngle[name.str()]->Fill(Abs(jt->get_slope_Y()),Abs(residu));
+						absResVSabsAngle[name.str()]->Fill(Abs(jt->get_slope_Y()),Abs(residu));
 						resVSanglePerp[name.str()]->Fill(jt->get_slope_X(),residu);
 					}
 					point_nb[name.str()]++;
@@ -810,8 +814,8 @@ void Analyse::Residus_ref(){
 				it->second->cd(15);
 				absResVStot[it->first]->Draw();
 				it->second->cd(16);
-				//absResVSabsAngle[it->first]->Draw();
-				ampl_h[it->first]->Draw("COLZ");
+				absResVSabsAngle[it->first]->Draw();
+				//ampl_h[it->first]->Draw("COLZ");
 				it->second->Modified();
 				it->second->Update();
 			}
@@ -889,8 +893,8 @@ void Analyse::Residus_ref(){
 		it->second->cd(15);
 		absResVStot[it->first]->Draw();
 		it->second->cd(16);
-		//absResVSabsAngle[it->first]->Draw();
-		ampl_h[it->first]->Draw("COLZ");
+		absResVSabsAngle[it->first]->Draw();
+		//ampl_h[it->first]->Draw("COLZ");
 		it->second->Modified();
 		it->second->Update();
 		cout << it->first << " efficacity : " << 100.*efficacity[it->first] << "%" << endl;
@@ -1909,13 +1913,17 @@ void Analyse::WatToFluxMap(double z,TEllipse el, TCanvas * c1, TCanvas * c2, dou
 	TH1D * tank_tracks_norm_H = new TH1D("tank_tracks_norm_H","tank_tracks_norm_H",nentries/interval_length,0,nentries/interval_length);
 	TH1D * tank_tracks_norm_V = new TH1D("tank_tracks_norm_V","tank_tracks_norm_V",nentries/interval_length,0,nentries/interval_length);
 	TCanvas * c3 = new TCanvas("WaterMon_time","WaterMon_time");
-	c3->Divide(1,3);
-	TH1D * tank_tracks_time = new TH1D("tank_tracks_time","tank_tracks_time",Sqrt(0.02*nentries),evttime_start,evttime_end);
-	TH1D * out_tracks_time = new TH1D("out_tracks_time","out_tracks_time",Sqrt(0.02*nentries),evttime_start,evttime_end);
-	TH1D * ratio_tracks_time = new TH1D("ratio_tracks_time","ratio_tracks_time",Sqrt(0.02*nentries),evttime_start,evttime_end);
+	c3->Divide(1,4);
+	double bin_time = 2*3600*Tomography::get_instance()->get_clock_rate();
+	double time_bin_n = (evttime_end-evttime_start)/bin_time;
+	TH1D * tank_tracks_time = new TH1D("tank_tracks_time","tank_tracks_time",time_bin_n,evttime_start,evttime_end);
+	TH1D * out_tracks_time = new TH1D("out_tracks_time","out_tracks_time",time_bin_n,evttime_start,evttime_end);
+	TH1D * ratio_tracks_time = new TH1D("ratio_tracks_time","ratio_tracks_time",time_bin_n,evttime_start,evttime_end);
 	tank_tracks_time->Sumw2();
 	out_tracks_time->Sumw2();
 	ratio_tracks_time->Sumw2();
+	double * interval_time = new double[(nentries/interval_length)+1];
+	interval_time[0] = evttime_start;
 	cout << setw(20) << "interval n" <<  "|" << setw(20) << "total track" <<  "|" << setw(20) << "track in ellipse" <<  "|" << setw(20) << "track in H band" <<  "|" << setw(20) << "track in V band" << endl;
 	for (Long64_t jentry=0; jentry<nentries && Tomography::get_instance()->get_can_continue();jentry++){
 		Long64_t ientry = LoadTree(jentry);
@@ -1984,6 +1992,7 @@ void Analyse::WatToFluxMap(double z,TEllipse el, TCanvas * c1, TCanvas * c2, dou
 				tank_tracks_norm_V->SetBinError(interval_n,0);
 			}
 			interval_n++;
+			interval_time[interval_n] = evttime;
 			event_n_interval = 0;
 			reconstructed_track = 0;
 			track_in_ellipse = 0;
@@ -2055,6 +2064,7 @@ void Analyse::WatToFluxMap(double z,TEllipse el, TCanvas * c1, TCanvas * c2, dou
 			tank_tracks_norm_V->SetBinError(interval_n,0);
 		}
 	}
+	interval_time[nentries/interval_length] = evttime;
 	c1->cd(1);
 	fluxMapZ->Draw("COLZ");
 	this_el->Draw();
@@ -2083,6 +2093,13 @@ void Analyse::WatToFluxMap(double z,TEllipse el, TCanvas * c1, TCanvas * c2, dou
 	out_tracks_time->Draw("E");
 	c3->cd(3);
 	ratio_tracks_time->Draw("E");
+	c3->cd(4);
+	TH1D * ratio_tracks_rebinned = new TH1D("ratio_tracks_rebinned","ratio_track_rebinned",nentries/interval_length,interval_time);
+	for(int i=0;i<(nentries/interval_length+1);i++){
+		ratio_tracks_rebinned->SetBinContent(i,tank_tracks_norm->GetBinContent(i));
+		ratio_tracks_rebinned->SetBinError(i,tank_tracks_norm->GetBinError(i));
+	}
+	ratio_tracks_rebinned->Draw("E");
 	c3->Modified();
 	c3->Update();
 }
@@ -3048,25 +3065,30 @@ void Analyse::EventDisplay(long event_nb, TCanvas * c1){
 		return;
 	}
 	TFile * signal_file = new TFile(signal_file_name.c_str(),"READ");
-	TTree * signal_tree = (TTree*)(signal_file->Get("T"));
-	Tsignal_R * signalT = new Tsignal_R(signal_tree,det_N);
-
-	if(nentries != signal_tree->GetEntriesFast()){
-		cout << "total number of event in signal and analyse tree does not match" << endl;
-		return;
+	TTree * signal_tree;// = (TTree*)(signal_file->Get("T"));
+	Tsignal_R * signalT;// = new Tsignal_R(signal_tree,det_N);
+	if(signal_file->IsOpen()){
+		signal_tree = (TTree*)(signal_file->Get("T"));
+		signalT = new Tsignal_R(signal_tree,det_N);
+		if(nentries != signal_tree->GetEntriesFast()){
+			cout << "total number of event in signal and analyse tree does not match" << endl;
+			return;
+		}
 	}
 	LoadTree(event_nb);
 	GetEntry(event_nb);
 	CosmicBenchEvent * CBEvent = new CosmicBenchEvent(this,this,-1);
-	signalT->LoadTree(event_nb);
-	signalT->GetEntry(event_nb);
-	for(vector<Event*>::iterator ev_it = (CBEvent->events).begin();ev_it!=(CBEvent->events).end();++ev_it){
-		(*ev_it)->set_strip_ampl(signalT->get_ampl<double>((*ev_it)->get_type(),(*ev_it)->get_n_in_tree()));
+	if(signal_file->IsOpen()){
+		signalT->LoadTree(event_nb);
+		signalT->GetEntry(event_nb);
+		for(vector<Event*>::iterator ev_it = (CBEvent->events).begin();ev_it!=(CBEvent->events).end();++ev_it){
+			(*ev_it)->set_strip_ampl(signalT->get_ampl<double>((*ev_it)->get_type(),(*ev_it)->get_n_in_tree()));
+		}
+		delete signal_file;
+		delete signalT;
 	}
 	CBEvent->EventDisplay(c1);
 	delete CBEvent;
-	delete signal_file;
-	delete signalT;
 	/*
 	long nentries = fChain->GetEntriesFast();
 	if(event_nb<0 || event_nb>nentries){
