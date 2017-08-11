@@ -47,7 +47,8 @@ int main(int argc, char ** argv){
 		mcube,
 		mcuberays,
 		live,
-		watto,
+		wattoanalyse,
+		wattosignal,
 		read
 	};
 	process_type operation = read;
@@ -79,76 +80,28 @@ int main(int argc, char ** argv){
 		else if(argv[i] == string("mcuberays")){
 			operation = mcuberays;
 		}
-		else if(argv[i] == string("watto")){
-			operation = watto;
+		else if(argv[i] == string("wattoanalyse")){
+			operation = wattoanalyse;
+		}
+		else if(argv[i] == string("wattosignal")){
+			operation = wattosignal;
 		}
 	}
 	string config_file = argv[1];
 	ptree config_tree;
 	read_json(config_file, config_tree);
 	Tomography::Init(config_tree);
-	if(operation == read){
-		DataReader * blah = new DataReader(config_tree,true,false);
-		blah->process();
-		delete blah;
-	}
-	else if((operation == analysis) || (operation == watto)){
-		CosmicBench * bench = new CosmicBench(config_tree);
-		Tanalyse_W * analysisFile = new Tanalyse_W(config_tree.get<string>("Tree"),bench->get_det_N());
-		DataReader * blah = NULL;
-		if(operation==analysis) blah = new DataReader(config_tree,false);
-		else{
-			cout << "processing all fdf files from current directory" << endl;
-			blah = new DataReader(config_tree,string("./"));
-		}
-		blah->read_ped();
-		map<Tomography::det_type,vector<vector<float> > > current_ped = blah->get_Ped();
-
-		Output_Task<event_data> * to_write = new Write_Analyse_Task(analysisFile);
-		Input_Task * to_do = new Read_Elec_Task(blah, new Ped_Corr_Task(current_ped, new Multicluster_Task(bench,to_write)));
-		vector<Thread*> threads;
-		threads.push_back(new Writer_Thread(to_write));
-		(threads.back())->start();
-		threads.push_back(new Reader_Thread(to_do));
-		(threads.back())->start();
-		const unsigned short n_thread = (Tomography::get_instance()->get_thread_number() > threads.size()) ? (Tomography::get_instance()->get_thread_number() - threads.size()) : 1;
-		cout << "1 | " << n_thread << " | 1" << endl;
-		for(unsigned short i=0;i<n_thread;i++){
-			threads.push_back(new Worker_Thread());
-			(threads.back())->start();
-		}
-		Display_Thread::get_instance()->start_count();
-		//cout << Tomography::get_instance()->init_count() << "|" << setw(7) << "tasks" << endl;
-		bool has_working_thread = true;
-		while(has_working_thread && Tomography::get_instance()->get_can_continue()){
-			//cout << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << Task::task_left() << flush;
-			has_working_thread = false;
-			for(unsigned short i=0;i<threads.size();i++){
-				if(threads[i]->is_working()){
-					has_working_thread = true;
-					break;
-				}
-			}
-			usleep(10000);
-		}
-		for(unsigned short i=0;i<threads.size();i++){
-			threads[i]->stop();
-			delete threads[i];
-		}
-		Display_Thread::get_instance()->stop_count();
-		//cout << "\r" << Tomography::get_instance()->print_count() << "|" << setw(7) << Task::task_left() << endl;
-		analysisFile->Write();
-		analysisFile->CloseFile();
-		delete blah;
-		delete analysisFile;
-		delete bench;
-	}
-	else if((operation == pyramids) || (operation == pyrarays) || (operation == live) || (operation == mcube) || (operation == mcuberays)){
+	if((operation != ped_run) && (operation != data_run)){
 		CosmicBench * bench = new CosmicBench(config_tree);
 		Tsignal_W * signalFile = NULL;
 		Tanalyse_W * analysisFile = NULL;
 		Tray * raysFile = NULL;
-		DataReader * blah = new DataReader(config_tree,false,true);
+		DataReader * blah = NULL;
+		if((operation != wattosignal) && (operation != wattoanalyse)) blah = new DataReader(config_tree,false,((operation != read) && (operation != analysis)));
+		else{
+			cout << "processing all fdf files from current directory" << endl;
+			blah = new DataReader(config_tree,string("./"));
+		}
 		blah->read_ped();
 		map<Tomography::det_type,vector<vector<float> > > current_ped = blah->get_Ped();
 
@@ -165,7 +118,7 @@ int main(int argc, char ** argv){
 		}
 		Output_Task<raw_data> * to_write_signal = NULL;
 		Typed_Task<raw_data> * follow_up_signal_task = NULL;
-		if(operation!=live){
+		if((operation==pyrarays) || (operation==mcuberays) || (operation==mcube) || (operation==pyramids) || (operation==analysis) || (operation==wattoanalyse)){
 			cout << "creating analyse output chain" << endl;
 			analysisFile = new Tanalyse_W(config_tree.get<string>("Tree"),bench->get_det_N());
 			to_write_analyse = new Write_Analyse_Task(analysisFile, follow_up_analyse_task);
@@ -173,7 +126,7 @@ int main(int argc, char ** argv){
 			follow_up_signal_task = new Ped_Corr_Task(current_ped,new Multicluster_Task(bench,to_write_analyse));
 		}
 		Input_Task * to_do = NULL;
-		if((operation == pyramids) || (operation == pyrarays) || (operation == live)){
+		if((operation == pyramids) || (operation == pyrarays) || (operation == live) || (operation==read) || (operation==wattosignal)){
 			cout << "creating signal output chain" << endl;
 			signalFile = new Tsignal_W(config_tree.get<string>("signal_file"),bench->get_det_N());
 			to_write_signal = new Write_Signal_Task<raw_data>(signalFile,follow_up_signal_task);
