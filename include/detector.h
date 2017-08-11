@@ -22,48 +22,87 @@ class Event;
 class Tanalyse_R;
 class TLine;
 
+//abstract class to store the detectors caracteristics and 3D position
+//has to be extended for a given type of detector
 class Detector{
 	public:
 		//getters
+		//retrieve the altitude of the detector
 		double get_z() const;
+		//check if the detector is measuring the X or Y coordinate
 		bool get_is_X() const;
+		//return the detector layer id in the bench
 		int get_layer() const;
+		//check if the detector data has to be used for the tracking
 		bool get_is_ref() const;
+		//retrieve the detector type
 		virtual Tomography::det_type get_type() const = 0;
+		//retrieve the detector measuring the perpendicular coordinate in case of 2D strip readout detectors such as the MG2D
 		virtual Tomography::det_type get_perp_type() const;
+		//retrieve the detector size accross the strip direction
 		virtual double get_size() const = 0;
+		//get the offset of the detector position in the direction accross the strips
 		double get_offset() const;
+		//check if the detector is upside down or not (inverse the direction axis)
 		bool get_direction() const;
+		//get the angle of the detector plane with respect to the x axis
 		double get_angle_x() const;
+		//get the angle of the detector plane with respect to the y axis
 		double get_angle_y() const;
+		//get the angle of the detector plane with respect to the z axis
 		double get_angle_z() const;
+		//retrieve the get_n_in_tree of the detector measuring the perpendicular coordinate in case of 2D strip readout detectors such as the MG2D
 		int get_perp_n() const;
+		//retrieve how many holes (un-hit strips) allowed inside a cluster
 		int get_clustering_holes() const;
+		//get the RMSPed of the ith channel of the detector
 		double get_RMS(int i) const;
+		//get the asic id to which the detector is connected and if the connector is plugged in the right way or not
 		vector<pair<int,bool> > get_asic_n() const;
+		//set the RMSPed of all the channel of the detectors
 		virtual void set_RMS(vector<double> RMS_) = 0;
+		//retrieve the channel to which the given strip id is connected (usefull for multiplexed detectors)
 		virtual unsigned int StripToChannel(unsigned int i) const = 0;
+		//retrieve the detector id in the storage ROOT tree
 		int get_n_in_tree() const;
+		//retrieve the total number of channels needed to read the detector
 		virtual int get_Nchannel() const = 0;
+		//retrieve the total number of strips composing the detectors
 		virtual int get_Nstrip() const = 0;
+		//retrieve the strip pitch
 		virtual double get_StripPitch() const = 0;
+		//retrieve the number of part the detector has to be divided in to compute the common noise
 		virtual int get_CMN_div() const = 0;
+		//check if the given cluster pass the detector dependent cuts
 		virtual bool is_suitable(const Cluster * const clus) const = 0;
 		virtual ~Detector();
+		//copy the current detector
 		virtual Detector * Clone() const = 0;
+		//build the event corresponding to this detector using the treeObject data at the given entry
 		virtual Event * build_event(Tanalyse_R * treeObject, int entry) const = 0;
+		//build the event corresponding to this detector using the treeObject data at already loaded entry
 		virtual Event * build_event(const Tanalyse_R * const treeObject) const = 0;
+		//build the event corresponding to this detetector by giving the pedestal and common noise substracted amplitude (by channel and by sample), event id and event timestamp
 		virtual Event * build_event(vector<vector<double> > strip_ampl_, int evn_, double evttime_) const = 0;
+		//build a detector of this type using the data in the config tree
 		virtual Detector * build_det(const ptree::value_type& child) const = 0;
+		//channel mapping function while using feminos electronics
 		virtual int feminos_mapping(int channel, bool connector_direction) const = 0;
+		//channel mapping function while using dream electronics
 		virtual int dream_mapping(int channel, bool connector_direction) const = 0;
+		//retrieve the name of the detector (usually contain its type and id)
 		virtual string Name() const = 0;
+		//retrieve the maximum number of cluster by event
 		virtual int get_MaxNClus() const = 0;
+		//return a line to display the detector (usually a line at altitude z from offset-size/2 to offset+size/2)
 		virtual TLine * get_line_display() const = 0;
 	protected:
-		Detector();	
+		Detector();
+		//copy constructor
 		Detector(const Detector& other);
+		//copy assignment
 		Detector& operator=(const Detector& other);
+		//constructor using the explicit parameters
 		Detector(double z_, bool is_X_, int layer_,int det_n, bool is_ref_, double offset_, bool direction_, double angle_x_, double angle_y_, double angle_z_, int perp_n_, int clustering_holes_, vector<pair<int,bool> > asic_n_);
 		double z; //altitude inside cosmic bench
 		bool is_X;//coordinate measured by the detector
@@ -83,6 +122,7 @@ class Detector{
 
 };
 
+//detector implementation for a single full connector dummy detector
 class dummy_Detector: public Detector{
 	public:
 		dummy_Detector();
@@ -112,7 +152,7 @@ class dummy_Detector: public Detector{
 		static constexpr const int CMN_div = 2;
 };
 
-
+//detector implementation for the CosMulti detectors
 class CM_Detector: public Detector{
 	public:	
 		CM_Detector();
@@ -165,6 +205,7 @@ class CM_Detector: public Detector{
 		double ClusMaxSampleCut_Max;
 };
 
+//detector implementation for the MultiGen v1 detectors (50x50cm^2; 1024 strips)
 class MG_Detector: public Detector{
 	public:
 		MG_Detector();
@@ -222,6 +263,7 @@ class MG_Detector: public Detector{
 		double srf_ratio;
 };
 
+//detector implementation for the MultiGen v2 detectors (50x50cm^2; 1037 strips)
 class MGv2_Detector: public Detector{
 	public:
 		MGv2_Detector();
@@ -279,24 +321,38 @@ class MGv2_Detector: public Detector{
 		double srf_ratio;
 };
 
+//class to store all the bench detectors information
 class CosmicBench{
 	public:
 		CosmicBench();
+		//build a cosmic bench using the data in the config tree
 		CosmicBench(ptree config_tree);
+		//copy constructor
 		CosmicBench(const CosmicBench& other);
+		//copy assignment
 		CosmicBench& operator=(const CosmicBench& other);
 		~CosmicBench();
 		//void add_MM(Detector * det);
+		//retrieve the number of detector of given type inside the bench
 		int get_det_N(Tomography::det_type det_t) const;
+		//retrieve the number of detectors by type inside the bench
 		map<Tomography::det_type,unsigned short> get_det_N() const;
+		//retrieve the total number of detector inside the bench
 		int get_det_N_tot() const;
+		//retrive the total number of detector exclluded from the tracking
 		int get_non_ref_N() const;
+		//retrieve the detector at the given index (does not correspond to dector id (which is type dependant) but is the index in the vector number)
 		Detector * get_detector(unsigned int i) const;
+		//retrieve the detector index (does not correspond to dector id (which is type dependant) but is the index in the vector number) of the given cluster
 		unsigned int find_det(const Cluster * const clus) const;
+		//read the given Ped.dat file containing information about the detector list described by det_n_
 		static map<Tomography::det_type,vector<vector<double> > > read_pedfile(string filename, map<Tomography::det_type,unsigned short> det_n_);
+		//retrieve the altitude of the higher detector of the bench
 		double get_z_Up() const;
+		//retrieve the altitude of the lower detector of the bench
 		double get_z_Down() const;
 	protected:
+		//some part of the construction is left in this init function
 		void Init(ptree config_tree);
 		vector<Detector*> detectors;
 		map<Tomography::det_type,unsigned short> det_n;

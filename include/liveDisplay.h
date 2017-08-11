@@ -13,6 +13,8 @@ using std::vector;
 using std::string;
 using std::map;
 
+//depreacted, currently broken
+//used before FeuUdpControl -q option was available
 class liveDisplay: public CosmicBench{
 	public:
 		liveDisplay();

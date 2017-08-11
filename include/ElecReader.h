@@ -16,6 +16,7 @@ using std::pair;
 using std::ifstream;
 
 
+//abstract helper class to store raw information about the data output of the electronics
 class RawData{
 	public:
 		RawData();
@@ -23,25 +24,28 @@ class RawData{
 		RawData(const RawData& other);
 		RawData& operator=(const RawData& other);
 };
+//implementation of the RawData for the FEU/Dream electronics
 class FeuData: public RawData{
 	public:
 		FeuData();
 		~FeuData();
 		FeuData(const FeuData& other);
 		FeuData& operator=(const FeuData& other);
-		double * data[Tomography::Nasic_FEU][Tomography::Nchannel];
+		double * data[Tomography::Nasic_FEU][Tomography::Nchannel]; //possibly buggy
 		long Nevent;
 		double evttime;
 		ifstream * file;
 		int current_index;
 		int dream_mask;
 };
+//store the FEU informations
 struct FeuInfo{
 	int id;
 	int n;
 	bool dream_mask[Tomography::Nasic_FEU];
 };
 
+//message queue compliant class to pass status information
 class status_message{
 	public:
 		status_message();
@@ -49,6 +53,7 @@ class status_message{
 		long mtype; //==1
 		short status;
 };
+//message queue compliant class to pass data
 class data_message{
 	public:
 		static const unsigned int max_length = 1114;
@@ -57,27 +62,36 @@ class data_message{
 		long mtype; //==2
 		uint16_t data[1114]; // 1 uint16_t == 1 16-bit word, if 0 dreams are masked and every channel is above ZS thr the packet is 1114-word long which is the largest possible packet
 };
-
+//implementation of the RawData for the Feminos electronics
 class FeminosData: public RawData{
 	public:
 		FeminosData();
 		~FeminosData();
 		FeminosData(const FeminosData& other);
 		FeminosData& operator=(const FeminosData& other);
-		double * data[Tomography::Nasic_Feminos][Tomography::Nchannel];
+		double * data[Tomography::Nasic_Feminos][Tomography::Nchannel]; //possibly buggy
 };
 
+//abstract class used to read electronics specific data packets
 class ElecReader{
 	public:
 		ElecReader();
 		virtual ~ElecReader();
+		//constructor giving the base electronics file name and the index limits (because the data is splitted in many files of usually 1GB)
 		ElecReader(string base_name_,int first_index_,int last_index_);
+		//copy constructor
 		ElecReader(const ElecReader& other);
+		//copy assignment
 		ElecReader& operator=(const ElecReader& other);
+		//read the file until a complete event has been decoded
 		virtual void read_next_event() = 0;
+		//retrieve data of current event from given asic, channel and sample
 		virtual double get_data(int asic_n,int channel_n,int sample_n) = 0;
+		//retrieve event id of current event
 		virtual long get_event_n() = 0;
+		//retrieve event timestamp of current event
 		virtual double get_evttime() = 0;
+		//check if there is more data to read
 		virtual bool is_end() const = 0;
 	protected:
 		int first_index;
@@ -85,6 +99,7 @@ class ElecReader{
 		string base_name;
 };
 
+//struct to store all of an event raw data (before mapping)
 struct asic_event{
 	public:
 		long Nevent;
@@ -94,6 +109,7 @@ struct asic_event{
 		asic_event(): Nevent(-1), evttime(0), strip_data(), data_retrieved(0){}
 };
 
+//implementation of the ElecReader for online event reading (message queue) using the -q option of FeuDataReader
 class LiveElecReader: public ElecReader{
 	public:
 		LiveElecReader();
@@ -121,6 +137,7 @@ class LiveElecReader: public ElecReader{
 		map<int,int> dream_mask;
 };
 
+//implementation of the ElecReader for offline reading of FeuUdpControl made .fdf files
 class DreamElecReader: public ElecReader{
 	public:
 		DreamElecReader();
@@ -145,6 +162,7 @@ class DreamElecReader: public ElecReader{
 		map<int,int> feu_id_to_n;
 };
 
+//implementation of the ElecReader for offline reading of FeuUdpControl made .fdf files, synchronizing multiple small run from a directory in a single one with consistant timestamps
 class DreamElecWattoReader: public DreamElecReader{
 	public:
 		DreamElecWattoReader();
@@ -163,6 +181,7 @@ class DreamElecWattoReader: public DreamElecReader{
 		double evttime_offset;
 };
 
+//implementation of the ElecReader for offline reading of mclient made files
 class FeminosElecReader: public ElecReader{
 	public:
 		FeminosElecReader();
