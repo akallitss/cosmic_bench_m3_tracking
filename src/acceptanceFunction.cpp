@@ -20,6 +20,7 @@ using std::endl;
 using std::flush;
 using std::pair;
 using std::setprecision;
+using std::fixed;
 using TMath::ATan;
 using TMath::Tan;
 using TMath::Erf;
@@ -213,7 +214,7 @@ TH2D acceptanceFunction::plot_XY(int nbin_x,double x1,double x2,int nbin_y,doubl
 			double real_z = z - y*Sin(y_angle);
 			double proba = (*this)(real_x,real_y,real_z);
 			proba_XY.Fill(x,y,proba);
-			cout << "\r" << setprecision(1) << (i*step_y+j+1)*100./(step_x*step_y) << "%" << flush;
+			cout << "\r" << setprecision(2) << fixed << (i*step_y+j+1)*100./(step_x*step_y) << "%" << flush;
 		}
 	}
 	cout << "done !" << endl;

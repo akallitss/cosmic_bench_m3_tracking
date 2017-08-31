@@ -737,6 +737,7 @@ void DreamElecReader::check_file(int feu_id){
 	if((feu_data[feu_id].file)->eof()){
 		if(feu_data[feu_id].current_index == last_index){
 			cout << "end of data for FEU : " << feu_id_to_n[feu_id] << endl;
+			feu_data[feu_id].current_index++;
 			reset_data(feu_id);
 			return;
 		}

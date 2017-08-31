@@ -683,14 +683,15 @@ void Signal::SignalDispersion(){
 	map<int,TGraph*> mean_X;
 	map<int,TGraph*> mean_Y;
 	int divisions = 11;
+	double division_limit = 30;
 	TCanvas * cDisplay = new TCanvas("cDisplay");
 	cDisplay->Divide(divisions,2);
 	for(int i=0;i<divisions;i++){
 		//double division_mean = 90.*(((2.*i+1.)/divisions)-1.);
 		ostringstream oss_title;
-		oss_title << "signalShape_" << (180.*i/divisions - 90) << "_" << (180.*(i+1)/divisions - 90) << "_";
+		oss_title << "signalShape_" << (division_limit*(2.*i/divisions - 1)) << "_" << (division_limit*(2.*(i+1)/divisions - 1)) << "_";
 		ostringstream oss_name;
-		oss_title << "signalShape_" << i << "_";
+		oss_name << "signalShape_" << i << "_";
 		signalShape_X[i] = new TH2D((oss_name.str() + "X").c_str(),(oss_title.str() + "X").c_str(),60,-6,6,nbin_time,0,nbin_time);
 		signalShape_Y[i] = new TH2D((oss_name.str() + "Y").c_str(),(oss_title.str() + "Y").c_str(),60,-6,6,nbin_time,0,nbin_time);
 		mean_X[i] = new TGraph();
@@ -781,8 +782,8 @@ void Signal::SignalDispersion(){
 						if(current_ampl > max_ampl) max_ampl = current_ampl;
 						if(current_X){
 							for(int k=0;k<divisions;k++){
-								double min_slope = Pi()*((k*1./divisions)-2);
-								double max_slope = Pi()*(((k+1.)/divisions)-2);
+								double min_slope = (division_limit*Pi()/180)*((k*2./divisions)-1);
+								double max_slope = (division_limit*Pi()/180)*((2.*(k+1)/divisions)-1);
 								double current_slope = ATan(ray_it->get_slope_X());
 								if(current_slope>min_slope && current_slope<max_slope){
 									signalShape_X[k]->Fill(current_pos,j,current_ampl);
@@ -794,8 +795,8 @@ void Signal::SignalDispersion(){
 						}
 						else{
 							for(int k=0;k<divisions;k++){
-								double min_slope = Pi()*((k*1./divisions)-2);
-								double max_slope = Pi()*(((k+1.)/divisions)-2);
+								double min_slope = (division_limit*Pi()/180)*((k*2./divisions)-1);
+								double max_slope = (division_limit*Pi()/180)*((2.*(k+1)/divisions)-1);
 								double current_slope = ATan(ray_it->get_slope_Y());
 								if(current_slope>min_slope && current_slope<max_slope){
 									signalShape_Y[k]->Fill(current_pos,j,current_ampl);

@@ -2177,8 +2177,17 @@ void Analyse::AbsorptionFluxMapNormTheo(double z, double bench_angle, TCanvas * 
 		}
 	}
 	cout << "\r"<< setw(20) << eventReconstructed << "|" << setw(20) << eventSuitable << "|" << setw(20) << nentries << endl;
+	
+	c1->cd();
+	fluxMapZ->Draw("COLZ");
+	c1->Modified();
+	c1->Update();
+	
+	TCanvas * c5 = new TCanvas("background_comp","background_comp");
+	c5->Divide(CeilNint(Sqrt(ray_class_n.size())),CeilNint(Sqrt(ray_class_n.size())));
 
 	TH2D * full_bkg = new TH2D("full_bkg","full_bkg",nbins,x_min,x_max,nbins,x_min,x_max);
+	int comp_n = 1;
 	for(map<pair<pair<int,int>,pair<int,int> >,unsigned long>::iterator class_it = ray_class_n.begin();class_it!=ray_class_n.end();++class_it){
 		double size_X_Down = detectors[(class_it->first).first.first]->get_size();
 		double size_X_Up = detectors[(class_it->first).first.second]->get_size();
@@ -2198,7 +2207,14 @@ void Analyse::AbsorptionFluxMapNormTheo(double z, double bench_angle, TCanvas * 
 		acceptanceFunction current_acceptance(offset_X_Up - size_X_Up/2,offset_X_Up + size_X_Up/2,offset_Y_Up - size_Y_Up/2,offset_Y_Up + size_Y_Up/2,offset_X_Down - size_X_Down/2,offset_X_Down + size_X_Down/2,offset_Y_Down - size_Y_Down/2,offset_Y_Down + size_Y_Down/2,z_X_Up,z_X_Down,z_Y_Up,z_Y_Down,bench_angle);
 		TH2D * current_bkg = new TH2D(current_acceptance.plot_XY(nbins,x_min,x_max,nbins,x_min,x_max,z));
 		full_bkg->Add(current_bkg,(class_it->second)/(current_bkg->Integral()));
-		delete current_bkg;
+		ostringstream current_name;
+		current_name << "bkg_comp_" << comp_n << "_" << class_it->second;
+		current_bkg->SetTitle(current_name.str().c_str());
+		current_bkg->SetName(current_name.str().c_str());
+		current_bkg->SetStats(0);
+		c5->cd(comp_n);
+		current_bkg->Draw("COLZ");
+		comp_n++;
 	}
 	if(c4 == 0) c4 = new TCanvas("fluxMap_background","fluxMap_background");
 	c4->cd();
