@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <utility>
+#include <set>
 
 #include "tomography.h"
 
@@ -16,6 +17,7 @@ using std::string;
 using std::vector;
 using std::map;
 using std::pair;
+using std::set;
 
 class Cluster;
 class Event;
@@ -341,10 +343,14 @@ class CosmicBench{
 		int get_det_N_tot() const;
 		//retrive the total number of detector exclluded from the tracking
 		int get_non_ref_N() const;
+		//retrieve the number of different layers of detector
+		int get_layers_n() const;
 		//retrieve the detector at the given index (does not correspond to dector id (which is type dependant) but is the index in the vector number)
 		Detector * get_detector(unsigned int i) const;
 		//retrieve the detector index (does not correspond to dector id (which is type dependant) but is the index in the vector number) of the given cluster
 		unsigned int find_det(const Cluster * const clus) const;
+		//retrieve the detector index (does not correspond to dector id (which is type dependant) but is the index in the vector number) of the given detector type and tree id
+		unsigned int find_det(Tomography::det_type det_t, unsigned int tree_n) const;
 		//read the given Ped.dat file containing information about the detector list described by det_n_
 		static map<Tomography::det_type,vector<vector<double> > > read_pedfile(string filename, map<Tomography::det_type,unsigned short> det_n_);
 		//retrieve the altitude of the higher detector of the bench
@@ -357,6 +363,7 @@ class CosmicBench{
 		vector<Detector*> detectors;
 		map<Tomography::det_type,unsigned short> det_n;
 		unsigned short non_ref_n;
+		set<unsigned short> layers;
 };
 
 bool operator==(Detector const &det1, Detector const &det2);

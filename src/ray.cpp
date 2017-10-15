@@ -524,27 +524,31 @@ vector<Cluster*> Ray::get_clus() const{
 }
 pair<pair<int,int>,pair<int,int> > Ray::get_extremal_det(const CosmicBench * const bench) const{
 	pair<pair<int,int>,pair<int,int> > return_pair(pair<int,int>(-1,-1),pair<int,int>(-1,-1));
-	pair<pair<double,double>,pair<double,double> > extremal_z(pair<double,double>(numeric_limits<double>::max(), numeric_limits<double>::min()),pair<double,double>(numeric_limits<double>::max(), numeric_limits<double>::min()));
+	pair<double,double> extremal_z(numeric_limits<double>::max(), numeric_limits<double>::min());
 	for(vector<Cluster*>::const_iterator it = clusters.begin();it!=clusters.end();++it){
 		double current_z = (*it)->get_z();
 		if((*it)->get_is_X()){
-			if(current_z < extremal_z.first.first){
-				extremal_z.first.first = current_z;
+			if(current_z < extremal_z.first){
+				extremal_z.first = current_z;
 				return_pair.first.first = bench->find_det(*it);
+				return_pair.second.first = bench->find_det(bench->get_detector(return_pair.first.first)->get_perp_type(),bench->get_detector(return_pair.first.first)->get_perp_n());
 			}
-			if(current_z > extremal_z.first.second){
-				extremal_z.first.second = current_z;
+			if(current_z > extremal_z.second){
+				extremal_z.second = current_z;
 				return_pair.first.second = bench->find_det(*it);
+				return_pair.second.second = bench->find_det(bench->get_detector(return_pair.first.second)->get_perp_type(),bench->get_detector(return_pair.first.second)->get_perp_n());
 			}
 		}
 		else{
-			if(current_z < extremal_z.second.first){
-				extremal_z.second.first = current_z;
+			if(current_z < extremal_z.first){
+				extremal_z.first = current_z;
 				return_pair.second.first = bench->find_det(*it);
+				return_pair.first.first = bench->find_det(bench->get_detector(return_pair.second.first)->get_perp_type(),bench->get_detector(return_pair.second.first)->get_perp_n());
 			}
-			if(current_z > extremal_z.second.second){
-				extremal_z.second.second = current_z;
+			if(current_z > extremal_z.second){
+				extremal_z.second = current_z;
 				return_pair.second.second = bench->find_det(*it);
+				return_pair.first.second = bench->find_det(bench->get_detector(return_pair.second.second)->get_perp_type(),bench->get_detector(return_pair.second.second)->get_perp_n());
 			}
 		}
 	}

@@ -297,7 +297,7 @@ void Analyse::Residus_time(){
 					//if(clus_in_nref_dir<det_in_nref_dir[name.str()]) continue;
 					//if(chiSquare_in_nref_dir > chisquare_threshold/static_cast<double>(clus_in_nref_dir)) continue;
 					if((jt->get_chiSquare_X() + jt->get_chiSquare_Y()) > chisquare_threshold/static_cast<double>(non_ref_n)) continue;
-					if(jt->get_clus_n()<static_cast<unsigned int>(get_det_N_tot()-non_ref_n)) continue;
+					if(jt->get_clus_n()<static_cast<unsigned int>(get_layers_n()-non_ref_n)) continue;
 					double residu = numeric_limits<double>::max();
 					vector<Cluster*>::iterator matching_cluster = current_clusters.end();
 					for(vector<Cluster*>::iterator kt = current_clusters.begin();kt!=current_clusters.end();++kt){
@@ -719,7 +719,7 @@ void Analyse::Residus_ref(){
 					//if(clus_in_nref_dir<det_in_nref_dir[name.str()]) continue;
 					//if(chiSquare_in_nref_dir > chisquare_threshold/static_cast<double>(clus_in_nref_dir)) continue;
 					if((jt->get_chiSquare_X() + jt->get_chiSquare_Y()) > chisquare_threshold/static_cast<double>(non_ref_n)) continue;
-					if(jt->get_clus_n()<static_cast<unsigned int>(get_det_N_tot()-non_ref_n)) continue;
+					if(jt->get_clus_n()<static_cast<unsigned int>(get_layers_n()-non_ref_n)) continue;
 					double residu = numeric_limits<double>::max();
 					vector<Cluster*>::iterator matching_cluster = current_clusters.end();
 					for(vector<Cluster*>::iterator kt = current_clusters.begin();kt!=current_clusters.end();++kt){
@@ -1116,7 +1116,7 @@ void Analyse::Residus_ref_MT(){
 					//if(clus_in_nref_dir<det_in_nref_dir[name.str()]) continue;
 					//if(chiSquare_in_nref_dir > chisquare_threshold/static_cast<double>(clus_in_nref_dir)) continue;
 					if((jt->get_chiSquare_X() + jt->get_chiSquare_Y()) > chisquare_threshold/static_cast<double>(non_ref_n)) continue;
-					if(jt->get_clus_n()<static_cast<unsigned int>(get_det_N_tot()-non_ref_n)) continue;
+					if(jt->get_clus_n()<static_cast<unsigned int>(get_layers_n()-non_ref_n)) continue;
 					double residu = numeric_limits<double>::max();
 					vector<Cluster*>::iterator matching_cluster = current_clusters.end();
 					for(vector<Cluster*>::iterator kt = current_clusters.begin();kt!=current_clusters.end();++kt){
@@ -1313,7 +1313,7 @@ double Analyse::Residus_ref_cost(){
 					//if(clus_in_nref_dir<det_in_nref_dir[name.str()]) continue;
 					//if(chiSquare_in_nref_dir > chisquare_threshold/static_cast<double>(clus_in_nref_dir)) continue;
 					if((jt->get_chiSquare_X() + jt->get_chiSquare_Y()) > chisquare_threshold/static_cast<double>(non_ref_n)) continue;
-					if(jt->get_clus_n()<static_cast<unsigned int>(get_det_N_tot()-non_ref_n)) continue;
+					if(jt->get_clus_n()<static_cast<unsigned int>(get_layers_n()-non_ref_n)) continue;
 					double residu = numeric_limits<double>::max();
 					vector<Cluster*>::iterator matching_cluster = current_clusters.end();
 					for(vector<Cluster*>::iterator kt = current_clusters.begin();kt!=current_clusters.end();++kt){
@@ -1640,7 +1640,7 @@ void Analyse::Efficacity(){
 					//if(clus_in_nref_dir<det_in_nref_dir[name.str()]) continue;
 					//if(chiSquare_in_nref_dir > chisquare_threshold/static_cast<double>(clus_in_nref_dir)) continue;
 					if((jt->get_chiSquare_X() + jt->get_chiSquare_Y()) > chisquare_threshold/static_cast<double>(non_ref_n)) continue;
-					if(jt->get_clus_n()<static_cast<unsigned int>(get_det_N_tot()-non_ref_n)) continue;
+					if(jt->get_clus_n()<static_cast<unsigned int>(get_layers_n()-non_ref_n)) continue;
 					double residu = numeric_limits<double>::max();
 					vector<Cluster*>::iterator matching_cluster = current_clusters.end();
 					for(vector<Cluster*>::iterator kt = current_clusters.begin();kt!=current_clusters.end();++kt){
@@ -2188,6 +2188,7 @@ void Analyse::AbsorptionFluxMapNormTheo(double z, double bench_angle, TCanvas * 
 
 	TH2D * full_bkg = new TH2D("full_bkg","full_bkg",nbins,x_min,x_max,nbins,x_min,x_max);
 	int comp_n = 1;
+	cout << ray_class_n.size() << endl;
 	for(map<pair<pair<int,int>,pair<int,int> >,unsigned long>::iterator class_it = ray_class_n.begin();class_it!=ray_class_n.end();++class_it){
 		double size_X_Down = detectors[(class_it->first).first.first]->get_size();
 		double size_X_Up = detectors[(class_it->first).first.second]->get_size();
@@ -2203,6 +2204,7 @@ void Analyse::AbsorptionFluxMapNormTheo(double z, double bench_angle, TCanvas * 
 		double z_X_Up = detectors[(class_it->first).first.second]->get_z();
 		double z_Y_Down = detectors[(class_it->first).second.first]->get_z();
 		double z_Y_Up = detectors[(class_it->first).second.second]->get_z();
+		cout << "    " << z_X_Down << " | " << z_X_Up << " | " << z_Y_Down << " | " << z_Y_Up << " | " << (class_it->second) << endl;
 
 		acceptanceFunction current_acceptance(offset_X_Up - size_X_Up/2,offset_X_Up + size_X_Up/2,offset_Y_Up - size_Y_Up/2,offset_Y_Up + size_Y_Up/2,offset_X_Down - size_X_Down/2,offset_X_Down + size_X_Down/2,offset_Y_Down - size_Y_Down/2,offset_Y_Down + size_Y_Down/2,z_X_Up,z_X_Down,z_Y_Up,z_Y_Down,bench_angle);
 		TH2D * current_bkg = new TH2D(current_acceptance.plot_XY(nbins,x_min,x_max,nbins,x_min,x_max,z));

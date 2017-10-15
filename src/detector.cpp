@@ -716,6 +716,7 @@ CosmicBench::CosmicBench(){
 	detectors.clear();
 	det_n.clear();
 	non_ref_n = 0;
+	layers.clear();
 }
 CosmicBench::CosmicBench(const CosmicBench& other){
 	for(unsigned int i=0;i<detectors.size();i++){
@@ -727,6 +728,7 @@ CosmicBench::CosmicBench(const CosmicBench& other){
 		detectors.push_back((*it)->Clone());
 	}
 	non_ref_n = other.non_ref_n;
+	layers = other.layers;
 }
 CosmicBench& CosmicBench::operator=(const CosmicBench& other){
 	for(unsigned int i=0;i<detectors.size();i++){
@@ -738,6 +740,7 @@ CosmicBench& CosmicBench::operator=(const CosmicBench& other){
 		detectors.push_back((*it)->Clone());
 	}
 	non_ref_n = other.non_ref_n;
+	layers = other.layers;
 	return *this;
 }
 CosmicBench::~CosmicBench(){
@@ -746,6 +749,7 @@ CosmicBench::~CosmicBench(){
 	}
 	detectors.clear();
 	det_n.clear();
+	layers.clear();
 }
 CosmicBench::CosmicBench(ptree config_tree){
 	Init(config_tree);
@@ -821,6 +825,7 @@ void CosmicBench::Init(ptree config_tree){
 	*/
 	detectors.clear();
 	non_ref_n = 0;
+	layers.clear();
 	for(map<const Tomography::det_type,const Detector* const>::iterator type_it=Tomography::Static_Detector.begin();type_it!=Tomography::Static_Detector.end();++type_it){
 		ostringstream childname;
 		childname << "CosmicBench." << type_it->first;
@@ -828,6 +833,7 @@ void CosmicBench::Init(ptree config_tree){
 			BOOST_FOREACH(const ptree::value_type& child, config_tree.get_child(childname.str())){
 				detectors.push_back(type_it->second->build_det(child));
 				if(!((detectors.back())->get_is_ref())) non_ref_n++;
+				layers.insert((detectors.back())->get_layer());
 				det_n[type_it->first]++;
 			}
 		}
@@ -889,8 +895,19 @@ unsigned int CosmicBench::find_det(const Cluster * const clus) const{
 	}
 	return detectors.size();
 }
+unsigned int CosmicBench::find_det(Tomography::det_type det_t, unsigned int tree_n) const{
+		for(unsigned int i=0;i<detectors.size();i++){
+		if(det_t == (detectors[i]->get_type())){
+			if(tree_n == (detectors[i]->get_n_in_tree())) return i;
+		}
+	}
+	return detectors.size();
+}
 int CosmicBench::get_non_ref_N() const{
 	return non_ref_n;
+}
+int CosmicBench::get_layers_n() const{
+	return layers.size();
 }
 double CosmicBench::get_z_Up() const{
 	double z_Up = numeric_limits<double>::max();

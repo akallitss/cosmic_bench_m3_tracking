@@ -116,7 +116,7 @@ int main(int argc, char ** argv){
 			if(argc>4){
 				bench_angle = atof(argv[4]);
 			}
-			blah->AbsorptionFluxMapNormTheo(z,bench_angle);
+			blah->AbsorptionFluxMapNormTheo(z,bench_angle*Pi()/180.);
 		}
 	}
 	else if(argv[2] == scanpyramids){
