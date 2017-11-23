@@ -177,6 +177,9 @@ Tomography::det_type dummy_Detector::get_type() const{
 double dummy_Detector::get_size() const{
 	return -1;
 }
+double dummy_Detector::get_perp_size() const{
+	return -1;
+}
 void dummy_Detector::set_RMS(vector<double> RMS_){
 	if(RMS_.size() != get_Nchannel()) return;
 	RMS = RMS_;
@@ -317,6 +320,9 @@ void CM_Detector::set_RMS(vector<double> RMS_){
 	RMS = RMS_;
 }
 double CM_Detector::get_size() const{
+	return size;
+}
+double CM_Detector::get_perp_size() const{
 	return size;
 }
 int CM_Detector::get_Nchannel() const{
@@ -490,6 +496,9 @@ double MG_Detector::SRF_fit(double * x, double * p){
 double MG_Detector::get_size() const{
 	return size;
 }
+double MG_Detector::get_perp_size() const{
+	return size;
+}
 int MG_Detector::get_Nchannel() const{
 	return Nchannel;
 }
@@ -655,6 +664,9 @@ double MGv2_Detector::SRF_fit(double * x, double * p){
 	return return_value;
 }
 double MGv2_Detector::get_size() const{
+	return size;
+}
+double MGv2_Detector::get_perp_size() const{
 	return size;
 }
 int MGv2_Detector::get_Nchannel() const{
@@ -926,4 +938,16 @@ double CosmicBench::get_z_Down() const{
 		}
 	}
 	return z_Down;
+}
+bool CosmicBench::is_compatible(const Event * const ev, const Ray * const track) const{
+	Detector * first_det = ev->get_det();
+	Detector * second_det = get_detector(find_det(first_det->get_perp_type(),first_det->get_perp_n()));
+	double first_coord = first_det->get_is_X() ? track->eval_X(first_det->get_z()) : track->eval_Y(first_det->get_z());
+	if(first_coord>(first_det->get_offset() + 6*first_det->get_size()/5)) return false;
+	if(first_coord<(first_det->get_offset() - 6*first_det->get_size()/5)) return false;
+	if(second_det == NULL) return true;
+	double second_coord = second_det->get_is_X() ? track->eval_X(second_det->get_z()) : track->eval_Y(second_det->get_z());
+	if(second_coord>(second_det->get_offset() + 6*second_det->get_size()/5)) return false;
+	if(second_coord<(second_det->get_offset() - 6*second_det->get_size()/5)) return false;
+	return true;
 }

@@ -719,7 +719,9 @@ void Analyse::Residus_ref(){
 					//if(clus_in_nref_dir<det_in_nref_dir[name.str()]) continue;
 					//if(chiSquare_in_nref_dir > chisquare_threshold/static_cast<double>(clus_in_nref_dir)) continue;
 					if((jt->get_chiSquare_X() + jt->get_chiSquare_Y()) > chisquare_threshold/static_cast<double>(non_ref_n)) continue;
-					if(jt->get_clus_n()<static_cast<unsigned int>(get_layers_n()-non_ref_n)) continue;
+					//if(jt->get_clus_n()<static_cast<unsigned int>(get_layers_n()-non_ref_n)) continue;
+					if(Ray_2D(*jt,(*it)->get_is_X() ? 'X' : 'Y').has_layer((*it)->get_det()->get_layer())) continue;
+					if(!is_compatible(*it,&(*jt))) continue;
 					double residu = numeric_limits<double>::max();
 					vector<Cluster*>::iterator matching_cluster = current_clusters.end();
 					for(vector<Cluster*>::iterator kt = current_clusters.begin();kt!=current_clusters.end();++kt){

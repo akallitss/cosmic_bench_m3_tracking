@@ -56,10 +56,14 @@ class Ray_2D{
 		double get_t_sigma() const;
 		//get number of cluster used to build the track
 		unsigned int get_clus_n() const;
+		//get the clusters used to build the track
+		vector<Cluster*> get_clus() const;
 		//get the index of the extremal detectors (wrt. z axis) which are used in the track (first is lower, second is higher)
 		pair<int,int> get_extremal_det(const CosmicBench * const bench) const;
 		//delete the clusters
 		void clear();
+		// check if ray use cluster in given layer
+		bool has_layer(int layer) const;
 	protected:
 		vector<Cluster*> clusters;
 		double chiSquare;
@@ -130,6 +134,8 @@ class Ray{
 		pair<pair<int,int>,pair<int,int> > get_extremal_det(const CosmicBench * const bench) const;
 		//delete the clusters
 		void clear();
+		// check if ray use cluster in given layer
+		bool has_layer(int layer) const;
 	protected:
 		vector<Cluster*> clusters;
 		double chiSquare_X;

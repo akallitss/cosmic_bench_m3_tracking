@@ -197,11 +197,11 @@ class CosmicBenchEvent{
 		//copy assignment
 		CosmicBenchEvent& operator=(const CosmicBenchEvent& other);
 		//build event for the given cosmic bench by using the treeObject data at the given entry
-		CosmicBenchEvent(const CosmicBench * const detectors, Tanalyse_R * treeObject, long entry);
+		CosmicBenchEvent(const CosmicBench * const detectors_, Tanalyse_R * treeObject, long entry);
 		//build event for the given cosmic bench by using the treeObject data at the already loaded entry
-		CosmicBenchEvent(const CosmicBench * const detectors, const Tanalyse_R * const treeObject);
+		CosmicBenchEvent(const CosmicBench * const detectors_, const Tanalyse_R * const treeObject);
 		//build event for the given cosmic bench by explicitely giving the Event object for all the detectors
-		CosmicBenchEvent(const CosmicBench * const detectors, const vector<Event*> events_);
+		CosmicBenchEvent(const CosmicBench * const detectors_, const vector<Event*> events_);
 		~CosmicBenchEvent();
 		//do the tracking in order to create tracks for scattered muons
 		void createPairs();
@@ -238,6 +238,7 @@ class CosmicBenchEvent{
 	protected:
 		int evn;
 		double evttime;
+		const CosmicBench * detectors;
 		vector<Event*> events;
 		//After processing
 		vector<RayPair> rayPairs;

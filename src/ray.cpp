@@ -88,6 +88,12 @@ void Ray_2D::clear(){
 	}
 	clusters.clear();
 }
+bool Ray_2D::has_layer(int layer) const{
+	for(vector<Cluster*>::const_iterator it = clusters.begin();it!=clusters.end();++it){
+		if((*it)->get_layer() == layer) return true;
+	}
+	return false;
+}
 Ray_2D::~Ray_2D(){
 	clear();
 	clusters.clear();
@@ -276,6 +282,13 @@ double Ray_2D::get_t_sigma() const{
 }
 unsigned int Ray_2D::get_clus_n() const{
 	return clusters.size();
+}
+vector<Cluster*> Ray_2D::get_clus() const{
+	vector<Cluster*> return_vector;
+	for(vector<Cluster*>::const_iterator it = clusters.begin();it != clusters.end(); ++it){
+		return_vector.push_back((*it)->Clone());
+	}
+	return return_vector;
 }
 pair<int,int> Ray_2D::get_extremal_det(const CosmicBench * const bench) const{
 	pair<int,int> return_pair(-1,-1);
@@ -554,6 +567,13 @@ pair<pair<int,int>,pair<int,int> > Ray::get_extremal_det(const CosmicBench * con
 	}
 	return return_pair;
 }
+bool Ray::has_layer(int layer) const{
+	for(vector<Cluster*>::const_iterator it = clusters.begin();it!=clusters.end();++it){
+		if((*it)->get_layer() == layer) return true;
+	}
+	return false;
+}
+
 ostream& operator<<(ostream& os, const Ray& ray){
 	os << "[" << Ray_2D(ray,'X') << " ; " << Ray_2D(ray,'Y') << "]";
 	return os;

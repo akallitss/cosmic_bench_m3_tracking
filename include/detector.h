@@ -43,6 +43,8 @@ class Detector{
 		virtual Tomography::det_type get_perp_type() const;
 		//retrieve the detector size accross the strip direction
 		virtual double get_size() const = 0;
+		//retrieve the detector size along the strip direction
+		virtual double get_perp_size() const = 0;
 		//get the offset of the detector position in the direction accross the strips
 		double get_offset() const;
 		//check if the detector is upside down or not (inverse the direction axis)
@@ -134,6 +136,7 @@ class dummy_Detector: public Detector{
 		~dummy_Detector();
 		Tomography::det_type get_type() const;
 		double get_size() const;
+		double get_perp_size() const;
 		void set_RMS(vector<double> RMS_);
 		unsigned int StripToChannel(unsigned int i) const;
 		int get_Nchannel() const;
@@ -173,6 +176,7 @@ class CM_Detector: public Detector{
 		static constexpr const int MaxNClus = 600;
 		unsigned int StripToChannel(unsigned int i) const;
 		double get_size() const;
+		double get_perp_size() const;
 		int get_Nchannel() const;
 		int get_Nstrip() const;
 		double get_StripPitch() const;
@@ -227,6 +231,7 @@ class MG_Detector: public Detector{
 		static constexpr const int CMN_div = 2;
 		static constexpr const int MaxNClus = 300;
 		double get_size() const;
+		double get_perp_size() const;
 		int get_Nchannel() const;
 		int get_Nstrip() const;
 		double get_StripPitch() const;
@@ -285,6 +290,7 @@ class MGv2_Detector: public Detector{
 		static constexpr const int CMN_div = 2;
 		static constexpr const int MaxNClus = 300;
 		double get_size() const;
+		double get_perp_size() const;
 		int get_Nchannel() const;
 		int get_Nstrip() const;
 		double get_StripPitch() const;
@@ -357,6 +363,8 @@ class CosmicBench{
 		double get_z_Up() const;
 		//retrieve the altitude of the lower detector of the bench
 		double get_z_Down() const;
+
+		bool is_compatible(const Event * const ev, const Ray * const track) const;
 	protected:
 		//some part of the construction is left in this init function
 		void Init(ptree config_tree);

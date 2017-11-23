@@ -1739,6 +1739,7 @@ CosmicBenchEvent::CosmicBenchEvent(){
 	for(unsigned int i=0;i<events.size();i++){
 		delete events[i];
 	}
+	detectors = NULL;
 	events.clear();
 	evn = -1;
 	evttime = 0;
@@ -1746,6 +1747,7 @@ CosmicBenchEvent::CosmicBenchEvent(){
 CosmicBenchEvent::CosmicBenchEvent(const CosmicBenchEvent& other){
 	evn = other.evn;
 	evttime = other.evttime;
+	detectors = other.detectors;
 	rayPairs.clear();
 	rayPairs.assign(other.rayPairs.begin(),other.rayPairs.end());
 	for(unsigned int i=0;i<events.size();i++){
@@ -1759,6 +1761,7 @@ CosmicBenchEvent::CosmicBenchEvent(const CosmicBenchEvent& other){
 CosmicBenchEvent& CosmicBenchEvent::operator=(const CosmicBenchEvent& other){
 	evn = other.evn;
 	evttime = other.evttime;
+	detectors = other.detectors;
 	rayPairs.clear();
 	rayPairs.assign(other.rayPairs.begin(),other.rayPairs.end());
 	for(unsigned int i=0;i<events.size();i++){
@@ -1770,11 +1773,12 @@ CosmicBenchEvent& CosmicBenchEvent::operator=(const CosmicBenchEvent& other){
 	}
 	return *this;
 }
-CosmicBenchEvent::CosmicBenchEvent(const CosmicBench * const detectors, Tanalyse_R * treeObject, long entry){
+CosmicBenchEvent::CosmicBenchEvent(const CosmicBench * const detectors_, Tanalyse_R * treeObject, long entry){
 	if(entry>-1){
 		treeObject->LoadTree(entry);
 		treeObject->GetEntry(entry);
 	}
+	detectors = detectors_;
 	evn = treeObject->evn;
 	evttime = treeObject->evttime;
 	rayPairs.clear();
@@ -1787,7 +1791,7 @@ CosmicBenchEvent::CosmicBenchEvent(const CosmicBench * const detectors, Tanalyse
 		events.push_back(detectors->get_detector(i)->build_event(treeObject));
 	}
 }
-CosmicBenchEvent::CosmicBenchEvent(const CosmicBench * const detectors, const Tanalyse_R * const treeObject){
+CosmicBenchEvent::CosmicBenchEvent(const CosmicBench * const detectors_, const Tanalyse_R * const treeObject){
 	evn = treeObject->evn;
 	evttime = treeObject->evttime;
 	rayPairs.clear();
@@ -1799,8 +1803,9 @@ CosmicBenchEvent::CosmicBenchEvent(const CosmicBench * const detectors, const Ta
 	for(int i=0;i<det_N;i++){
 		events.push_back(detectors->get_detector(i)->build_event(treeObject));
 	}
+	detectors = detectors_;
 }
-CosmicBenchEvent::CosmicBenchEvent(const CosmicBench * const detectors,const vector<Event*> events_){
+CosmicBenchEvent::CosmicBenchEvent(const CosmicBench * const detectors_,const vector<Event*> events_){
 	rayPairs.clear();
 	events.clear();
 	unsigned int det_N = detectors->get_det_N_tot();
@@ -1823,6 +1828,7 @@ CosmicBenchEvent::CosmicBenchEvent(const CosmicBench * const detectors,const vec
 		det_is_used.insert(pair<Tomography::det_type,int>((*it)->get_type(),(*it)->get_n_in_tree()));
 		events.push_back((*it)->Clone());
 	}
+	detectors = detectors_;
 }
 CosmicBenchEvent::~CosmicBenchEvent(){
 	for(unsigned int i=0;i<events.size();i++){
@@ -2351,6 +2357,7 @@ vector<Ray> CosmicBenchEvent::get_absorption_rays(double chiSquare_threshold){
 			}
 		}
 	}
+	/*
 	unsigned int min_size = (suitableRays.size()>1) ? numeric_limits<unsigned int>::max() : 0;
 	for(map<bool, vector<Ray_2D> >::iterator it=suitableRays.begin();it!=suitableRays.end();++it){
 		if((it->second).size()<min_size) min_size = (it->second).size();
@@ -2358,6 +2365,34 @@ vector<Ray> CosmicBenchEvent::get_absorption_rays(double chiSquare_threshold){
 	for(unsigned int i = 0;i<min_size;i++){
 		returnRays.push_back(Ray(suitableRays[true][i],suitableRays[false][i]));
 		returnRays.back().angle_correction();
+	}
+	*/
+	for(vector<Ray_2D>::iterator jt = suitableRays[true].begin(); (jt!=suitableRays[true].end()) && (!suitableRays[false].empty());++jt){
+		vector<Cluster*> x_clus = jt->get_clus();
+		map<int,pair<Tomography::det_type,int> > x_dets;
+		for(vector<Cluster*>::iterator kt = x_clus.begin();kt!=x_clus.end();++kt){
+			 x_dets.insert(pair<int,pair<Tomography::det_type,int> >((*kt)->get_layer(),pair<Tomography::det_type,int>((*kt)->get_type(),(*kt)->get_n_in_tree())));
+			 delete *kt;
+		}
+		for(vector<Ray_2D>::iterator kt = suitableRays[false].begin(); kt!=suitableRays[false].end();++kt){
+			vector<Cluster*> y_clus = kt->get_clus();
+			bool mismatch = false;
+			for(vector<Cluster*>::iterator nt = y_clus.begin();nt!=y_clus.end();++nt){
+				Detector * y_det = detectors->get_detector(detectors->find_det(*nt));
+				map<int,pair<Tomography::det_type,int> >::iterator in_layer = x_dets.find((*nt)->get_layer());
+				if(in_layer != x_dets.end())
+				{
+					if(((in_layer->second).first != y_det->get_perp_type()) ||  ((in_layer->second).second != y_det->get_perp_n())) mismatch = true;
+				}
+				delete *nt;
+			}
+			if(!mismatch){
+				returnRays.push_back(Ray(*jt,*kt));
+				returnRays.back().angle_correction();
+				suitableRays[false].erase(kt);
+				break;
+			}
+		}
 	}
 	for(map<bool, map<int,vector<Cluster*> > >::iterator jt = currentClusters.begin();jt!=currentClusters.end();++jt){
 		for(map<int,vector<Cluster*> >::iterator kt = (jt->second).begin();kt!=(jt->second).end();++kt){
