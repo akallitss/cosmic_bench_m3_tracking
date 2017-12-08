@@ -157,18 +157,19 @@ int main(int argc, char ** argv){
 		}
 	}
 	else if(argv[2] == eventdisplaymult){
-		if(argc<4){
-			cout << "you must indicate the number of the event you wanna see" << endl;
+		if(argc<5){
+			cout << "you must indicate the first and last event you wanna see" << endl;
 			Tomography::Quit();
 			delete blah;
 			return 1;
 		}
 		else{
 			int i = atoi(argv[3]);
+			int j = atoi(argv[4]);
 			TCanvas * cDisplay = new TCanvas();
-			for(int j=0;j<i && Tomography::get_instance()->get_can_continue();j++){
-				cout << "\r" << "Event : " << j << flush;
-				blah->EventDisplay(j, cDisplay);
+			for(int k=i;k<=j && Tomography::get_instance()->get_can_continue();k++){
+				cout << "\r" << "Event : " << k << flush;
+				blah->EventDisplay(k, cDisplay);
 				sleep(2);
 			}
 			cout << endl;
